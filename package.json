@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx seed.ts"
+    "seed": "tsx seed.ts",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
@@ -28,10 +29,13 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "conventional-changelog-cli": "^5.0.0",
     "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
@@ -39,5 +43,22 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5"
-  }
+  },
+  "description": "��#\u0000 \u0000r\u0000o\u0000n\u0000a\u0000n\u0000_\u0000s\u0000a\u0000t\u0000_\u0000e\u0000d\u0000t\u0000e\u0000c\u0000h\u0000\r\u0000 \u0000",
+  "main": "stress-test.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/levinh2006b/ronan_sat_edtech.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/levinh2006b/ronan_sat_edtech/issues"
+  },
+  "homepage": "https://github.com/levinh2006b/ronan_sat_edtech#readme"
 }
