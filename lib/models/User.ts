@@ -9,6 +9,8 @@ export interface IUser extends Document {
     highestScore: number;
     lastTestDate?: Date;
     wrongQuestions: mongoose.Types.ObjectId[]; // Ref to Result or Question
+    resetPasswordToken?: string;  // THÊM DÒNG NÀY: Lưu mã code 6 số
+    resetPasswordExpires?: Date;  // THÊM DÒNG NÀY: Lưu thời gian hết hạn của mã
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -21,6 +23,8 @@ const UserSchema: Schema<IUser> = new Schema(
         highestScore: { type: Number, default: 0 },
         lastTestDate: { type: Date },
         wrongQuestions: [{ type: Schema.Types.ObjectId, ref: "Question" }],
+        resetPasswordToken: { type: String, required: false },
+        resetPasswordExpires: { type: Date, required: false },
     },
     { timestamps: true }
 );

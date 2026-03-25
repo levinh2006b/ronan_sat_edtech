@@ -9,6 +9,8 @@ export const UserValidationSchema = z.object({
     highestScore: z.number().min(0).default(0),
     lastTestDate: z.date().optional(),
     wrongQuestions: z.array(z.string()).optional(),
+    resetPasswordToken: z.string().optional(),
+    resetPasswordExpires: z.date().optional(),
 });
 
 export type UserInput = z.infer<typeof UserValidationSchema>;

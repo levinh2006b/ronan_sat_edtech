@@ -19,6 +19,10 @@ export default function Navbar() {
     const { data: session, status } = useSession();    // Lấy thông tin phiên đăng nhập
     const pathname = usePathname();                    // Cất cái đuôi của url hiện tại vd  web/edtech -> pathname = edtech
 
+    if (pathname.startsWith("/auth")) {
+            return null;
+     }
+
     if (                                               // Các trường hợp cất navBar đi: chưa login or đang load or loadin (chưa check user xong) or đường link starts with "test" => Đang test or url = auth (đang đăng nhập)
         status === "loading" ||
         status === "unauthenticated" ||
