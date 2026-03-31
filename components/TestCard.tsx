@@ -19,15 +19,42 @@ interface TestCardProps {
 }
 
 export default function TestCard({ test, isSectional = false, subjectFilter, userResults = [] }: TestCardProps) {
-    const totalQuestions = test.sections?.reduce((acc, sec) => acc + sec.questionsCount, 0) || 0;
     const formattedSectionName = subjectFilter === "reading" ? "Reading and Writing" : "Math";
 
-    // 1. Kiểm tra số lượng câu hỏi thực tế (nếu không có trường đếm thì cho là 0)
+    // 1. Kiểm tra số lượng câu hỏi thực tế trong database cho từng module
+    const rw1Count = test.questionCounts?.rw_1 || 0;
+    const rw2Count = test.questionCounts?.rw_2 || 0;
+    const math1Count = test.questionCounts?.math_1 || 0;
+    const math2Count = test.questionCounts?.math_2 || 0;
+
+    // 2. Logic cộng dồn số câu và số giờ cố định theo luật SAT
+    let totalQuestions = 0;
+    let totalTime = 0;
+
+    if (isSectional) {
+        if (subjectFilter === "reading") {
+            // Reading & Writing: 27 câu, 32 phút mỗi module
+            if (rw1Count > 0) { totalQuestions += 27; totalTime += 32; }
+            if (rw2Count > 0) { totalQuestions += 27; totalTime += 32; }
+        } else if (subjectFilter === "math") {
+            // Math: 22 câu, 35 phút mỗi module
+            if (math1Count > 0) { totalQuestions += 22; totalTime += 35; }
+            if (math2Count > 0) { totalQuestions += 22; totalTime += 35; }
+        }
+    } else {
+        // Chế độ Full-length Test: Cộng dồn toàn bộ nếu module đó đã được khởi tạo
+        if (rw1Count > 0) { totalQuestions += 27; totalTime += 32; }
+        if (rw2Count > 0) { totalQuestions += 27; totalTime += 32; }
+        if (math1Count > 0) { totalQuestions += 22; totalTime += 35; }
+        if (math2Count > 0) { totalQuestions += 22; totalTime += 35; }
+    }
+
+    // Biến phụ trợ để quản lý nút bấm
     const secPrefix = subjectFilter === "reading" ? "rw" : "math";
     const mod1Count = test.questionCounts?.[`${secPrefix}_1` as keyof typeof test.questionCounts] || 0;
     const mod2Count = test.questionCounts?.[`${secPrefix}_2` as keyof typeof test.questionCounts] || 0;
 
-    // 2. ẨN HOÀN TOÀN nếu đang ở chế độ Sectional và cả 2 module đều không có câu hỏi nào
+    // 3. ẨN HOÀN TOÀN nếu đang ở chế độ Sectional và cả 2 module đều không có câu hỏi nào
     if (isSectional && mod1Count === 0 && mod2Count === 0) {
         return null;
     }
@@ -58,10 +85,12 @@ export default function TestCard({ test, isSectional = false, subjectFilter, use
                 <div className="space-y-2 mt-4 text-sm text-slate-600">
                     <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-slate-400" />
-                        <span>{test.timeLimit} Minutes Total</span>
+                        {/* Thay test.timeLimit bằng tổng thời gian vừa tính */}
+                        <span>{totalTime} Minutes Total</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <GraduationCap className="w-4 h-4 text-slate-400" />
+                        {/* Thay thế tổng câu hỏi động bằng tổng câu hỏi cố định */}
                         <span>{totalQuestions} Questions</span>
                     </div>
                 </div>

@@ -7,6 +7,7 @@ import Loading from "@/components/Loading";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
 import { BookOpen } from "lucide-react";
+import  TestCardSkeleton  from "@/components/TestCardSkeleton"
 
 export default function SectionalTestsPage() {
   const { data: session, status } = useSession();
@@ -26,14 +27,43 @@ export default function SectionalTestsPage() {
   const [subjectFilter, setSubjectFilter] = useState("reading"); // "reading" hoặc "math"
   const limit = 6;
 
-  // Logic lấy danh sách thời gian (giống trang chủ)
-  const uniquePeriods = ["All", ...Array.from(new Set(tests.map(t => {
+  // THÊM MỚI: Reset lại trang và bộ lọc ngày mỗi khi đổi môn học
+  useEffect(() => {
+    setSelectedPeriod("All");
+    setPage(1);
+  }, [subjectFilter]);
+
+  const testsWithSubject = tests.filter((t: any) => {
+  if (!t.sections || !Array.isArray(t.sections)) return false;
+
+  const targetSectionName = subjectFilter === "reading" ? "Reading and Writing" : "Math";
+  const section = t.sections.find((s: any) => s.name === targetSectionName);
+  if (!section) return false;
+
+  // Dùng questionCounts ở root — đây là nguồn data thực tế
+  // Chỉ cần 1 trong 2 module có câu hỏi là hiện
+  if (t.questionCounts) {
+    if (subjectFilter === "reading") {
+      return (t.questionCounts.rw_1 > 0) || (t.questionCounts.rw_2 > 0);
+    } else {
+      return (t.questionCounts.math_1 > 0) || (t.questionCounts.math_2 > 0);
+    }
+  }
+
+  // Fallback nếu questionCounts chưa có (bài test cũ): dùng section.questionsCount
+  return (section.questionsCount ?? 0) > 0;
+});
+
+
+  // BƯỚC 2: Tạo sidebar "Filter by Date" chỉ từ những bài test hợp lệ đã lọc ở BƯỚC 1
+  const uniquePeriods = ["All", ...Array.from(new Set(testsWithSubject.map((t: any) => {
       const parts = t.title.split(' ');
       if (parts.length >= 2) return `${parts[0]} ${parts[1]}`;
       return "Other";
   })))];
 
-  const filteredTests = tests.filter(t => {
+  // BƯỚC 3: Lọc danh sách bài test cuối cùng để render ra UI
+  const filteredTests = testsWithSubject.filter((t: any) => {
     if (selectedPeriod === "All") return true;
     if (selectedPeriod === "Other") return t.title.split(' ').length < 2;
     return t.title.startsWith(selectedPeriod);
@@ -160,8 +190,12 @@ export default function SectionalTestsPage() {
 
               {/* Render danh sách bài thi */}
               {loading ? (
-                <Loading />
-              ) : filteredTests.length === 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <TestCardSkeleton key={i} isSectional={true} />
+                  ))}
+                </div>
+         ) : filteredTests.length === 0 ? (
                 <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
                   <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-slate-900">No tests found</h3>

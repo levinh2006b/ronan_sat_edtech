@@ -4,6 +4,7 @@ import { BookOpen } from "lucide-react";       // icon
 import TestCard from "@/components/TestCard";       // Khung hiển thị 1 bài test
 import Loading from "@/components/Loading";         // animation loading
 import { Dispatch, SetStateAction } from "react";
+import TestCardSkeleton from "@/components/TestCardSkeleton";
 
 interface TestLibraryProps {
     uniquePeriods: string[];
@@ -81,13 +82,19 @@ export default function TestLibrary({
                     </div>
 
                     {loading ? (
-                        <Loading />
-                    ) : filteredTests.length === 0 ? (
-                        <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
-                            <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-slate-900">No tests found for this period</h3>
-                        </div>
-                    ) : (
+                            /* Hiển thị danh sách Khung sườn (Skeleton) khi đang chờ API */
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                {/* Tạo mảng 6 phần tử ảo để in ra 6 cái khung sườn lấp đầy màn hình */}
+                                {[1, 2, 3, 4, 5, 6].map((index) => (
+                                    <TestCardSkeleton key={index} />
+                                ))}
+                            </div>
+                        ) : filteredTests.length === 0 ? (
+                            <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
+                                <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-slate-900">No tests found for this period</h3>
+                            </div>
+                        ) : (
                         <>
                             {/* Điều chỉnh Grid thành 2 cột to để vừa vặn với kích thước mới (vì bên trái đã chiếm 1 khoảng) */}
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
