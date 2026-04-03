@@ -1,278 +1,249 @@
 "use client";
 
 import { useState } from "react";
-import { Flag } from "lucide-react";
-import { CldImage } from 'next-cloudinary';
-import 'katex/dist/katex.min.css';
-import Latex from 'react-latex-next';
+import { CldImage } from "next-cloudinary";
+import Latex from "react-latex-next";
+
+import "katex/dist/katex.min.css";
+import { getChoiceCode } from "@/utils/gradingHelper";
+
+const MAX_SPR_ANSWER_LENGTH = 200;
+
+type ViewerQuestion = {
+  _id: string;
+  questionType?: "multiple_choice" | "spr";
+  questionText?: string;
+  passage?: string;
+  imageUrl?: string;
+  choices?: string[];
+};
 
 interface QuestionViewerProps {
-    question: any;
-    userAnswer: string;
-    onAnswerSelect: (questionId: string, choice: string) => void;
-    isFlagged: boolean;
-    onToggleFlag: (questionId: string) => void;
-    index: number;
-    leftWidth?: number;   // THÊM MỚI: nhận % từ TestEngine, mặc định 50
+  question: ViewerQuestion;
+  userAnswer: string;
+  onAnswerSelect: (questionId: string, choice: string) => void;
+  isFlagged: boolean;
+  onToggleFlag: (questionId: string) => void;
+  index: number;
+  leftWidth?: number;
 }
 
 export default function QuestionViewer({
-    question,
-    userAnswer,
-    onAnswerSelect,
-    isFlagged,
-    onToggleFlag,
-    index,
-    leftWidth = 50,       // THÊM MỚI: mặc định 50/50 nếu không truyền vào
+  question,
+  userAnswer,
+  onAnswerSelect,
+  isFlagged,
+  onToggleFlag,
+  index,
+  leftWidth = 50,
 }: QuestionViewerProps) {
-    const optionLabels = ["A", "B", "C", "D"];
+  const optionLabels = ["A", "B", "C", "D"];
+  const [crossedOut, setCrossedOut] = useState<string[]>([]);
+  const [showElimination, setShowElimination] = useState(false);
 
-    // Danh sách đáp án bị loại trừ
-    const [crossedOut, setCrossedOut] = useState<string[]>([]);
+  const toggleCrossOut = (event: React.MouseEvent, choice: string) => {
+    event.stopPropagation();
+    if (crossedOut.includes(choice)) {
+      setCrossedOut(crossedOut.filter((item) => item !== choice));
+      return;
+    }
 
-    // Trạng thái bật/tắt chế độ Process of Elimination
-    const [showElimination, setShowElimination] = useState(false);
+    setCrossedOut([...crossedOut, choice]);
+  };
 
-    const toggleCrossOut = (e: React.MouseEvent, choice: string) => {
-        e.stopPropagation();
-        if (crossedOut.includes(choice)) {
-            setCrossedOut(crossedOut.filter(c => c !== choice));
-        } else {
-            // Nếu đáp án này đang được chọn thì bỏ chọn trước khi cross out
-            if (userAnswer === choice) {
-                onAnswerSelect(question._id, "");
-            }
-            setCrossedOut([...crossedOut, choice]);
-        }
-    };
+  const hasLeftPanel = question.passage || question.imageUrl;
+  const leftPct = `${leftWidth}%`;
+  const rightPct = `${100 - leftWidth}%`;
 
-    const hasLeftPanel = question.passage || question.imageUrl;
-
-    // THÊM MỚI: tính % right panel từ leftWidth, trừ thêm ~12px cho divider (dùng CSS calc)
-    const leftPct = `${leftWidth}%`;
-    const rightPct = `${100 - leftWidth}%`;
-
-    return (
-        // THAY ĐỔI: bỏ flex-1, dùng w-full h-full để lấp đầy container từ TestEngine
-        <div className="w-full flex bg-white h-[calc(100vh-8rem)] mt-16 mb-16 overflow-hidden">
-
-            {/* Left Panel: Passage Text & Image */}
-            {hasLeftPanel && (
-                // THAY ĐỔI: bỏ w-1/2 hardcode, dùng inline style theo leftWidth
-                <div className="h-full overflow-y-auto p-10 border-r border-slate-300" style={{ width: leftPct, flexShrink: 0 }}>
-                    {question.imageUrl && (
-                        <div className="flex justify-center w-full bg-slate-50 p-4 rounded border border-slate-200 mb-6">
-                            <CldImage
-                                src={question.imageUrl}
-                                width={350}
-                                height={350}
-                                alt="Question Reference"
-                                className="max-w-full h-auto object-contain"
-                            />
-                        </div>
-                    )}
-
-                    {question.passage && (
-                        <div className="whitespace-pre-wrap text-[15px] leading-relaxed text-slate-900 font-serif selection:bg-yellow-200 selection:text-black">
-                            <Latex>{question.passage}</Latex>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* THÊM MỚI: Divider thanh kéo nằm giữa 2 panel — render từ bên trong QuestionViewer
-                để đúng vị trí giữa left panel và right panel */}
-            {/* THÊM MỚI: Divider thanh kéo nằm giữa 2 panel */}
-{hasLeftPanel && (
-    <div
-    id="qv-divider"
-    // Thêm class 'group' để bắt hiệu ứng hover, và 'relative' để giữ vị trí nút cầm
-    className="group flex-shrink-0 flex items-center justify-center cursor-col-resize z-10 bg-slate-200 hover:bg-slate-300 transition-colors relative"
-    style={{ width: "4px" }} // Thu hẹp thanh dọc (từ 16px xuống 8px)
->
-    {/* Hình chữ nhật chứa mũi tên */}
-    <div
-        // Thêm 'absolute' để nút này có thể nổi đè lên và tràn ra ngoài thanh 8px mà không bị méo
-        className="absolute flex items-center justify-center rounded-sm bg-slate-500 group-hover:bg-slate-700 transition-colors select-none pointer-events-none"
-        style={{ width: "16px", height: "33px", borderRadius: "4px" }} // Làm nút to và cao hơn một chút
-    >
-        {/* Mũi tên trái phải mới: Kích thước to hơn (18x18) và nét dày hơn (2.5) */}
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Nét vẽ mũi tên trái */}
-            <path d="M9 18L3 12L9 6" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            {/* Nét vẽ mũi tên phải */}
-            <path d="M15 6L21 12L15 18" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-    </div>
-</div>
-)}
-
-            {/* Right Panel: Question & Answers */}
-            {/* THAY ĐỔI: bỏ w-1/2 hardcode, dùng inline style theo rightWidth */}
-            <div
-                className={`${hasLeftPanel ? "" : "max-w-3xl mx-auto"} h-full overflow-y-auto flex flex-col`}
-                style={{ width: hasLeftPanel ? rightPct : "100%", flexShrink: 0 }}
-            >
-
-                {/* ── HEADER ROW ── */}
-                <div className="px-6 pt-5 pb-2 shrink-0">
-                    <div className="flex items-stretch h-[32px]">
-                        
-                        <div className="bg-[#1e293b] text-white w-[32px] flex items-center justify-center font-bold text-sm shrink-0 select-none">
-                            {index + 1}
-                        </div>
-
-                        <div className="flex-1 bg-slate-100 flex items-center justify-between px-3">
-                            <button
-                                onClick={() => onToggleFlag(question._id)}
-                                className={`cursor-pointer flex items-center gap-1.5 text-[13px] shrink-0 select-none transition-all
-                                    ${isFlagged
-                                        ? "font-semibold text-[#1e3a5f] underline underline-offset-2 hover:font-medium hover:no-underline"
-                                        : "font-medium text-slate-700 hover:font-semibold hover:text-[#1e3a5f] hover:underline hover:underline-offset-2"
-                                    }
-                                `}
-                            >
-                                <svg width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path
-                                        d="M2.5 2A1.5 1.5 0 014 0.5h7A1.5 1.5 0 0112.5 2v13l-5-3-5 3V2z"
-                                        stroke={isFlagged ? "#1e3a5f" : "currentColor"}
-                                        strokeWidth="1.4"
-                                        fill={isFlagged ? "#1e3a5f" : "none"}
-                                    />
-                                </svg>
-                                <span>Mark for Review</span>
-                            </button>
-
-                            <button
-                                onClick={() => setShowElimination(prev => !prev)}
-                                title={showElimination ? "Tắt Process of Elimination" : "Bật Process of Elimination"}
-                                className={`
-                                    cursor-pointer relative shrink-0 w-[26px] h-[26px] flex items-center justify-center rounded-sm border font-bold transition-colors select-none
-                                    ${showElimination
-                                        ? "bg-[#2B579A] border-[#2B579A] text-white"
-                                        : "bg-white border-slate-300 text-slate-700"
-                                    }
-                                    hover:!bg-slate-200 hover:!text-slate-800 hover:!border-slate-400
-                                `}
-                            >
-                                <span className="tracking-[-0.08em] text-[10px] relative z-10">ABC</span>
-                                <svg
-                                    className="absolute inset-0 w-full h-full pointer-events-none z-20"
-                                    viewBox="0 0 26 26"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <line x1="5" y1="21" x2="21" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    {/* ── ĐƯỜNG KẺ NGANG ĐỨT NÉT ── */}
-                    <div 
-                        className="w-full h-[2px] mt-[2px]" 
-                        style={{ backgroundImage: 'repeating-linear-gradient(to right, #2d3642 0, #1c2128 19px, transparent 19px, transparent 20px)' }}
-                    ></div>
-                </div>
-                    <div className="px-6 pt-3 pb-3 text-[15px] text-slate-900 leading-relaxed">
-                        <Latex>{question.questionText}</Latex>
-                    </div>
-                    
-                {/* KIỂM TRA LOẠI CÂU HỎI */}
-                <div className="px-6 pb-8 flex-1">
-                    {question.questionType === "spr" ? (
-                        <div className="mt-4">
-                            <label className="block text-sm font-semibold text-slate-700 mb-3">
-                                Student-Produced Response (Điền đáp án)
-                            </label>
-                            <input
-                                type="text"
-                                value={userAnswer || ""}
-                                onChange={(e) => onAnswerSelect(question._id, e.target.value)}
-                                placeholder="Nhập câu trả lời của bạn (VD: 1/3, 0.5, ...)"
-                                className="w-full max-w-sm px-4 py-2.5 border border-slate-400 rounded focus:border-[#1e3a5f] focus:ring-2 focus:ring-blue-100 outline-none text-[15px] text-slate-800 transition-all"
-                            />
-                            <p className="text-sm text-slate-500 mt-2">
-                                Bạn có thể nhập phân số, số thập phân hoặc số nguyên.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3 mt-3">
-                            {question.choices?.map((choice: string, i: number) => {
-                                const isSelected = userAnswer === choice;
-                                const isCrossed = crossedOut.includes(choice);
-                                const label = optionLabels[i] || "";
-
-                                return (
-                                    <div key={i} className="flex items-center gap-3">
-
-                                        <div
-                                            className={`
-                                                relative flex-1 flex items-center gap-3 pl-4 pr-4 py-[10px] rounded-xl transition-all
-                                                ${isCrossed
-                                                    ? "ring-1 ring-inset ring-slate-200 bg-slate-50 cursor-default"
-                                                    : isSelected
-                                                        ? "ring-2 ring-inset ring-[#3056D3] bg-white cursor-pointer"
-                                                        : "ring-1 ring-inset ring-slate-400 bg-white hover:ring-slate-600 cursor-pointer"
-                                                }
-                                            `}
-                                            onClick={() => !isCrossed && onAnswerSelect(question._id, choice)}
-                                        >
-                                            {isCrossed && (
-                                                <div className="absolute top-1/2 left-4 right-4 h-[1.5px] bg-slate-500 pointer-events-none z-10" />
-                                            )}
-
-                                            <div className={`
-                                                shrink-0 w-[26px] h-[26px] rounded-full border flex items-center justify-center text-[13px] font-semibold select-none transition-all
-                                                ${isCrossed
-                                                    ? "border-slate-300 text-slate-400 bg-white"
-                                                    : isSelected
-                                                        ? "border-[#2B579A] bg-[#2B579A] text-white"
-                                                        : "border-slate-500 text-slate-700 bg-white"
-                                                }
-                                            `}>
-                                                {label}
-                                            </div>
-
-                                            <span className={`text-[15px] leading-snug select-none ${
-                                                isCrossed ? "text-slate-400" : "text-slate-900"
-                                            }`}>
-                                                <Latex>{choice || ""}</Latex>
-                                            </span>
-                                        </div>
-
-                                        {/* ── NÚT LOẠI TRỪ ── */}
-                                        {showElimination && (
-                                            <button
-                                                onClick={(e) => toggleCrossOut(e, choice)}
-                                                title={isCrossed ? `Hoàn tác loại trừ đáp án ${label}` : `Loại trừ đáp án ${label}`}
-                                                className="cursor-pointer shrink-0 transition-all flex items-center justify-center w-[30px]"
-                                            >
-                                                {isCrossed ? (
-                                                    <span className="text-[13px] font-semibold text-slate-600 underline hover:no-underline whitespace-nowrap">
-                                                        Undo
-                                                    </span>
-                                                ) : (
-                                                    <EliminationCircle label={label} />
-                                                )}
-                                            </button>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
+  return (
+    <div className="mt-16 mb-16 flex h-[calc(100vh-8rem)] w-full overflow-hidden bg-white">
+      {hasLeftPanel ? (
+        <div className="h-full overflow-y-auto border-r border-slate-300 p-10" style={{ width: leftPct, flexShrink: 0 }}>
+          {question.imageUrl ? (
+            <div className="mb-6 flex w-full justify-center rounded border border-slate-200 bg-slate-50 p-4">
+              <CldImage
+                src={question.imageUrl}
+                width={350}
+                height={350}
+                alt="Question Reference"
+                className="h-auto max-w-full object-contain"
+              />
             </div>
+          ) : null}
+
+          {question.passage ? (
+            <div className="whitespace-pre-wrap font-serif text-[15px] leading-relaxed text-slate-900 selection:bg-yellow-200 selection:text-black">
+              <Latex>{question.passage}</Latex>
+            </div>
+          ) : null}
         </div>
-    );
+      ) : null}
+
+      {hasLeftPanel ? (
+        <div
+          id="qv-divider"
+          className="group relative z-10 flex flex-shrink-0 cursor-col-resize items-center justify-center bg-slate-200 transition-colors hover:bg-slate-300"
+          style={{ width: "4px" }}
+        >
+          <div
+            className="pointer-events-none absolute flex select-none items-center justify-center rounded-sm bg-slate-500 transition-colors group-hover:bg-slate-700"
+            style={{ width: "16px", height: "33px", borderRadius: "4px" }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 18L3 12L9 6" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M15 6L21 12L15 18" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+      ) : null}
+
+      <div
+        className={`${hasLeftPanel ? "" : "mx-auto max-w-3xl"} flex h-full flex-col overflow-y-auto`}
+        style={{ width: hasLeftPanel ? rightPct : "100%", flexShrink: 0 }}
+      >
+        <div className="shrink-0 px-6 pb-2 pt-5">
+          <div className="flex h-[32px] items-stretch">
+            <div className="flex w-[32px] shrink-0 select-none items-center justify-center bg-[#1e293b] text-sm font-bold text-white">
+              {index + 1}
+            </div>
+
+            <div className="flex flex-1 items-center justify-between bg-slate-100 px-3">
+              <button
+                onClick={() => onToggleFlag(question._id)}
+                className={`cursor-pointer select-none text-[13px] transition-all ${
+                  isFlagged
+                    ? "font-semibold text-[#1e3a5f] underline underline-offset-2 hover:font-medium hover:no-underline"
+                    : "font-medium text-slate-700 hover:font-semibold hover:text-[#1e3a5f] hover:underline hover:underline-offset-2"
+                }`}
+              >
+                Mark for Review
+              </button>
+
+              <button
+                onClick={() => setShowElimination((prev) => !prev)}
+                title={showElimination ? "Tat Process of Elimination" : "Bat Process of Elimination"}
+                className={`relative flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-sm border font-bold transition-colors select-none ${
+                  showElimination
+                    ? "border-[#2B579A] bg-[#2B579A] text-white"
+                    : "border-slate-300 bg-white text-slate-700"
+                } hover:!border-slate-400 hover:!bg-slate-200 hover:!text-slate-800`}
+              >
+                <span className="relative z-10 text-[10px] tracking-[-0.08em]">ABC</span>
+                <svg
+                  className="pointer-events-none absolute inset-0 z-20 h-full w-full"
+                  viewBox="0 0 26 26"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <line x1="5" y1="21" x2="21" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="mt-[2px] h-[2px] w-full"
+            style={{ backgroundImage: "repeating-linear-gradient(to right, #2d3642 0, #1c2128 19px, transparent 19px, transparent 20px)" }}
+          />
+        </div>
+
+        <div className="px-6 pb-3 pt-3 text-[15px] leading-relaxed text-slate-900">
+          <Latex>{question.questionText}</Latex>
+        </div>
+
+        <div className="flex-1 px-6 pb-8">
+          {question.questionType === "spr" ? (
+            <div className="mt-4">
+              <label className="mb-3 block text-sm font-semibold text-slate-700">
+                Student-Produced Response (dien dap an)
+              </label>
+              <input
+                type="text"
+                value={userAnswer || ""}
+                onChange={(event) => onAnswerSelect(question._id, event.target.value)}
+                maxLength={MAX_SPR_ANSWER_LENGTH}
+                placeholder="Nhap cau tra loi cua ban (VD: 1/3, 0.5, ...)"
+                className="w-full max-w-sm rounded border border-slate-400 px-4 py-2.5 text-[15px] text-slate-800 outline-none transition-all focus:border-[#1e3a5f] focus:ring-2 focus:ring-blue-100"
+              />
+              <div className="mt-2 flex max-w-sm items-center justify-between gap-3 text-sm text-slate-500">
+                <p>Ban co the nhap phan so, so thap phan hoac so nguyen.</p>
+                <span className={`${(userAnswer || "").length >= MAX_SPR_ANSWER_LENGTH ? "text-amber-600" : ""}`}>
+                  {(userAnswer || "").length}/{MAX_SPR_ANSWER_LENGTH}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3 space-y-3">
+              {question.choices?.map((choice: string, indexChoice: number) => {
+                const storedChoiceCode = getChoiceCode(indexChoice);
+                const isSelected = userAnswer === storedChoiceCode;
+                const isCrossed = crossedOut.includes(choice);
+                const label = optionLabels[indexChoice] || "";
+
+                return (
+                  <div key={indexChoice} className="flex items-center gap-3">
+                    <div
+                      className={`relative flex flex-1 cursor-pointer items-center gap-3 rounded-xl pl-4 pr-4 py-[10px] transition-all ${
+                        isCrossed
+                          ? "cursor-default bg-slate-50 ring-1 ring-inset ring-slate-200"
+                          : isSelected
+                            ? "bg-white ring-2 ring-inset ring-[#3056D3]"
+                            : "bg-white ring-1 ring-inset ring-slate-400 hover:ring-slate-600"
+                      }`}
+                      onClick={() => !isCrossed && onAnswerSelect(question._id, storedChoiceCode)}
+                    >
+                      {isCrossed ? (
+                        <div className="pointer-events-none absolute left-4 right-4 top-1/2 z-10 h-[1.5px] bg-slate-500" />
+                      ) : null}
+
+                      <div
+                        className={`flex h-[26px] w-[26px] shrink-0 select-none items-center justify-center rounded-full border text-[13px] font-semibold transition-all ${
+                          isCrossed
+                            ? "border-slate-300 bg-white text-slate-400"
+                            : isSelected
+                              ? "border-[#2B579A] bg-[#2B579A] text-white"
+                              : "border-slate-500 bg-white text-slate-700"
+                        }`}
+                      >
+                        {label}
+                      </div>
+
+                      <span className={`select-none text-[15px] leading-snug ${isCrossed ? "text-slate-400" : "text-slate-900"}`}>
+                        <Latex>{choice || ""}</Latex>
+                      </span>
+                    </div>
+
+                    {showElimination ? (
+                      <button
+                        onClick={(event) => toggleCrossOut(event, choice)}
+                        title={isCrossed ? `Hoan tac loai tru dap an ${label}` : `Loai tru dap an ${label}`}
+                        className="flex w-[30px] shrink-0 cursor-pointer items-center justify-center transition-all"
+                      >
+                        {isCrossed ? (
+                          <span className="whitespace-nowrap text-[13px] font-semibold text-slate-600 underline hover:no-underline">
+                            Undo
+                          </span>
+                        ) : (
+                          <EliminationCircle label={label} />
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
-// ── ELIMINATION CIRCLE ──
 function EliminationCircle({ label }: { label: string }) {
-    return (
-        <div className="relative w-[16px] h-[16px] flex items-center justify-center rounded-full border border-slate-500 text-slate-600 hover:border-slate-800 hover:text-slate-800 transition-colors">
-            <span className="font-medium text-[10px] select-none leading-none mt-[1px]">{label}</span>
-            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-current -translate-y-1/2"></div>
-        </div>
-    );
+  return (
+    <div className="relative flex h-[16px] w-[16px] items-center justify-center rounded-full border border-slate-500 text-slate-600 transition-colors hover:border-slate-800 hover:text-slate-800">
+      <span className="mt-[1px] select-none text-[10px] font-medium leading-none">{label}</span>
+      <div className="absolute left-0 top-1/2 h-[1px] w-full -translate-y-1/2 bg-current" />
+    </div>
+  );
 }

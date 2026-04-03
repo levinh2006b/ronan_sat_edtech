@@ -144,7 +144,7 @@ export default function DownloadPdfButton({
           : "cursor-pointer text-black hover:text-blue-600 hover:no-underline"
       }`}
     >
-      {isDownloading ? "Dang chuan bi PDF..." : "Download PDF"}
+      {isDownloading ? "Downloading..." : "Download PDF"}
     </button>
   );
 }

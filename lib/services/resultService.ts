@@ -12,6 +12,15 @@ type ValidatedAnswer = {
   userAnswer?: string | null;
 };
 
+function normalizeText(value?: string | null) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function getChoiceIndexFromCode(value?: string | null) {
+  const match = value?.match(/^choice_(\d+)$/i);
+  return match ? Number(match[1]) : -1;
+}
+
 function normalizeAnswer(value?: string | null) {
   return value?.trim() || "Omitted";
 }
@@ -19,6 +28,7 @@ function normalizeAnswer(value?: string | null) {
 function isAnswerCorrect(question: {
   questionType?: string;
   correctAnswer?: string;
+  choices?: string[];
   sprAnswers?: string[];
 }, userAnswer: string) {
   if (!userAnswer || userAnswer === "Omitted") {
@@ -32,7 +42,24 @@ function isAnswerCorrect(question: {
     );
   }
 
-  return userAnswer === question.correctAnswer;
+  const correctAnswer = question.correctAnswer ?? "";
+  const choices = Array.isArray(question.choices) ? question.choices : [];
+  const userChoiceIndex = getChoiceIndexFromCode(userAnswer);
+  const correctChoiceIndex = getChoiceIndexFromCode(correctAnswer);
+
+  if (userChoiceIndex >= 0 && correctChoiceIndex >= 0) {
+    return userChoiceIndex === correctChoiceIndex;
+  }
+
+  if (userChoiceIndex >= 0 && correctChoiceIndex < 0) {
+    return normalizeText(choices[userChoiceIndex]) === normalizeText(correctAnswer);
+  }
+
+  if (userChoiceIndex < 0 && correctChoiceIndex >= 0) {
+    return normalizeText(userAnswer) === normalizeText(choices[correctChoiceIndex]);
+  }
+
+  return normalizeText(userAnswer) === normalizeText(correctAnswer);
 }
 
 function buildDateFilter(days?: number) {
