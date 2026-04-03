@@ -11,7 +11,7 @@ const MAX_SPR_ANSWER_LENGTH = 200;
 
 type ViewerQuestion = {
   _id: string;
-  questionType?: "multiple_choice" | "spr";
+  questionType?: string;
   questionText?: string;
   passage?: string;
   imageUrl?: string;
