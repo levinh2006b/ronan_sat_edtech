@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookMarked, CheckCircle2, Inbox, MoreHorizontal, Plus, Sparkles, X } from "lucide-react";
+import { BookMarked, CheckCircle2, ChevronLeft, ChevronRight, Inbox, Layers2, MoreHorizontal, Plus, X } from "lucide-react";
 
 import {
   useVocabBoard,
@@ -41,6 +41,12 @@ type DropIndicatorState = {
   position: "before" | "after";
 };
 
+type FlashCardModalState = {
+  columnId: string;
+  title: string;
+  cards: VocabCard[];
+};
+
 export default function VocabPage() {
   const {
     board,
@@ -68,6 +74,9 @@ export default function VocabPage() {
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingColumnTitle, setEditingColumnTitle] = useState("");
   const [openMenuColumnId, setOpenMenuColumnId] = useState<string | null>(null);
+  const [flashCardModal, setFlashCardModal] = useState<FlashCardModalState | null>(null);
+  const [flashCardIndex, setFlashCardIndex] = useState(0);
+  const [isFlashCardAnswerVisible, setIsFlashCardAnswerVisible] = useState(false);
 
   const menuRef = useRef<HTMLDivElement | null>(null);
   const dragPreviewRef = useRef<HTMLElement | null>(null);
@@ -95,6 +104,42 @@ export default function VocabPage() {
     window.addEventListener("mousedown", handlePointerDown);
     return () => window.removeEventListener("mousedown", handlePointerDown);
   }, [openMenuColumnId]);
+
+  useEffect(() => {
+    if (!flashCardModal) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setFlashCardModal(null);
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        setFlashCardIndex((current) => {
+          const nextIndex = Math.min(current + 1, flashCardModal.cards.length - 1);
+          if (nextIndex !== current) {
+            setIsFlashCardAnswerVisible(false);
+          }
+          return nextIndex;
+        });
+      }
+
+      if (event.key === "ArrowLeft") {
+        setFlashCardIndex((current) => {
+          const nextIndex = Math.max(current - 1, 0);
+          if (nextIndex !== current) {
+            setIsFlashCardAnswerVisible(false);
+          }
+          return nextIndex;
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [flashCardModal]);
 
   useEffect(() => {
     if (!draggingColumnId) {
@@ -194,6 +239,17 @@ export default function VocabPage() {
     setOpenMenuColumnId(null);
   };
 
+  const openFlashCards = (columnId: string, title: string, cards: VocabCard[]) => {
+    if (cards.length === 0) {
+      return;
+    }
+
+    setFlashCardModal({ columnId, title, cards });
+    setFlashCardIndex(0);
+    setIsFlashCardAnswerVisible(false);
+    setOpenMenuColumnId(null);
+  };
+
   const saveColumnEdit = () => {
     if (!editingColumnId) {
       return;
@@ -264,6 +320,9 @@ export default function VocabPage() {
     clearColumnDragState();
   };
 
+  const activeFlashCard = flashCardModal?.cards[flashCardIndex] ?? null;
+  const activeFlashCardContent = activeFlashCard ? parseFlashCardText(activeFlashCard.text) : null;
+
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.92),_rgba(232,240,247,0.88)_26%,_rgba(225,233,241,0.96)_100%)] px-4 py-4 sm:px-5 lg:px-6">
       <div className="mx-auto max-w-[1640px]">
@@ -301,13 +360,25 @@ export default function VocabPage() {
             <BoardColumnShell
               accentClass="bg-slate-200"
               shellClass="border-slate-100/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(248,250,252,0.94)_100%)]"
-              title={<ColumnHeader icon={<Inbox className="h-4 w-4" />} title="Hộp từ điển" subtitle={`${inboxCards.length} thẻ`} hideDefaultMenu />}
+              title={
+                <ColumnHeader
+                  icon={<Inbox className="h-4 w-4" />}
+                  title="Hộp từ điển"
+                  subtitle={`${inboxCards.length} thẻ`}
+                  menuButton={
+                    <ColumnActionButton
+                      onClick={() => openFlashCards("inbox", "Hộp từ điển", inboxCards)}
+                      disabled={inboxCards.length === 0}
+                    />
+                  }
+                />
+              }
               onDrop={() => draggingCardId && moveCard(draggingCardId, "inbox")}
             >
               {!hydrated ? (
-                <BoardEmptyState text="Đang tải..." />
+                <BoardEmptyState text="Äang táº£i..." />
               ) : inboxCards.length === 0 ? (
-                <BoardEmptyState text="Chưa có từ nào được lưu." />
+                <BoardEmptyState text="ChÆ°a cÃ³ tá»« nÃ o Ä‘Æ°á»£c lÆ°u." />
               ) : (
                 inboxCards.map((card) => (
                   <EditableVocabCard
@@ -344,6 +415,7 @@ export default function VocabPage() {
               const theme = COLUMN_THEME[column.colorKey];
               const showBefore = dropIndicator?.columnId === column.id && dropIndicator.position === "before" && draggingColumnId !== column.id;
               const showAfter = dropIndicator?.columnId === column.id && dropIndicator.position === "after" && draggingColumnId !== column.id;
+              const columnCards = column.cardIds.map((cardId) => board.cards[cardId]).filter(Boolean);
 
               return (
                 <ColumnStack key={column.id}>
@@ -391,6 +463,15 @@ export default function VocabPage() {
 
                               {openMenuColumnId === column.id ? (
                                 <div className="absolute right-0 top-8 z-20 w-44 rounded-[16px] border border-slate-200 bg-white/96 p-2 shadow-[0_18px_44px_rgba(148,163,184,0.22)] backdrop-blur-xl">
+                                  <button
+                                    type="button"
+                                    onClick={() => openFlashCards(column.id, column.title, columnCards)}
+                                    disabled={columnCards.length === 0}
+                                    className="mb-1 flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left text-[13px] font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
+                                  >
+                                    <Layers2 className="h-4 w-4" />
+                                    Flash Card
+                                  </button>
                                   <div className="px-2 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                                     Màu cột
                                   </div>
@@ -438,26 +519,23 @@ export default function VocabPage() {
                     {column.cardIds.length === 0 ? (
                       <BoardEmptyState text="Chưa có thẻ nào." />
                     ) : (
-                      column.cardIds
-                        .map((cardId) => board.cards[cardId])
-                        .filter(Boolean)
-                        .map((card) => (
-                          <EditableVocabCard
-                            key={card.id}
-                            card={card}
-                            isEditing={editingCardId === card.id}
-                            editingText={editingCardText}
-                            onEditingTextChange={setEditingCardText}
-                            onEdit={() => startEditCard(card)}
-                            onSave={saveCardEdit}
-                            onCancel={() => {
-                              setEditingCardId(null);
-                              setEditingCardText("");
-                            }}
-                            onRemove={() => removeCard(card.id)}
-                            onDragStart={setDraggingCardId}
-                          />
-                        ))
+                      columnCards.map((card) => (
+                        <EditableVocabCard
+                          key={card.id}
+                          card={card}
+                          isEditing={editingCardId === card.id}
+                          editingText={editingCardText}
+                          onEditingTextChange={setEditingCardText}
+                          onEdit={() => startEditCard(card)}
+                          onSave={saveCardEdit}
+                          onCancel={() => {
+                            setEditingCardId(null);
+                            setEditingCardText("");
+                          }}
+                          onRemove={() => removeCard(card.id)}
+                          onDragStart={setDraggingCardId}
+                        />
+                      ))
                     )}
                     <AddCardComposer
                       isOpen={!!openComposerByBucket[column.id]}
@@ -493,7 +571,7 @@ export default function VocabPage() {
                         setIsAddingColumn(false);
                       }
                     }}
-                    placeholder="Tên danh sách mới"
+                    placeholder="TÃªn danh sÃ¡ch má»›i"
                     className="w-full rounded-[12px] border border-slate-200 bg-white px-3 py-2.5 text-[14px] text-slate-900 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
                   />
                   <div className="mt-3 flex items-center gap-3">
@@ -502,7 +580,7 @@ export default function VocabPage() {
                       onClick={handleCreateColumn}
                       className="rounded-full bg-[#0071e3] px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#0077ed]"
                     >
-                      Tạo danh sách
+                      Táº¡o danh sÃ¡ch
                     </button>
                     <button
                       type="button"
@@ -512,7 +590,7 @@ export default function VocabPage() {
                       }}
                       className="text-[13px] font-medium text-slate-500 transition hover:text-slate-900"
                     >
-                      Hủy
+                      Há»§y
                     </button>
                   </div>
                 </div>
@@ -523,13 +601,34 @@ export default function VocabPage() {
                   className="flex w-full items-center gap-2 rounded-[18px] border border-dashed border-slate-200 bg-white/52 px-4 py-3.5 text-left shadow-[0_12px_30px_rgba(148,163,184,0.1)] backdrop-blur-xl transition hover:bg-white/76"
                 >
                   <Plus className="h-4.5 w-4.5 text-slate-700" />
-                  <span className="text-[15px] font-medium tracking-[-0.02em] text-slate-800">Thêm danh sách khác</span>
+                  <span className="text-[15px] font-medium tracking-[-0.02em] text-slate-800">ThÃªm danh sÃ¡ch khÃ¡c</span>
                 </button>
               )}
             </div>
           </div>
         </section>
       </div>
+
+      {flashCardModal && activeFlashCard && activeFlashCardContent ? (
+        <FlashCardOverlay
+          title={flashCardModal.title}
+          currentIndex={flashCardIndex}
+          total={flashCardModal.cards.length}
+          vocabulary={activeFlashCardContent.vocabulary}
+          meaning={activeFlashCardContent.meaning}
+          isAnswerVisible={isFlashCardAnswerVisible}
+          onToggleAnswer={() => setIsFlashCardAnswerVisible((current) => !current)}
+          onClose={() => setFlashCardModal(null)}
+          onPrevious={() => {
+            setFlashCardIndex((current) => Math.max(current - 1, 0));
+            setIsFlashCardAnswerVisible(false);
+          }}
+          onNext={() => {
+            setFlashCardIndex((current) => Math.min(current + 1, flashCardModal.cards.length - 1));
+            setIsFlashCardAnswerVisible(false);
+          }}
+        />
+      ) : null}
     </main>
   );
 }
@@ -622,6 +721,29 @@ function ColumnHeader({
   );
 }
 
+function ColumnActionButton({
+  onClick,
+  disabled,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
+      disabled={disabled}
+      className="rounded-full p-1 text-slate-400 transition hover:bg-white/70 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-45"
+      title="Flash Card"
+    >
+      <Layers2 className="h-4 w-4" />
+    </button>
+  );
+}
+
 function EditableVocabCard({
   card,
   isEditing,
@@ -679,7 +801,7 @@ function EditableVocabCard({
           <button
             type="button"
             onClick={onRemove}
-            title="Đánh dấu hoàn thành"
+            title="ÄÃ¡nh dáº¥u hoÃ n thÃ nh"
             className="rounded-full p-0.5 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-sky-500"
           >
             <CheckCircle2 className="h-4.5 w-4.5" />
@@ -713,7 +835,7 @@ function AddCardComposer({
         className="flex w-full items-center gap-2 rounded-[14px] px-2 py-2 text-left text-[14px] font-medium text-slate-500 transition hover:bg-white/50 hover:text-slate-900"
       >
         <Plus className="h-4 w-4" />
-        Thêm thẻ
+        ThÃªm tháº»
       </button>
     );
   }
@@ -723,7 +845,7 @@ function AddCardComposer({
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Nhập nội dung vocab mới"
+        placeholder="Nháº­p ná»™i dung vocab má»›i"
         className="min-h-[86px] w-full resize-none rounded-[12px] border border-slate-200 bg-white px-3 py-2.5 text-[14px] leading-6 text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
       />
       <div className="mt-2.5 flex items-center gap-3">
@@ -732,9 +854,9 @@ function AddCardComposer({
           onClick={onAdd}
           className="rounded-full bg-[#0071e3] px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#0077ed]"
         >
-          Thêm thẻ
+          ThÃªm tháº»
         </button>
-        <button type="button" onClick={onClose} className="text-slate-500 transition hover:text-slate-900" aria-label="Đóng">
+        <button type="button" onClick={onClose} className="text-slate-500 transition hover:text-slate-900" aria-label="ÄÃ³ng">
           <X className="h-4.5 w-4.5" />
         </button>
       </div>
@@ -752,4 +874,118 @@ function ColumnDropIndicator() {
       <div className="w-[3px] rounded-full bg-sky-400 shadow-[0_0_0_6px_rgba(56,189,248,0.15)]" />
     </div>
   );
+}
+
+
+
+
+
+function FlashCardOverlay({
+  title,
+  currentIndex,
+  total,
+  vocabulary,
+  meaning,
+  isAnswerVisible,
+  onToggleAnswer,
+  onClose,
+  onPrevious,
+  onNext,
+}: {
+  title: string;
+  currentIndex: number;
+  total: number;
+  vocabulary: string;
+  meaning: string;
+  isAnswerVisible: boolean;
+  onToggleAnswer: () => void;
+  onClose: () => void;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.98),rgba(226,232,240,0.96)_45%,rgba(203,213,225,0.96)_100%)] px-4 py-5 sm:px-6 lg:px-10">
+      <div className="mx-auto flex w-full max-w-6xl items-start justify-between gap-4">
+        <div>
+          <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">{title}</div>
+          <div className="mt-2 text-[18px] font-semibold tracking-[-0.03em] text-slate-950">
+            Từ {currentIndex + 1} / {total}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white/80 text-slate-700 shadow-[0_12px_28px_rgba(148,163,184,0.18)] transition hover:bg-white"
+          aria-label="Đóng flash card"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center gap-8 py-6">
+        <button
+          type="button"
+          onClick={onToggleAnswer}
+          className="flex min-h-[360px] w-full max-w-4xl items-center justify-center rounded-[36px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(241,245,249,0.96)_100%)] px-8 py-10 text-center shadow-[0_28px_80px_rgba(148,163,184,0.24)]"
+        >
+          <div className="w-full">
+            <div className="mb-5 text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+              {isAnswerVisible ? "Nghĩa" : "Từ vựng"}
+            </div>
+            <div className="whitespace-pre-wrap break-words text-[clamp(2rem,4.2vw,4.5rem)] font-semibold tracking-[-0.05em] text-slate-950">
+              {isAnswerVisible ? meaning || "Không có nghĩa được tách." : vocabulary}
+            </div>
+          </div>
+        </button>
+
+        <div className="flex items-center gap-4">
+          {currentIndex > 0 ? (
+            <button
+              type="button"
+              onClick={onPrevious}
+              className="flex h-14 w-14 items-center justify-center rounded-full border border-white/80 bg-white/88 text-slate-700 shadow-[0_14px_30px_rgba(148,163,184,0.2)] transition hover:bg-white"
+              aria-label="Flash card trước"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          ) : (
+            <div className="h-14 w-14" aria-hidden="true" />
+          )}
+
+          {currentIndex < total - 1 ? (
+            <button
+              type="button"
+              onClick={onNext}
+              className="flex h-14 w-14 items-center justify-center rounded-full border border-white/80 bg-white/88 text-slate-700 shadow-[0_14px_30px_rgba(148,163,184,0.2)] transition hover:bg-white"
+              aria-label="Flash card tiếp theo"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          ) : (
+            <div className="h-14 w-14" aria-hidden="true" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function parseFlashCardText(text: string) {
+  const normalized = text.trim();
+  const separatorMatch = normalized.match(/\s*[:：]\s*/);
+
+  if (!separatorMatch || separatorMatch.index === undefined) {
+    return {
+      vocabulary: normalized,
+      meaning: "",
+    };
+  }
+
+  const separatorStart = separatorMatch.index;
+  const separatorEnd = separatorStart + separatorMatch[0].length;
+
+  return {
+    vocabulary: normalized.slice(0, separatorStart).trim() || normalized,
+    meaning: normalized.slice(separatorEnd).trim(),
+  };
 }

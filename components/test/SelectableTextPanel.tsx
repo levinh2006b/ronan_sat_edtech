@@ -128,8 +128,13 @@ export default function SelectableTextPanel({
         return;
       }
 
-      const start = getTextOffset(root, range.startContainer, range.startOffset);
-      const end = getTextOffset(root, range.endContainer, range.endOffset);
+      const startRaw = getTextOffset(root, range.startContainer, range.startOffset);
+      const endRaw = getTextOffset(root, range.endContainer, range.endOffset);
+      
+      // Đảm bảo start luôn nhỏ hơn end dù kéo chuột xuôi hay ngược
+      const start = Math.min(startRaw, endRaw);
+      const end = Math.max(startRaw, endRaw);
+      
       if (start === end) {
         return;
       }
@@ -164,6 +169,8 @@ export default function SelectableTextPanel({
     if (!annotationElement) {
       return;
     }
+
+    event.stopPropagation();
 
     const annotationId = annotationElement.dataset.textAnnotationId;
     if (!annotationId) {
@@ -395,51 +402,183 @@ function createRangeFromOffsets(root: HTMLElement, start: number, end: number) {
     return null;
   }
 
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let currentNode: Text | null = null;
-  let currentOffset = 0;
-  let startNode: Text | null = null;
-  let endNode: Text | null = null;
-  let startOffset = 0;
-  let endOffset = 0;
+  const startPoint = resolveTextPoint(root, start);
+  const endPoint = resolveTextPoint(root, end);
 
-  while ((currentNode = walker.nextNode() as Text | null)) {
-    const nextOffset = currentOffset + currentNode.data.length;
-
-    if (!startNode && start >= currentOffset && start <= nextOffset) {
-      startNode = currentNode;
-      startOffset = start - currentOffset;
-    }
-
-    if (!endNode && end >= currentOffset && end <= nextOffset) {
-      endNode = currentNode;
-      endOffset = end - currentOffset;
-      break;
-    }
-
-    currentOffset = nextOffset;
-  }
-
-  if (!startNode || !endNode) {
+  if (!startPoint || !endPoint) {
     return null;
   }
 
   const range = document.createRange();
-  range.setStart(startNode, startOffset);
-  range.setEnd(endNode, endOffset);
+  range.setStart(startPoint.node, startPoint.offset);
+  range.setEnd(endPoint.node, endPoint.offset);
   return range;
 }
 
 function getTextOffset(root: HTMLElement, container: Node, offset: number) {
-  const range = document.createRange();
-  range.selectNodeContents(root);
-  range.setEnd(container, offset);
-  return range.toString().length;
+  // 1. Khắc phục lỗi xoay/kéo chuột ra ngoài mép chữ
+  // Dùng hàm có sẵn để nắn vị trí chuột trượt về đúng đoạn text gần nhất
+  const point = normalizePointToTextNode(root, container, offset);
+  if (!point) {
+    return 0;
+  }
+
+  // 2. Khắc phục lỗi lệch chữ
+  // Chỉ đếm vị trí trên các node hiển thị thật (đồng bộ 100% với hàm vẽ màu bôi đen)
+  const textNodes = getSelectableTextNodes(root);
+  let currentOffset = 0;
+
+  for (const node of textNodes) {
+    // Nếu tìm thấy đúng đoạn text chuột đang trỏ vào
+    if (node === point.node) {
+      return currentOffset + point.offset;
+    }
+    // Cộng dồn độ dài của các đoạn chữ đi qua
+    currentOffset += node.data.length;
+  }
+
+  return currentOffset;
 }
 
 function getTextSlice(root: HTMLElement, start: number, end: number) {
-  const fullText = root.textContent ?? "";
+  const fullText = getSelectableTextNodes(root)
+    .map((node) => node.data)
+    .join("");
   return fullText.slice(start, end).replace(/\s+/g, " ").trim();
+}
+
+function getSelectableTextNodes(root: HTMLElement) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parentElement = node.parentElement;
+      if (!parentElement) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      if (parentElement.closest("[data-annotation-toolbar], [data-text-annotation-id], [data-pending-selection]")) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      if (parentElement.closest("annotation, semantics")) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      const computedStyle = window.getComputedStyle(parentElement);
+      if (computedStyle.display === "none" || computedStyle.visibility === "hidden") {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      if (parentElement.getAttribute("aria-hidden") === "true") {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      if (!node.textContent?.length) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+
+  const nodes: Text[] = [];
+  let currentNode: Node | null = null;
+  while ((currentNode = walker.nextNode())) {
+    nodes.push(currentNode as Text);
+  }
+
+  return nodes;
+}
+
+function normalizePointToTextNode(root: HTMLElement, container: Node, offset: number) {
+  const textNodes = getSelectableTextNodes(root);
+  if (textNodes.length === 0) {
+    return null;
+  }
+
+  if (container.nodeType === Node.TEXT_NODE) {
+    const textNode = container as Text;
+    if (!textNodes.includes(textNode)) {
+      return null;
+    }
+
+    return {
+      node: textNode,
+      offset: Math.min(offset, textNode.data.length),
+    };
+  }
+
+  const element = container as Element;
+  const childNodes = Array.from(element.childNodes);
+  const leftBoundaryNode = childNodes[Math.max(0, offset - 1)] ?? null;
+  const rightBoundaryNode = childNodes[offset] ?? null;
+
+  const rightTextNode = findBoundaryTextNode(rightBoundaryNode, "start", textNodes);
+  if (rightTextNode) {
+    return {
+      node: rightTextNode,
+      offset: 0,
+    };
+  }
+
+  const leftTextNode = findBoundaryTextNode(leftBoundaryNode, "end", textNodes);
+  if (leftTextNode) {
+    return {
+      node: leftTextNode,
+      offset: leftTextNode.data.length,
+    };
+  }
+
+  return null;
+}
+
+function findBoundaryTextNode(node: Node | null, direction: "start" | "end", textNodes: Text[]) {
+  if (!node) {
+    return null;
+  }
+
+  if (node.nodeType === Node.TEXT_NODE) {
+    return textNodes.includes(node as Text) ? (node as Text) : null;
+  }
+
+  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+  const matches: Text[] = [];
+  let currentNode: Node | null = null;
+  while ((currentNode = walker.nextNode())) {
+    if (textNodes.includes(currentNode as Text)) {
+      matches.push(currentNode as Text);
+    }
+  }
+
+  if (matches.length === 0) {
+    return null;
+  }
+
+  return direction === "start" ? matches[0] : matches[matches.length - 1];
+}
+
+function resolveTextPoint(root: HTMLElement, absoluteOffset: number) {
+  const textNodes = getSelectableTextNodes(root);
+  if (textNodes.length === 0) {
+    return null;
+  }
+
+  let currentOffset = 0;
+  for (const node of textNodes) {
+    const nextOffset = currentOffset + node.data.length;
+    if (absoluteOffset <= nextOffset) {
+      return {
+        node,
+        offset: Math.max(0, absoluteOffset - currentOffset),
+      };
+    }
+    currentOffset = nextOffset;
+  }
+
+  const lastNode = textNodes[textNodes.length - 1];
+  return {
+    node: lastNode,
+    offset: lastNode.data.length,
+  };
 }
 
 function clearSelection() {

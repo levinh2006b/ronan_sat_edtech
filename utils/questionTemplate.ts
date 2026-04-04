@@ -484,25 +484,26 @@ export function generatePDFTemplate({
 
           .answer-watermark {
             position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            top: 0;
+            right: 0;
+            display: block;
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 88px;
+            font-size: 42px;
             font-weight: 700;
-            color: rgba(15, 23, 42, 0.06);
+            color: rgba(15, 23, 42, 0.12);
             letter-spacing: 0.08em;
             text-transform: uppercase;
             pointer-events: none;
-            transform: rotate(-18deg);
+            transform: none;
             user-select: none;
+            z-index: 0;
           }
 
           .answer-key-header {
             position: relative;
-            z-index: 1;
+            z-index: 2;
             margin-bottom: 18px;
+            padding-top: 18px;
           }
 
           .answer-key-label {
@@ -525,7 +526,7 @@ export function generatePDFTemplate({
 
           .answer-groups {
             position: relative;
-            z-index: 1;
+            z-index: 2;
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 18px 22px;

@@ -41,7 +41,7 @@ export default function QuestionViewer({
   const [crossedOutByQuestion, setCrossedOutByQuestion] = useState<Record<string, string[]>>({});
   const [showEliminationByQuestion, setShowEliminationByQuestion] = useState<Record<string, boolean>>({});
   const [annotationsByQuestion, setAnnotationsByQuestion] = useState<
-    Record<string, { passage: TextAnnotation[]; questionText: TextAnnotation[] }>
+    Record<string, { passage: TextAnnotation[]; questionText: TextAnnotation[]; choices: Record<string, TextAnnotation[]> }>
   >({});
 
   const toggleCrossOut = (event: React.MouseEvent, choice: string) => {
@@ -65,6 +65,7 @@ export default function QuestionViewer({
       annotationsByQuestion[question._id] ?? {
         passage: [],
         questionText: [],
+        choices: {},
       },
     [annotationsByQuestion, question._id],
   );
@@ -77,9 +78,33 @@ export default function QuestionViewer({
       [question._id]: {
         passage: previous[question._id]?.passage ?? [],
         questionText: previous[question._id]?.questionText ?? [],
+        choices: previous[question._id]?.choices ?? {},
         [part]: nextAnnotations,
       },
     }));
+  };
+
+  const updateChoiceAnnotations = (choiceKey: string, nextAnnotations: TextAnnotation[]) => {
+    setAnnotationsByQuestion((previous) => ({
+      ...previous,
+      [question._id]: {
+        passage: previous[question._id]?.passage ?? [],
+        questionText: previous[question._id]?.questionText ?? [],
+        choices: {
+          ...(previous[question._id]?.choices ?? {}),
+          [choiceKey]: nextAnnotations,
+        },
+      },
+    }));
+  };
+
+  const handleChoiceSelect = (questionId: string, choiceCode: string) => {
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed && selection.toString().trim()) {
+      return;
+    }
+
+    onAnswerSelect(questionId, choiceCode);
   };
 
   return (
@@ -230,9 +255,9 @@ export default function QuestionViewer({
                           ? "cursor-default bg-slate-50 ring-1 ring-inset ring-slate-200"
                           : isSelected
                             ? "bg-white ring-2 ring-inset ring-[#3056D3]"
-                            : "bg-white ring-1 ring-inset ring-slate-400 hover:ring-slate-600"
+                          : "bg-white ring-1 ring-inset ring-slate-400 hover:ring-slate-600"
                       }`}
-                      onClick={() => !isCrossed && onAnswerSelect(question._id, storedChoiceCode)}
+                      onClick={() => !isCrossed && handleChoiceSelect(question._id, storedChoiceCode)}
                     >
                       {isCrossed ? (
                         <div className="pointer-events-none absolute left-4 right-4 top-1/2 z-10 h-[1.5px] bg-slate-500" />
@@ -250,9 +275,14 @@ export default function QuestionViewer({
                         {label}
                       </div>
 
-                      <span className={`select-none text-[15px] leading-snug ${isCrossed ? "text-slate-400" : "text-slate-900"}`}>
+                      <SelectableTextPanel
+                        annotations={currentAnnotations.choices[storedChoiceCode] ?? []}
+                        onChange={(nextAnnotations) => updateChoiceAnnotations(storedChoiceCode, nextAnnotations)}
+                        className={`min-w-0 flex-1 text-[15px] leading-snug ${isCrossed ? "text-slate-400" : "text-slate-900"}`}
+                        sourceQuestionId={question._id}
+                      >
                         <Latex>{choice || ""}</Latex>
-                      </span>
+                      </SelectableTextPanel>
                     </div>
 
                     {showElimination ? (
