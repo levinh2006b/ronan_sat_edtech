@@ -515,7 +515,26 @@ export default function VocabPage() {
                     onHeaderDrop={() => handleColumnDrop(column.id)}
                   >
                     {column.cardIds.length === 0 ? (
-                      <BoardEmptyState text="No cards yet." />
+                      openComposerByBucket[column.id] ? (
+                        <AddCardComposer
+                          isOpen
+                          value={draftByBucket[column.id] ?? ""}
+                          placeholder={`Add the first card`}
+                          variant="empty"
+                          onOpen={() => undefined}
+                          onClose={() => {
+                            setDraftByBucket((previous) => ({ ...previous, [column.id]: "" }));
+                            setOpenComposerByBucket((previous) => ({ ...previous, [column.id]: false }));
+                          }}
+                          onChange={(value) => setDraftByBucket((previous) => ({ ...previous, [column.id]: value }))}
+                          onAdd={() => handleAddCard(column.id)}
+                        />
+                      ) : (
+                        <BoardEmptyState
+                          text="No cards yet."
+                          onClick={() => setOpenComposerByBucket((previous) => ({ ...previous, [column.id]: true }))}
+                        />
+                      )
                     ) : (
                       columnCards.map((card) => (
                         <EditableVocabCard
@@ -535,17 +554,19 @@ export default function VocabPage() {
                         />
                       ))
                     )}
-                    <AddCardComposer
-                      isOpen={!!openComposerByBucket[column.id]}
-                      value={draftByBucket[column.id] ?? ""}
-                      onOpen={() => setOpenComposerByBucket((previous) => ({ ...previous, [column.id]: true }))}
-                      onClose={() => {
-                        setDraftByBucket((previous) => ({ ...previous, [column.id]: "" }));
-                        setOpenComposerByBucket((previous) => ({ ...previous, [column.id]: false }));
-                      }}
-                      onChange={(value) => setDraftByBucket((previous) => ({ ...previous, [column.id]: value }))}
-                      onAdd={() => handleAddCard(column.id)}
-                    />
+                    {column.cardIds.length > 0 || !openComposerByBucket[column.id] ? (
+                      <AddCardComposer
+                        isOpen={!!openComposerByBucket[column.id]}
+                        value={draftByBucket[column.id] ?? ""}
+                        onOpen={() => setOpenComposerByBucket((previous) => ({ ...previous, [column.id]: true }))}
+                        onClose={() => {
+                          setDraftByBucket((previous) => ({ ...previous, [column.id]: "" }));
+                          setOpenComposerByBucket((previous) => ({ ...previous, [column.id]: false }));
+                        }}
+                        onChange={(value) => setDraftByBucket((previous) => ({ ...previous, [column.id]: value }))}
+                        onAdd={() => handleAddCard(column.id)}
+                      />
+                    ) : null}
                   </BoardColumnShell>
                   {showAfter ? <ColumnDropIndicator /> : null}
                 </ColumnStack>
@@ -817,6 +838,8 @@ function AddCardComposer({
   onClose,
   onChange,
   onAdd,
+  placeholder = "Enter new vocab content",
+  variant = "default",
 }: {
   isOpen: boolean;
   value: string;
@@ -824,6 +847,8 @@ function AddCardComposer({
   onClose: () => void;
   onChange: (value: string) => void;
   onAdd: () => void;
+  placeholder?: string;
+  variant?: "default" | "empty";
 }) {
   if (!isOpen) {
     return (
@@ -838,15 +863,30 @@ function AddCardComposer({
     );
   }
 
+  const isEmptyVariant = variant === "empty";
+
   return (
-    <div className="rounded-[16px] border border-slate-200/90 bg-white/90 p-2.5 shadow-[0_14px_34px_rgba(148,163,184,0.12)]">
+    <div
+      className={`border border-slate-200/90 bg-white/90 shadow-[0_14px_34px_rgba(148,163,184,0.12)] ${
+        isEmptyVariant ? "rounded-[18px] p-3" : "rounded-[16px] p-2.5"
+      }`}
+    >
       <textarea
+        autoFocus
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Enter new vocab content"
-        className="min-h-[86px] w-full resize-none rounded-[12px] border border-slate-200 bg-white px-3 py-2.5 text-[14px] leading-6 text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            onAdd();
+          }
+        }}
+        placeholder={placeholder}
+        className={`w-full resize-none rounded-[12px] border border-slate-200 bg-white px-3 py-2.5 text-[14px] leading-6 text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 ${
+          isEmptyVariant ? "min-h-[112px]" : "min-h-[86px]"
+        }`}
       />
-      <div className="mt-2.5 flex items-center gap-3">
+      <div className={`flex items-center gap-3 ${isEmptyVariant ? "mt-3 justify-between" : "mt-2.5"}`}>
         <button
           type="button"
           onClick={onAdd}
@@ -854,15 +894,40 @@ function AddCardComposer({
         >
           Add card
         </button>
-        <button type="button" onClick={onClose} className="text-slate-500 transition hover:text-slate-900" aria-label="Close">
-          <X className="h-4.5 w-4.5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={onClose} className="text-slate-500 transition hover:text-slate-900" aria-label="Close">
+            <X className="h-4.5 w-4.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function BoardEmptyState({ text }: { text: string }) {
+function BoardEmptyState({
+  text,
+  hint,
+  onClick,
+}: {
+  text: string;
+  hint?: string;
+  onClick?: () => void;
+}) {
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="group w-full rounded-[18px] border border-dashed border-slate-200 bg-white/55 px-4 py-5 text-left transition hover:border-sky-200 hover:bg-white/82"
+      >
+        <div className="text-[14px] leading-6 text-slate-500 transition group-hover:text-slate-700">{text}</div>
+        {hint ? (
+          <div className="mt-1.5 text-[12px] font-medium text-slate-400 transition group-hover:text-sky-500">{hint}</div>
+        ) : null}
+      </button>
+    );
+  }
+
   return <div className="rounded-[16px] border border-dashed border-slate-200 bg-white/45 px-3.5 py-4 text-[13px] leading-6 text-slate-500">{text}</div>;
 }
 
