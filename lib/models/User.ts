@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
+import type { VocabBoardState } from "@/lib/vocabBoard";
 
 export interface IUser extends Document {
     name?: string;
@@ -12,6 +13,7 @@ export interface IUser extends Document {
     wrongQuestions: mongoose.Types.ObjectId[]; // Ref to Result or Question
     resetPasswordToken?: string; // Store 6-digit reset code
     resetPasswordExpires?: Date; // Store reset code expiration time
+    vocabBoard?: VocabBoardState;
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -27,6 +29,14 @@ const UserSchema: Schema<IUser> = new Schema(
         wrongQuestions: [{ type: Schema.Types.ObjectId, ref: "Question" }],
         resetPasswordToken: { type: String, required: false },
         resetPasswordExpires: { type: Date, required: false },
+        vocabBoard: {
+            type: Schema.Types.Mixed,
+            default: () => ({
+                inboxIds: [],
+                columns: [],
+                cards: {},
+            }),
+        },
     },
     { timestamps: true }
 );

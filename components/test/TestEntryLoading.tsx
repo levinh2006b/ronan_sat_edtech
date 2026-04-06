@@ -7,51 +7,31 @@ type Quote = {
   text: string;
 };
 
+type TestEntryLoadingProps = {
+  showQuote?: boolean;
+};
+
 const QUOTES: Quote[] = [
-  { author: "Albert Einstein", text: "I have no special talent. I am only passionately curious." },
-  { author: "Thomas Edison", text: "Genius is 1% inspiration and 99% perspiration." },
-  { author: "Elon Musk", text: "Work like hell. I mean you just have to put in 80 to 100 hour weeks." },
-  {
-    author: "Bill Gates",
-    text: "It's fine to celebrate success, but it is more important to heed the lessons of failure.",
-  },
-  { author: "Kobe Bryant", text: "Great things come from hard work and perseverance." },
-  {
-    author: "Michael Jordan",
-    text: "I can accept failure, everyone fails at something. But I can't accept not trying.",
-  },
-  {
-    author: "Will Smith",
-    text: "The only thing that I see that is distinctly different about me is I'm not afraid to die on a treadmill.",
-  },
-  { author: "Dwayne Johnson (The Rock)", text: "Success isn't always about greatness. It's about consistency." },
-  { author: "Jack Ma", text: "Today is hard, tomorrow will be worse, but the day after tomorrow will be sunshine." },
-  { author: "Andrew Tate", text: "Discipline is the key to success." },
-  {
-    author: "Naval Ravikant",
-    text: "Learn to sell. Learn to build. If you can do both, you will be unstoppable.",
-  },
-  { author: "Cal Newport", text: "Clarity about what matters provides clarity about what does not." },
-  {
-    author: "James Clear",
-    text: "You do not rise to the level of your goals. You fall to the level of your systems.",
-  },
-  { author: "Tim Cook", text: "The side effect of hard work is success." },
-  {
-    author: "Arnold Schwarzenegger",
-    text: "You can't climb the ladder of success with your hands in your pockets.",
-  },
-  { author: "Gary Vaynerchuk", text: "There is no substitute for hard work." },
-  {
-    author: "Mark Cuban",
-    text: "Work like there is someone working 24 hours a day to take it all away from you.",
-  },
-  { author: "Confucius (Khong Tu)", text: "It does not matter how slowly you go as long as you do not stop." },
-  { author: "Malcolm Gladwell", text: "It takes 10,000 hours to achieve mastery." },
-  {
-    author: "Steve Jobs",
-    text: "I'm convinced that about half of what separates the successful entrepreneurs from the non-successful ones is pure perseverance.",
-  },
+  { author: "Albert Einstein", text: "Stay curious." },
+  { author: "Thomas Edison", text: "99% is hard work." },
+  { author: "Elon Musk", text: "Work harder than others." },
+  { author: "Bill Gates", text: "Learn from failure." },
+  { author: "Kobe Bryant", text: "Outwork everyone." },
+  { author: "Michael Jordan", text: "Never stop trying." },
+  { author: "Will Smith", text: "Outwork the rest." },
+  { author: "The Rock", text: "Consistency wins." },
+  { author: "Jack Ma", text: "Don’t give up." },
+  { author: "Andrew Tate", text: "Discipline first." },
+  { author: "Naval Ravikant", text: "Build and learn." },
+  { author: "Cal Newport", text: "Focus deeply." },
+  { author: "James Clear", text: "Trust the system." },
+  { author: "Tim Cook", text: "Hard work pays." },
+  { author: "Arnold Schwarzenegger", text: "Keep climbing." },
+  { author: "Gary Vaynerchuk", text: "Work relentlessly." },
+  { author: "Mark Cuban", text: "Stay hungry." },
+  { author: "Confucius", text: "Keep going." },
+  { author: "Malcolm Gladwell", text: "Master takes time." },
+  { author: "Steve Jobs", text: "Keep pushing." },
 ];
 
 const QUOTE_CHANGE_INTERVAL_MS = 3200;
@@ -71,14 +51,18 @@ function getRandomQuoteIndex(excludeIndex?: number) {
   return nextIndex;
 }
 
-export default function TestEntryLoading() {
-  const [quoteIndex, setQuoteIndex] = useState<number | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
+export default function TestEntryLoading({ showQuote = true }: TestEntryLoadingProps) {
+  const [quoteIndex, setQuoteIndex] = useState<number | null>(showQuote ? null : 0);
+  const [isVisible, setIsVisible] = useState(!showQuote);
   const timeoutRef = useRef<number | null>(null);
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const [rippleOrigin, setRippleOrigin] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
+    if (!showQuote) {
+      return;
+    }
+
     const initializeQuoteTimeoutId = window.setTimeout(() => {
       setQuoteIndex(getRandomQuoteIndex());
       setIsVisible(true);
@@ -87,10 +71,10 @@ export default function TestEntryLoading() {
     return () => {
       window.clearTimeout(initializeQuoteTimeoutId);
     };
-  }, []);
+  }, [showQuote]);
 
   useEffect(() => {
-    if (quoteIndex === null) {
+    if (!showQuote || quoteIndex === null) {
       return;
     }
 
@@ -110,7 +94,7 @@ export default function TestEntryLoading() {
         window.clearTimeout(timeoutRef.current);
       }
     };
-  }, [quoteIndex]);
+  }, [quoteIndex, showQuote]);
 
   useEffect(() => {
     const updateRippleOrigin = () => {
@@ -143,7 +127,7 @@ export default function TestEntryLoading() {
     };
   }, []);
 
-  const activeQuote = quoteIndex === null ? null : QUOTES[quoteIndex];
+  const activeQuote = showQuote && quoteIndex !== null ? QUOTES[quoteIndex] : null;
 
   return (
     <div className="test-entry-loader relative flex min-h-screen items-center justify-center overflow-hidden bg-[#D0CECA] px-6 py-12">
@@ -166,16 +150,20 @@ export default function TestEntryLoading() {
         ) : null}
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-3xl justify-center">
+      <div className="relative z-10 mx-auto flex w-full max-w-3xl translate-y-[4vh] justify-center sm:translate-y-[3vh]">
         <div ref={anchorRef} className="quote-ripple-anchor relative inline-flex w-full max-w-[44rem] justify-center">
-          <div className={`relative z-10 w-full text-center ${isVisible ? "quote-fade-enter" : "quote-fade-exit"}`}>
-            <blockquote className="quote-text mx-auto max-w-[40rem] text-balance text-[1.6rem] font-normal leading-[1.55] tracking-[-0.03em] text-[#222] sm:text-[2.15rem]">
-              {activeQuote ? <>&ldquo;{activeQuote.text}&rdquo;</> : <span className="invisible">Loading quote</span>}
-            </blockquote>
-            <p className="mt-5 text-right text-[0.95rem] font-medium tracking-[0.02em] text-[#5f5b57] sm:text-[1.02rem]">
-              {activeQuote ? activeQuote.author : <span className="invisible">Author</span>}
-            </p>
-          </div>
+          {showQuote ? (
+            <div className={`relative z-10 w-full text-center ${isVisible ? "quote-fade-enter" : "quote-fade-exit"}`}>
+              <blockquote className="quote-text mx-auto max-w-[40rem] text-balance text-[1.6rem] font-normal leading-[1.55] tracking-[-0.03em] text-[#222] sm:text-[2.15rem]">
+                {activeQuote ? <>&ldquo;{activeQuote.text}&rdquo;</> : <span className="invisible">Loading quote</span>}
+              </blockquote>
+              <p className="mt-5 text-right text-[0.95rem] font-medium tracking-[0.02em] text-[#5f5b57] sm:text-[1.02rem]">
+                {activeQuote ? activeQuote.author : <span className="invisible">Author</span>}
+              </p>
+            </div>
+          ) : (
+            <div className="h-[12rem] w-full sm:h-[14rem]" aria-hidden="true" />
+          )}
         </div>
       </div>
     </div>

@@ -2,29 +2,23 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSession } from "next-auth/react";
+import { API_PATHS } from "@/lib/apiPaths";
+import {
+  emptyVocabBoard,
+  isVocabBoardEmpty,
+  normalizeVocabBoard,
+  VOCAB_COLUMN_COLOR_KEYS,
+  type VocabBoardState,
+  type VocabColumnColorKey,
+} from "@/lib/vocabBoard";
 
-export const VOCAB_COLUMN_COLOR_KEYS = ["sky", "mint", "lavender", "peach", "sand"] as const;
-export type VocabColumnColorKey = (typeof VOCAB_COLUMN_COLOR_KEYS)[number];
-
-export type VocabCard = {
-  id: string;
-  text: string;
-  createdAt: string;
-  sourceQuestionId?: string;
-};
-
-export type VocabColumn = {
-  id: string;
-  title: string;
-  cardIds: string[];
-  colorKey: VocabColumnColorKey;
-};
-
-type VocabBoardState = {
-  inboxIds: string[];
-  columns: VocabColumn[];
-  cards: Record<string, VocabCard>;
-};
+export {
+  VOCAB_COLUMN_COLOR_KEYS,
+  type VocabBoardState,
+  type VocabCard,
+  type VocabColumn,
+  type VocabColumnColorKey,
+} from "@/lib/vocabBoard";
 
 type VocabBoardContextValue = {
   board: VocabBoardState;
@@ -40,18 +34,27 @@ type VocabBoardContextValue = {
   reorderColumns: (draggedColumnId: string, targetColumnId: string, position: "before" | "after") => void;
 };
 
-const emptyBoard: VocabBoardState = {
-  inboxIds: [],
-  columns: [],
-  cards: {},
-};
-
 const VocabBoardContext = createContext<VocabBoardContextValue | null>(null);
 
+async function persistBoardToServer(nextBoard: VocabBoardState) {
+  const response = await fetch(API_PATHS.USER_VOCAB_BOARD, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ board: nextBoard }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to save vocab board: ${response.status}`);
+  }
+}
+
 export function VocabBoardProvider({ children }: { children: ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const idRef = useRef(0);
-  const [board, setBoard] = useState<VocabBoardState>(emptyBoard);
+  const lastPersistedRef = useRef("");
+  const [board, setBoard] = useState<VocabBoardState>(emptyVocabBoard);
   const [hydrated, setHydrated] = useState(false);
 
   const storageKey = useMemo(() => {
@@ -59,28 +62,99 @@ export function VocabBoardProvider({ children }: { children: ReactNode }) {
     return `ronan-sat-vocab-board:${userKey}`;
   }, [session?.user?.email, session?.user?.id]);
 
+  const isAuthenticated = status === "authenticated";
+
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (status === "loading" || typeof window === "undefined") {
       return;
     }
 
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      setBoard(raw ? normalizeBoard(JSON.parse(raw)) : emptyBoard);
-    } catch {
-      setBoard(emptyBoard);
-    } finally {
-      setHydrated(true);
-    }
-  }, [storageKey]);
+    let cancelled = false;
+
+    const loadBoard = async () => {
+      setHydrated(false);
+
+      if (!isAuthenticated) {
+        const localBoard = readBoardFromLocalStorage(storageKey);
+        if (!cancelled) {
+          setBoard(localBoard);
+          lastPersistedRef.current = JSON.stringify(localBoard);
+          setHydrated(true);
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(API_PATHS.USER_VOCAB_BOARD, {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load vocab board: ${response.status}`);
+        }
+
+        const payload = (await response.json()) as { board?: unknown };
+        const serverBoard = normalizeVocabBoard(payload.board);
+        const localBoard = readBoardFromLocalStorage(storageKey);
+        const nextBoard = isVocabBoardEmpty(serverBoard) && !isVocabBoardEmpty(localBoard) ? localBoard : serverBoard;
+
+        if (!cancelled) {
+          setBoard(nextBoard);
+          lastPersistedRef.current = JSON.stringify(nextBoard);
+          setHydrated(true);
+        }
+
+        if (nextBoard === localBoard) {
+          await persistBoardToServer(nextBoard);
+          window.localStorage.removeItem(storageKey);
+        }
+      } catch (error) {
+        console.error("Failed to hydrate vocab board from server:", error);
+        const localBoard = readBoardFromLocalStorage(storageKey);
+        if (!cancelled) {
+          setBoard(localBoard);
+          lastPersistedRef.current = JSON.stringify(localBoard);
+          setHydrated(true);
+        }
+      }
+    };
+
+    void loadBoard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, status, storageKey]);
 
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") {
+    if (!hydrated || status === "loading" || typeof window === "undefined") {
       return;
     }
 
-    window.localStorage.setItem(storageKey, JSON.stringify(board));
-  }, [board, hydrated, storageKey]);
+    const serializedBoard = JSON.stringify(board);
+    if (serializedBoard === lastPersistedRef.current) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      window.localStorage.setItem(storageKey, serializedBoard);
+      lastPersistedRef.current = serializedBoard;
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void persistBoardToServer(board)
+        .then(() => {
+          lastPersistedRef.current = serializedBoard;
+        })
+        .catch((error) => {
+          console.error("Failed to persist vocab board:", error);
+        });
+    }, 500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [board, hydrated, isAuthenticated, status, storageKey]);
 
   const value = useMemo<VocabBoardContextValue>(
     () => ({
@@ -275,76 +349,6 @@ export function useVocabBoard() {
   return context;
 }
 
-function normalizeBoard(raw: unknown): VocabBoardState {
-  if (!raw || typeof raw !== "object") {
-    return emptyBoard;
-  }
-
-  const maybeBoard = raw as Partial<VocabBoardState>;
-  const cardIdMap = new Map<string, string>();
-  const usedCardIds = new Set<string>();
-  const cardsEntries = maybeBoard.cards && typeof maybeBoard.cards === "object" ? Object.entries(maybeBoard.cards) : [];
-  const normalizedCards: Record<string, VocabCard> = {};
-
-  cardsEntries.forEach(([entryKey, rawCard], index) => {
-    const value = rawCard as Partial<VocabCard> | undefined;
-    const rawId = isString(value?.id) ? value.id : entryKey;
-    if (!isString(rawId) || !isString(value?.text) || !isString(value?.createdAt)) {
-      return;
-    }
-
-    const nextId = makeStableUniqueId(rawId, usedCardIds, "vocab", index);
-    cardIdMap.set(entryKey, nextId);
-    cardIdMap.set(rawId, nextId);
-    normalizedCards[nextId] = {
-      id: nextId,
-      text: value.text,
-      createdAt: value.createdAt,
-      sourceQuestionId: isString(value.sourceQuestionId) ? value.sourceQuestionId : undefined,
-    };
-  });
-
-  const usedColumnIds = new Set<string>();
-  const normalizedColumns = Array.isArray(maybeBoard.columns)
-    ? maybeBoard.columns
-        .filter((column): column is VocabColumn => Boolean(column && typeof column === "object"))
-        .map((column, index) => {
-          const rawId = isString(column.id) ? column.id : `column-restored-${index}`;
-          const nextId = makeStableUniqueId(rawId, usedColumnIds, "column", index);
-          const remappedCardIds = Array.isArray(column.cardIds)
-            ? column.cardIds
-                .filter(isString)
-                .map((cardId) => cardIdMap.get(cardId) ?? null)
-                .filter((cardId): cardId is string => typeof cardId === "string" && Boolean(normalizedCards[cardId]))
-            : [];
-
-          return {
-            id: nextId,
-            title: isString(column.title) ? column.title : "Untitled",
-            cardIds: Array.from(new Set(remappedCardIds)),
-            colorKey: isColorKey(column.colorKey) ? column.colorKey : VOCAB_COLUMN_COLOR_KEYS[index % VOCAB_COLUMN_COLOR_KEYS.length],
-          };
-        })
-    : [];
-
-  const normalizedInboxIds = Array.isArray(maybeBoard.inboxIds)
-    ? Array.from(
-        new Set(
-          maybeBoard.inboxIds
-            .filter(isString)
-            .map((cardId) => cardIdMap.get(cardId) ?? null)
-            .filter((cardId): cardId is string => typeof cardId === "string" && Boolean(normalizedCards[cardId])),
-        ),
-      )
-    : [];
-
-  return {
-    inboxIds: normalizedInboxIds,
-    columns: normalizedColumns,
-    cards: normalizedCards,
-  };
-}
-
 function moveCardBetweenBuckets(board: VocabBoardState, cardId: string, destination: string) {
   if (!board.cards[cardId]) {
     return board;
@@ -382,32 +386,16 @@ function normalizeText(text: string) {
   return text.replace(/\s+/g, " ").trim();
 }
 
-function isString(value: unknown): value is string {
-  return typeof value === "string";
-}
-
-function isColorKey(value: unknown): value is VocabColumnColorKey {
-  return typeof value === "string" && VOCAB_COLUMN_COLOR_KEYS.includes(value as VocabColumnColorKey);
-}
-
 function createUniqueId(prefix: string, idRef: React.MutableRefObject<number>) {
   idRef.current += 1;
   return `${prefix}-${Date.now()}-${idRef.current}`;
 }
 
-function makeStableUniqueId(baseId: string, usedIds: Set<string>, prefix: string, index: number) {
-  const candidate = baseId.trim().length > 0 ? baseId : `${prefix}-restored-${index}`;
-  if (!usedIds.has(candidate)) {
-    usedIds.add(candidate);
-    return candidate;
+function readBoardFromLocalStorage(storageKey: string) {
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    return raw ? normalizeVocabBoard(JSON.parse(raw)) : emptyVocabBoard;
+  } catch {
+    return emptyVocabBoard;
   }
-
-  let suffix = 1;
-  while (usedIds.has(`${candidate}-restored-${suffix}`)) {
-    suffix += 1;
-  }
-
-  const uniqueId = `${candidate}-restored-${suffix}`;
-  usedIds.add(uniqueId);
-  return uniqueId;
 }

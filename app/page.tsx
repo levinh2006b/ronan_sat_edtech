@@ -21,7 +21,7 @@ export default function Home() {
 
 
   if (status === "loading") {
-    return <Loading />;
+    return <Loading showQuote={false} />;
   }
 
   // Render Landing Page cho người chưa đăng nhập
