@@ -4,7 +4,6 @@ import mongoose from "mongoose";
 
 import { authOptions } from "@/lib/authOptions";
 import dbConnect from "@/lib/mongodb";
-import Question from "@/lib/models/Question";
 import Result from "@/lib/models/Result";
 import Test from "@/lib/models/Test";
 import User from "@/lib/models/User";
@@ -16,33 +15,120 @@ type SessionUser = {
 
 type TestLean = {
   _id: mongoose.Types.ObjectId;
-  title: string;
+  title?: string;
   timeLimit?: number;
-};
-
-type QuestionLean = {
-  _id: mongoose.Types.ObjectId;
-  section?: string;
-};
-
-type ResultAnswerLean = {
-  questionId: mongoose.Types.ObjectId;
-  isCorrect: boolean;
 };
 
 type ResultLean = {
   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   testId: mongoose.Types.ObjectId;
-  answers: ResultAnswerLean[];
   totalScore?: number;
   readingScore?: number;
   mathScore?: number;
   score?: number;
   date?: Date;
   createdAt?: Date;
-  isSectional?: boolean;
 };
+
+type DailyCountPoint = {
+  dateKey: string;
+  label: string;
+  tests: number;
+};
+
+type DailyMinutesPoint = {
+  dateKey: string;
+  label: string;
+  minutes: number;
+};
+
+const ACTIVITY_WINDOWS = [1, 7, 15, 30] as const;
+const DAILY_TREND_WINDOWS = [7, 15, 30] as const;
+const TIME_TREND_WINDOWS = [1, 7, 15, 30] as const;
+
+function startOfDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function endOfDay(date: Date) {
+  const next = new Date(date);
+  next.setHours(23, 59, 59, 999);
+  return next;
+}
+
+function formatDateKey(date: Date) {
+  return startOfDay(date).toISOString().split("T")[0];
+}
+
+function formatShortDate(date: Date) {
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function buildDailyCountSeries(dates: Date[], window: number): DailyCountPoint[] {
+  const today = startOfDay(new Date());
+  const start = startOfDay(new Date(today));
+  start.setDate(today.getDate() - (window - 1));
+
+  const countMap = new Map<string, number>();
+
+  dates.forEach((date) => {
+    const normalized = startOfDay(date);
+    if (normalized < start || normalized > today) {
+      return;
+    }
+
+    const key = formatDateKey(normalized);
+    countMap.set(key, (countMap.get(key) ?? 0) + 1);
+  });
+
+  return Array.from({ length: window }, (_, index) => {
+    const current = new Date(start);
+    current.setDate(start.getDate() + index);
+    const dateKey = formatDateKey(current);
+
+    return {
+      dateKey,
+      label: formatShortDate(current),
+      tests: countMap.get(dateKey) ?? 0,
+    };
+  });
+}
+
+function buildDailyMinutesSeries(entries: Array<{ date: Date; minutes: number }>, window: number): DailyMinutesPoint[] {
+  const today = startOfDay(new Date());
+  const start = startOfDay(new Date(today));
+  start.setDate(today.getDate() - (window - 1));
+
+  const minutesMap = new Map<string, number>();
+
+  entries.forEach((entry) => {
+    const normalized = startOfDay(entry.date);
+    if (normalized < start || normalized > today) {
+      return;
+    }
+
+    const key = formatDateKey(normalized);
+    minutesMap.set(key, (minutesMap.get(key) ?? 0) + entry.minutes);
+  });
+
+  return Array.from({ length: window }, (_, index) => {
+    const current = new Date(start);
+    current.setDate(start.getDate() + index);
+    const dateKey = formatDateKey(current);
+
+    return {
+      dateKey,
+      label: formatShortDate(current),
+      minutes: minutesMap.get(dateKey) ?? 0,
+    };
+  });
+}
 
 export async function GET(): Promise<NextResponse> {
   try {
@@ -56,46 +142,43 @@ export async function GET(): Promise<NextResponse> {
     await dbConnect();
 
     const parent = await User.findById(sessionUser.id)
-      .select("childrenIds email name")
-      .lean<{ childrenIds?: mongoose.Types.ObjectId[]; email?: string; name?: string } | null>();
+      .select("childrenIds")
+      .lean<{ childrenIds?: mongoose.Types.ObjectId[] } | null>();
 
     if (!parent) {
       return NextResponse.json({ error: "Parent not found" }, { status: 404 });
     }
 
-    const childrenIds = parent.childrenIds ?? [];
+    const childId = parent.childrenIds?.[0];
 
-    if (childrenIds.length === 0) {
+    if (!childId) {
       return NextResponse.json(
         {
           hasChildren: false,
           child: null,
-          scoreTrend: [],
-          strengths: [],
-          activity: {
+          overview: {
+            highestScore: 0,
             testsCompleted: 0,
-            totalTimeSpent: 0,
+            activityLast30Days: 0,
+            lastActiveAt: null,
           },
-          activityLog: [],
-          goal: {
-            currentScore: 0,
-            targetScore: 1500,
-          },
+          timeSpentByWindow: {},
+          scoreHistory: [],
+          testsPerDay: {},
+          timeSpentPerDay: {},
+          recentTests: [],
         },
         { status: 200 }
       );
     }
 
-    const childId = childrenIds[0];
-
     const child = await User.findById(childId)
-      .select("name email highestScore lastTestDate")
+      .select("name email highestScore")
       .lean<{
         _id: mongoose.Types.ObjectId;
         name?: string;
         email: string;
         highestScore?: number;
-        lastTestDate?: Date;
       } | null>();
 
     if (!child) {
@@ -103,123 +186,126 @@ export async function GET(): Promise<NextResponse> {
         {
           hasChildren: false,
           child: null,
-          scoreTrend: [],
-          strengths: [],
-          activity: {
+          overview: {
+            highestScore: 0,
             testsCompleted: 0,
-            totalTimeSpent: 0,
+            activityLast30Days: 0,
+            lastActiveAt: null,
           },
-          activityLog: [],
-          goal: {
-            currentScore: 0,
-            targetScore: 1500,
-          },
+          timeSpentByWindow: {},
+          scoreHistory: [],
+          testsPerDay: {},
+          timeSpentPerDay: {},
+          recentTests: [],
         },
         { status: 200 }
       );
     }
 
-    const rawResults = await Result.find({ userId: child._id })
+    const rawResults = await Result.find({ userId: child._id, isSectional: { $ne: true } })
       .sort({ createdAt: 1 })
-      .select(
-        "userId testId answers totalScore readingScore mathScore score date createdAt isSectional"
-      )
+      .select("userId testId totalScore readingScore mathScore score date createdAt")
       .lean<ResultLean[]>();
 
-    const testIds = Array.from(
-      new Set(rawResults.map((result) => result.testId?.toString()).filter(Boolean))
-    );
+    const testIds = Array.from(new Set(rawResults.map((result) => result.testId?.toString()).filter(Boolean)));
 
-    const questionIds = Array.from(
-      new Set(
-        rawResults
-          .flatMap((result) => result.answers ?? [])
-          .map((answer) => answer.questionId?.toString())
-          .filter(Boolean)
-      )
-    );
-
-    const [tests, questions] = await Promise.all([
-      Test.find({ _id: { $in: testIds } })
-        .select("title timeLimit")
-        .lean<TestLean[]>(),
-      Question.find({ _id: { $in: questionIds } })
-        .select("section")
-        .lean<QuestionLean[]>(),
-    ]);
+    const tests = await Test.find({ _id: { $in: testIds } })
+      .select("title timeLimit")
+      .lean<TestLean[]>();
 
     const testMap = new Map(tests.map((test) => [test._id.toString(), test]));
-    const questionMap = new Map(questions.map((question) => [question._id.toString(), question]));
 
-    const scoreTrend = rawResults.map((result) => {
-      const occurredAt = result.createdAt ?? result.date ?? new Date();
+    const normalizedResults = rawResults.map((result) => {
+      const takenAt = new Date(result.createdAt ?? result.date ?? new Date());
+      const test = testMap.get(result.testId.toString());
+
       return {
-        date: new Date(occurredAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        total: result.totalScore ?? result.score ?? 0,
-        math: result.mathScore ?? 0,
-        rw: result.readingScore ?? result.score ?? 0,
+        id: result._id.toString(),
+        takenAt,
+        testName: test?.title ?? "Practice Test",
+        timeSpentMinutes: test?.timeLimit ?? 0,
+        totalScore: result.totalScore ?? result.score ?? 0,
+        readingWritingScore: result.readingScore ?? 0,
+        mathScore: result.mathScore ?? 0,
       };
     });
 
-    const subjectBuckets = new Map<string, { total: number; correct: number }>();
+    const today = startOfDay(new Date());
+    const activityLast30Start = startOfDay(new Date(today));
+    activityLast30Start.setDate(today.getDate() - 29);
 
-    rawResults.forEach((result) => {
-      result.answers.forEach((answer) => {
-        const question = questionMap.get(answer.questionId.toString());
-        const subject = question?.section?.trim() || "General";
-        const bucket = subjectBuckets.get(subject) ?? { total: 0, correct: 0 };
-        bucket.total += 1;
-        if (answer.isCorrect) {
-          bucket.correct += 1;
-        }
-        subjectBuckets.set(subject, bucket);
-      });
-    });
+    const timeSpentByWindow = Object.fromEntries(
+      ACTIVITY_WINDOWS.map((window) => {
+        const rangeStart = startOfDay(new Date(today));
+        rangeStart.setDate(today.getDate() - (window - 1));
 
-    const strengths = Array.from(subjectBuckets.entries())
-      .map(([subject, stats]) => ({
-        subject,
-        correctRate: stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0,
-      }))
-      .sort((a, b) => b.correctRate - a.correctRate);
+        const total = normalizedResults.reduce((sum, result) => {
+          if (result.takenAt >= rangeStart && result.takenAt <= endOfDay(today)) {
+            return sum + result.timeSpentMinutes;
+          }
+          return sum;
+        }, 0);
 
-    const activityLog = rawResults
+        return [String(window), total];
+      })
+    );
+
+    const testsPerDay = Object.fromEntries(
+      DAILY_TREND_WINDOWS.map((window) => [
+        String(window),
+        buildDailyCountSeries(
+          normalizedResults.map((result) => result.takenAt),
+          window
+        ),
+      ])
+    );
+
+    const timeSpentPerDay = Object.fromEntries(
+      TIME_TREND_WINDOWS.map((window) => [
+        String(window),
+        buildDailyMinutesSeries(
+          normalizedResults.map((result) => ({
+            date: result.takenAt,
+            minutes: result.timeSpentMinutes,
+          })),
+          window
+        ),
+      ])
+    );
+
+    const scoreHistory = normalizedResults.map((result) => ({
+      id: result.id,
+      dateKey: formatDateKey(result.takenAt),
+      label: formatShortDate(result.takenAt),
+      total: result.totalScore,
+      math: result.mathScore,
+      rw: result.readingWritingScore,
+      takenAt: result.takenAt.toISOString(),
+    }));
+
+    const recentTests = normalizedResults
       .slice()
       .reverse()
-      .map((result) => {
-        const test = testMap.get(result.testId.toString());
-        const score = result.totalScore ?? result.score ?? 0;
-        const timeSpent = test?.timeLimit ?? 0;
-        return {
-          date: new Date(result.createdAt ?? result.date ?? new Date()).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          }),
-          testName: test?.title ?? "Practice Test",
-          score,
-          timeSpent,
-          status: score >= 1400 ? "Excellent" : score >= 1200 ? "On Track" : "Needs Support",
-        };
-      });
+      .map((result) => ({
+        id: result.id,
+        testName: result.testName,
+        takenAt: result.takenAt.toISOString(),
+        dateLabel: result.takenAt.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+        timeLabel: result.takenAt.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+        readingWritingScore: result.readingWritingScore,
+        mathScore: result.mathScore,
+        totalScore: result.totalScore,
+      }));
 
-    const activity = {
-      testsCompleted: rawResults.length,
-      totalTimeSpent: rawResults.reduce((sum, result) => {
-        const test = testMap.get(result.testId.toString());
-        return sum + (test?.timeLimit ?? 0);
-      }, 0),
-    };
-
-    const latestResult = rawResults[rawResults.length - 1];
-    const currentScore =
-      latestResult?.totalScore ??
-      latestResult?.score ??
-      child.highestScore ??
-      0;
+    const lastActiveAt =
+      normalizedResults.length > 0 ? normalizedResults[normalizedResults.length - 1].takenAt.toISOString() : null;
 
     return NextResponse.json(
       {
@@ -229,14 +315,17 @@ export async function GET(): Promise<NextResponse> {
           name: child.name ?? "Student",
           email: child.email,
         },
-        scoreTrend,
-        strengths,
-        activity,
-        activityLog,
-        goal: {
-          currentScore,
-          targetScore: 1500,
+        overview: {
+          highestScore: Math.max(child.highestScore ?? 0, ...normalizedResults.map((result) => result.totalScore), 0),
+          testsCompleted: normalizedResults.length,
+          activityLast30Days: normalizedResults.filter((result) => result.takenAt >= activityLast30Start).length,
+          lastActiveAt,
         },
+        timeSpentByWindow,
+        scoreHistory,
+        testsPerDay,
+        timeSpentPerDay,
+        recentTests,
       },
       { status: 200 }
     );

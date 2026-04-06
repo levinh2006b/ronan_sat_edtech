@@ -2,33 +2,13 @@ import Link from "next/link";
 import { Clock, GraduationCap } from "lucide-react";
 
 import DownloadPdfButton from "@/components/DownloadPdfButton";
-
-interface Test {
-  _id: string;
-  title: string;
-  timeLimit: number;
-  difficulty: string;
-  sections: Array<{ name: string; questionsCount: number; timeLimit: number }>;
-  questionCounts?: { rw_1: number; rw_2: number; math_1: number; math_2: number };
-}
-
-interface UserResultAnswer {
-  isCorrect: boolean;
-}
-
-interface UserResult {
-  testId: string;
-  sectionalSubject?: string;
-  sectionalModule?: number;
-  answers?: UserResultAnswer[];
-  score?: number;
-}
+import type { TestListItem, UserResultSummary } from "@/types/testLibrary";
 
 interface TestCardProps {
-  test: Test;
+  test: TestListItem;
   isSectional?: boolean;
   subjectFilter?: string;
-  userResults?: UserResult[];
+  userResults?: UserResultSummary[];
 }
 
 export default function TestCard({
@@ -87,8 +67,8 @@ export default function TestCard({
   }
 
   const secPrefix = subjectFilter === "reading" ? "rw" : "math";
-  const mod1Count = test.questionCounts?.[`${secPrefix}_1` as keyof NonNullable<Test["questionCounts"]>] || 0;
-  const mod2Count = test.questionCounts?.[`${secPrefix}_2` as keyof NonNullable<Test["questionCounts"]>] || 0;
+  const mod1Count = test.questionCounts?.[`${secPrefix}_1` as keyof NonNullable<TestListItem["questionCounts"]>] || 0;
+  const mod2Count = test.questionCounts?.[`${secPrefix}_2` as keyof NonNullable<TestListItem["questionCounts"]>] || 0;
 
   if (isSectional && mod1Count === 0 && mod2Count === 0) {
     return null;
@@ -105,7 +85,7 @@ export default function TestCard({
   const mod1Result = isSectional ? getModuleResult(1) : null;
   const mod2Result = isSectional ? getModuleResult(2) : null;
 
-  const getScore = (result: UserResult | null) => {
+  const getScore = (result: UserResultSummary | null) => {
     if (result?.answers) {
       return result.answers.filter((answer) => answer.isCorrect).length;
     }

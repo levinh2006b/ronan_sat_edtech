@@ -6,13 +6,14 @@ import DesmosCalculator from "@/components/DesmosCalculator";
 import ReviewChatbot from "@/components/ReviewChatbot";
 import "katex/dist/katex.min.css";
 import Latex from "react-latex-next";
+import type { ReviewAnswer } from "@/types/review";
 
 // Import các component con đã được tách
 import PassageColumn from "@/components/review/PassageCollumn";
 import AnswerDetails from "@/components/review/AnswerDetails";
 
 interface ReviewPopupProps {
-    ans: any;
+    ans: ReviewAnswer;
     onClose: () => void;
     expandedExplanation: string | undefined;
     loadingExplanation: boolean;
@@ -147,7 +148,7 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
                                 <span className="text-[10px] font-bold text-[#1a4080] uppercase tracking-[0.15em]">Question</span>
                             </div>
                             <p className="text-[17px] text-[#1a2540] leading-relaxed font-medium">
-                                <Latex>{q.questionText}</Latex>
+                                <Latex>{q.questionText || ""}</Latex>
                             </p>
                         </div>
 
@@ -164,7 +165,7 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
                                 <div className="p-6">
                                     {expandedExplanation ? (
                                         <p className="text-[#334155] leading-relaxed text-[15px] whitespace-pre-wrap">
-                                            <Latex>{expandedExplanation}</Latex>
+                                            <Latex>{expandedExplanation || ""}</Latex>
                                         </p>
                                     ) : (
                                         <div className="flex items-center gap-2 text-[#94a3b8] text-sm">
@@ -200,7 +201,7 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
                         </button>
                     </div>
                     <div className="flex-1 overflow-hidden relative bg-[#f5f7fa]">
-                        <ReviewChatbot questionId={q._id} questionText={q.questionText} headless />
+                        <ReviewChatbot questionId={q._id} questionText={q.questionText || ""} headless />
                     </div>
                 </div>
             )}

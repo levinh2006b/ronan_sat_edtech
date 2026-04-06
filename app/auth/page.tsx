@@ -2,7 +2,7 @@
 
 "use client";
 
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { AxiosError } from "axios";
+import Loading from "@/components/Loading";
 
 export default function AuthPage() {
     const router = useRouter();
@@ -17,9 +18,9 @@ export default function AuthPage() {
 
     useEffect(() => {
         if (status === "authenticated") {
-            router.push("/full-length");
+            router.replace("/auth/redirect");
         }
-    }, [status, router]);
+    }, [router, status]);
 
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState("");
@@ -30,7 +31,7 @@ export default function AuthPage() {
     const [isError, setIsError] = useState(false);
 
     if (status === "loading" || status === "authenticated") {
-        return null;
+        return <Loading showQuote={false} />;
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -51,8 +52,14 @@ export default function AuthPage() {
                     setIsError(true);
                     setError(res.error);
                 } else {
-                    router.push("/full-length");
-                    router.refresh();
+                    const nextSession = await getSession();
+                    if (!nextSession?.user) {
+                        setIsError(true);
+                        setError("Login succeeded but the session is still syncing. Please try again.");
+                        return;
+                    }
+
+                    window.location.assign("/auth/redirect");
                 }
             } else {
                 const res = await api.post(API_PATHS.AUTH_REGISTER, { email, password, name });
@@ -61,8 +68,7 @@ export default function AuthPage() {
                     setIsError(false);
                     setError("Register successfully! Redirecting...");
                     await signIn("credentials", { email, password, redirect: false });
-                    router.push("/full-length");
-                    router.refresh();
+                    window.location.assign("/auth/redirect");
                 } else {
                     setIsError(true);
                     setError(res.data.message || "Registration failed");
@@ -167,7 +173,7 @@ export default function AuthPage() {
                     href="/auth/parent"
                     className="mt-4 flex w-full items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                 >
-                    Log in as Parent
+                    Create a Parent account
                 </Link>
 
                 <div className="mt-6">
@@ -181,7 +187,7 @@ export default function AuthPage() {
                     </div>
 
                     <button
-                        onClick={() => signIn("google", { callbackUrl: "/full-length" })}
+                        onClick={() => signIn("google", { callbackUrl: "/auth/redirect" })}
                         disabled={loading}
                         className="mt-4 w-full flex items-center justify-center gap-3 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors font-medium disabled:cursor-not-allowed disabled:opacity-50"
                     >

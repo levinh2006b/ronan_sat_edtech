@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Loading from "@/components/Loading";
 
-type ParentAuthView = "login" | "link" | "verify";
+type ParentAuthView = "link" | "verify";
 
 type ApiError = {
   error?: string;
@@ -16,26 +17,23 @@ export default function ParentAuthPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const [view, setView] = useState<ParentAuthView>("login");
+  const [view, setView] = useState<ParentAuthView>("link");
   const [studentEmail, setStudentEmail] = useState("");
   const [code, setCode] = useState("");
   const [parentEmail, setParentEmail] = useState("");
   const [parentPassword, setParentPassword] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (status === "authenticated") {
-      if (session?.user?.role === "PARENT" || session?.user?.role === "ADMIN") {
-        router.push("/parent/dashboard");
-      } else {
-        router.push("/full-length");
-      }
+      router.replace("/auth/redirect");
     }
   }, [router, session?.user?.role, status]);
 
   if (status === "loading" || status === "authenticated") {
-    return null;
+    return <Loading showQuote={false} />;
   }
 
   const getErrorMessage = async (response: Response): Promise<string> => {
@@ -47,44 +45,20 @@ export default function ParentAuthPage() {
     }
   };
 
-  const resetSignupFlow = () => {
-    setView("login");
+  const resetLinkFlow = () => {
+    setView("link");
     setStudentEmail("");
     setCode("");
     setParentEmail("");
     setParentPassword("");
     setError("");
-  };
-
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const result = await signIn("credentials", {
-        email: parentEmail,
-        password: parentPassword,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError(result.error);
-        return;
-      }
-
-      router.push("/parent/dashboard");
-      router.refresh();
-    } catch {
-      setError("Unable to sign in right now. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    setMessage("");
   };
 
   const handleRequestCode = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+    setMessage("");
     setLoading(true);
 
     try {
@@ -101,6 +75,7 @@ export default function ParentAuthPage() {
         return;
       }
 
+      setMessage(`A 6-digit verification code was sent to ${studentEmail}.`);
       setView("verify");
     } catch {
       setError("Unable to send verification code. Please try again.");
@@ -112,6 +87,7 @@ export default function ParentAuthPage() {
   const handleVerifyCode = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+    setMessage("");
     setLoading(true);
 
     try {
@@ -144,8 +120,7 @@ export default function ParentAuthPage() {
         return;
       }
 
-      router.push("/parent/dashboard");
-      router.refresh();
+      window.location.assign("/auth/redirect");
     } catch {
       setError("Unable to verify code. Please try again.");
     } finally {
@@ -168,71 +143,33 @@ export default function ParentAuthPage() {
             </div>
 
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              {view === "login"
-                ? "Parent Login"
-                : view === "link"
-                  ? "Parent Portal - Link to your Child"
-                  : "Enter Verification Code"}
+              {view === "link" ? "Parent Portal - Link to your Child" : "Enter Verification Code"}
             </h1>
 
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              {view === "login"
-                ? "Sign in with your parent account to view your child's learning progress."
-                : view === "link"
-                  ? "Enter your child's email so we can send a secure verification code to their inbox."
-                  : `A code was sent to ${studentEmail}. Enter it below to create your parent account.`}
+              {view === "link"
+                ? "Enter your child's email and we'll send a secure 6-digit code to their Gmail, just like a password recovery flow."
+                : `We sent a secure code to ${studentEmail}. Enter it below to verify and finish creating your parent access.`}
             </p>
           </div>
-
+          <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 whitespace-pre-line">
+            {view === "link"
+              ? "Step 1: Parent enters the student's email. \nStep 2: Student receives a Gmail verification code.\nStep 3: Parent enters the code to complete the link."
+              : "For security, the code expires after 15 minutes and is deleted after too many incorrect attempts."}
+          </div>
           {error && (
             <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}
 
-          {view === "login" ? (
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label htmlFor="parentLoginEmail" className="mb-2 block text-sm font-medium text-slate-700">
-                  Parent Email
-                </label>
-                <input
-                  id="parentLoginEmail"
-                  type="email"
-                  value={parentEmail}
-                  onChange={(e) => setParentEmail(e.target.value)}
-                  placeholder="parent@example.com"
-                  required
-                  autoComplete="email"
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
-                />
-              </div>
+          {message && (
+            <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              {message}
+            </div>
+          )}
 
-              <div>
-                <label htmlFor="parentLoginPassword" className="mb-2 block text-sm font-medium text-slate-700">
-                  Password
-                </label>
-                <input
-                  id="parentLoginPassword"
-                  type="password"
-                  value={parentPassword}
-                  onChange={(e) => setParentPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                  autoComplete="current-password"
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-2xl bg-sky-600 px-4 py-3 font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? "Signing in..." : "Log in as Parent"}
-              </button>
-            </form>
-          ) : view === "link" ? (
+          {view === "link" ? (
             <form onSubmit={handleRequestCode} className="space-y-5">
               <div>
                 <label
@@ -258,7 +195,7 @@ export default function ParentAuthPage() {
                 disabled={loading}
                 className="w-full rounded-2xl bg-sky-600 px-4 py-3 font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? "Sending..." : "Send Verification Code"}
+                {loading ? "Sending..." : "Send 6-Digit Code"}
               </button>
             </form>
           ) : (
@@ -326,32 +263,53 @@ export default function ParentAuthPage() {
               >
                 {loading ? "Verifying..." : "Verify & Create Account"}
               </button>
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={async () => {
+                  setError("");
+                  setMessage("");
+                  setLoading(true);
+
+                  try {
+                    const response = await fetch("/api/parent/request-code", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({ studentEmail }),
+                    });
+
+                    if (!response.ok) {
+                      setError(await getErrorMessage(response));
+                      return;
+                    }
+
+                    setMessage(`A new verification code was sent to ${studentEmail}.`);
+                  } catch {
+                    setError("Unable to resend verification code. Please try again.");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Resend Code
+              </button>
             </form>
           )}
 
           <div className="mt-6 text-center text-sm text-slate-600">
-            {view === "login" ? (
+            {view === "verify" ? (
               <button
                 type="button"
-                onClick={() => {
-                  setError("");
-                  setCode("");
-                  setStudentEmail("");
-                  setView("link");
-                }}
+                onClick={resetLinkFlow}
                 className="font-medium text-sky-700 hover:text-sky-800 hover:underline"
               >
-                Don&apos;t have an account? Sign up
+                Change student email
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={resetSignupFlow}
-                className="font-medium text-sky-700 hover:text-sky-800 hover:underline"
-              >
-                Already have an account? Log in
-              </button>
-            )}
+            ) : null}
           </div>
 
           <div className="mt-4 text-center text-sm text-slate-600">

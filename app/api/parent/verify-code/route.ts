@@ -1,49 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 
 import { authOptions } from "@/lib/authOptions";
 import dbConnect from "@/lib/mongodb";
 import ParentVerificationCode from "@/lib/models/ParentVerificationCode";
 import User from "@/lib/models/User";
-import { normalizeEmail } from "@/lib/security";
-
-type VerifyCodeBody = {
-  studentEmail?: string;
-  code?: string;
-  parentEmail?: string;
-  parentPassword?: string;
-};
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { hashToken, normalizeEmail, validatePasswordStrength } from "@/lib/security";
 
 type SessionUserWithId = {
   id?: string;
 };
 
+const verifyCodeSchema = z.object({
+  studentEmail: z.string().trim().min(1),
+  code: z.string().trim().regex(/^\d{6}$/),
+  parentEmail: z.string().trim().optional(),
+  parentPassword: z.string().optional(),
+});
+
 function isStudentLikeRole(role: string | undefined): boolean {
-  return !role || role === "STUDENT" || role === "user" || role ==="admin";
+  return !role || role === "STUDENT" || role === "user" || role === "admin";
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    const body = (await req.json()) as VerifyCodeBody;
-    const rawStudentEmail = body.studentEmail?.trim();
-    const rawCode = body.code?.trim();
-    const rawParentEmail = body.parentEmail?.trim();
-    const parentPassword = body.parentPassword;
+    const parsed = verifyCodeSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "studentEmail and code are required" }, { status: 400 });
+    }
 
-    if (!rawStudentEmail || !rawCode) {
+    const studentEmail = normalizeEmail(parsed.data.studentEmail);
+    const code = parsed.data.code;
+    const rawParentEmail = parsed.data.parentEmail?.trim();
+    const parentPassword = parsed.data.parentPassword;
+    const ip = getClientIp(req);
+    const rateLimit = checkRateLimit(`parent-verify-code:${ip}:${studentEmail}`, {
+      limit: 10,
+      windowMs: 15 * 60 * 1000,
+    });
+
+    if (!rateLimit.success) {
       return NextResponse.json(
-        { error: "studentEmail and code are required" },
-        { status: 400 }
+        { error: "Too many verification attempts. Please try again later." },
+        { status: 429 }
       );
     }
 
-    const studentEmail = normalizeEmail(rawStudentEmail);
-    const code = rawCode;
-
     await dbConnect();
 
-    const otpDoc = await ParentVerificationCode.findOne({ studentEmail, code });
+    const otpDoc = await ParentVerificationCode.findOne({ studentEmail });
 
     if (!otpDoc) {
       return NextResponse.json({ error: "Invalid verification code" }, { status: 400 });
@@ -52,6 +60,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (otpDoc.expiresAt.getTime() <= Date.now()) {
       await ParentVerificationCode.deleteOne({ _id: otpDoc._id });
       return NextResponse.json({ error: "Verification code has expired" }, { status: 400 });
+    }
+
+    if (otpDoc.code !== hashToken(code)) {
+      otpDoc.attemptCount += 1;
+
+      if (otpDoc.attemptCount >= 5) {
+        await ParentVerificationCode.deleteOne({ _id: otpDoc._id });
+        return NextResponse.json(
+          { error: "Too many incorrect attempts. Please request a new code." },
+          { status: 400 }
+        );
+      }
+
+      await otpDoc.save();
+      return NextResponse.json({ error: "Invalid verification code" }, { status: 400 });
     }
 
     const student = await User.findOne({ email: studentEmail });
@@ -102,6 +125,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
 
       const parentEmail = normalizeEmail(rawParentEmail);
+      const passwordError = validatePasswordStrength(parentPassword);
+
+      if (passwordError) {
+        return NextResponse.json({ error: passwordError }, { status: 400 });
+      }
 
       const existingParent = await User.findOne({ email: parentEmail });
       if (existingParent) {

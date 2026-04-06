@@ -30,6 +30,10 @@ body {
   font-family: var(--font-sans);
 }
 
+body.loading-screen-active nav {
+  display: none;
+}
+
 @keyframes marquee {
   0% {
     transform: translateX(0);

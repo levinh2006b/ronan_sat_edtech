@@ -1,9 +1,10 @@
 "use client";
 
 import Latex from 'react-latex-next';
+import type { ReviewQuestion } from "@/types/review";
 
 interface PassageColumnProps {
-    q: any;
+    q: ReviewQuestion;
 }
 
 export default function PassageColumn({ q }: PassageColumnProps) {

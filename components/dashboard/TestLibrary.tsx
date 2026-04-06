@@ -5,18 +5,19 @@ import { BookOpen } from "lucide-react";
 
 import TestCard from "@/components/TestCard";
 import TestCardSkeleton from "@/components/TestCardSkeleton";
+import type { SortOption, TestListItem } from "@/types/testLibrary";
 
 interface TestLibraryProps {
   uniquePeriods: string[];
   selectedPeriod: string;
   setSelectedPeriod: (val: string) => void;
-  sortOption: string;
-  setSortOption: (val: string) => void;
+  sortOption: SortOption;
+  setSortOption: Dispatch<SetStateAction<SortOption>>;
   page: number;
   setPage: Dispatch<SetStateAction<number>>;
   loading: boolean;
   syncing?: boolean;
-  filteredTests: any[];
+  filteredTests: TestListItem[];
   totalPages: number;
 }
 
@@ -77,7 +78,7 @@ export default function TestLibrary({
                 id="sort-tests"
                 value={sortOption}
                 onChange={(e) => {
-                  setSortOption(e.target.value);
+                  setSortOption(e.target.value as SortOption);
                   setPage(1);
                 }}
                 className="cursor-pointer bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none"
@@ -104,7 +105,7 @@ export default function TestLibrary({
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredTests.map((test: any) => (
+                {filteredTests.map((test) => (
                   <TestCard key={test._id} test={test} />
                 ))}
               </div>

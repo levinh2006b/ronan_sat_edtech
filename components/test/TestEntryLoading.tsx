@@ -59,6 +59,14 @@ export default function TestEntryLoading({ showQuote = true }: TestEntryLoadingP
   const [rippleOrigin, setRippleOrigin] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
+    document.body.classList.add("loading-screen-active");
+
+    return () => {
+      document.body.classList.remove("loading-screen-active");
+    };
+  }, []);
+
+  useEffect(() => {
     if (!showQuote) {
       return;
     }
