@@ -24,7 +24,7 @@ export default function PassageColumn({ q }: PassageColumnProps) {
                     <div className="w-1 h-4 bg-slate-300 rounded-full" />
                     <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Passage</span>
                 </div>
-                <div className="text-[15px] leading-[1.85] font-serif text-slate-700 selection:bg-blue-100">
+                <div className="text-[16px] leading-[1.85] font-[Georgia,serif] text-slate-800 selection:bg-blue-100">
                     <Latex>{q.passage.replace(/\n/g, "<br/>")}</Latex>
                 </div>
             </div>

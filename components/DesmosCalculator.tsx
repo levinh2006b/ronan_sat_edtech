@@ -193,9 +193,22 @@ useEffect(() => {
             });
             
             // Nếu đúc xong máy tính rồi thì xóa bỏ cái vòng lặp hẹn giờ đi
-            clearInterval(checkInterval);
+            if (checkInterval) clearInterval(checkInterval);
         }
     };
+
+    // Kiểm tra và tải Script nếu chưa có
+    const existingScript = document.getElementById("desmos-script");
+    if (!existingScript && !window.Desmos) {
+        const script = document.createElement("script");
+        script.src = desmosUrl || "https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6";
+        script.id = "desmos-script";
+        script.async = true;
+        script.onload = () => {
+            initCalculator();
+        };
+        document.body.appendChild(script);
+    }
 
     // Bước 1: Vừa mở cửa sổ lên là cố gắng khởi động ngay lập tức
     if (window.Desmos) {
@@ -219,7 +232,7 @@ useEffect(() => {
             calculatorInst.current = null;
         }
     };
-}, [isOpen]);
+}, [isOpen, desmosUrl]);
 
     // Don't render anything if not open
     if (!isOpen) return null;   // Code dưới sẽ vẽ ra 1 khung cho window Desmos, dòng này chặn, nếu Desmos đang đóng/bị tắt thì không vẽ khung

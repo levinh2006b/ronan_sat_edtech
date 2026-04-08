@@ -86,25 +86,29 @@ export type DomainStat = {
   skills: SkillStat[];
 };
 
-export function getSkillPerformance(answers: ReviewAnswer[]): DomainStat[] {
-  const domainMap: Record<string, Record<string, SkillStat>> = {};
+export type SectionSkillStat = {
+  section: string;
+  domains: DomainStat[];
+};
+
+export function getSkillPerformance(answers: ReviewAnswer[]): SectionSkillStat[] {
+  const sectionMap: Record<string, Record<string, Record<string, SkillStat>>> = {};
 
   answers.forEach((answer) => {
     const q = answer.questionId;
     if (!q) return;
 
+    const section = q.section || "Uncategorized";
     const domain = q.domain || q.subject || "Uncategorized";
     const skill = q.skill || "General";
 
-    if (!domainMap[domain]) {
-      domainMap[domain] = {};
+    if (!sectionMap[section]) sectionMap[section] = {};
+    if (!sectionMap[section][domain]) sectionMap[section][domain] = {};
+    if (!sectionMap[section][domain][skill]) {
+      sectionMap[section][domain][skill] = { name: skill, wrong: 0, correct: 0, omitted: 0, total: 0 };
     }
 
-    if (!domainMap[domain][skill]) {
-      domainMap[domain][skill] = { name: skill, wrong: 0, correct: 0, omitted: 0, total: 0 };
-    }
-
-    const stat = domainMap[domain][skill];
+    const stat = sectionMap[section][domain][skill];
     stat.total += 1;
 
     const isOmitted = !answer.userAnswer || answer.userAnswer === "" || answer.userAnswer === "Omitted";
@@ -117,10 +121,19 @@ export function getSkillPerformance(answers: ReviewAnswer[]): DomainStat[] {
     }
   });
 
-  const validDomains = Object.keys(domainMap).filter((d) => d !== "Uncategorized" || Object.keys(domainMap[d]).length > 0);
-
-  return validDomains.map((domain) => {
-    const skills = Object.values(domainMap[domain]).sort((a, b) => b.total - a.total);
-    return { domain, skills };
-  });
+  return Object.keys(sectionMap)
+    .sort((a, b) => {
+      if (a === "Reading and Writing") return -1;
+      if (b === "Reading and Writing") return 1;
+      return a.localeCompare(b);
+    })
+    .map((section) => {
+      const domains = Object.keys(sectionMap[section])
+        .filter((d) => d !== "Uncategorized" || Object.keys(sectionMap[section][d]).length > 0)
+        .map((domain) => {
+          const skills = Object.values(sectionMap[section][domain]).sort((a, b) => b.total - a.total);
+          return { domain, skills };
+        });
+      return { section, domains };
+    });
 }

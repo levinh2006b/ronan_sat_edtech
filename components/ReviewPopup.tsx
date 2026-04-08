@@ -8,6 +8,7 @@ import ReviewChatbot from "@/components/ReviewChatbot";
 import "katex/dist/katex.min.css";
 import Latex from "react-latex-next";
 import type { ReviewAnswer } from "@/types/review";
+import SelectableTextPanel, { TextAnnotation } from "@/components/test/SelectableTextPanel";
 
 // Import các component con đã được tách
 import PassageColumn from "@/components/review/PassageCollumn";
@@ -35,6 +36,7 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
     const [showCalculator, setShowCalculator] = useState(false);
     const [showAI, setShowAI] = useState(false);
     const [isExplanationVisible, setIsExplanationVisible] = useState(false);
+    const [annotations, setAnnotations] = useState<TextAnnotation[]>([]);
 
     if (!q) {
         return (
@@ -48,7 +50,7 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
         );
     }
 
-    const isMath = q?.subject?.toLowerCase() === "math" || q?.domain?.toLowerCase()?.includes("math");
+    const isMath = q?.subject?.toLowerCase() === "math" || q?.domain?.toLowerCase()?.includes("math") || q?.section?.toLowerCase()?.includes("math");
 
     const handleToggleExplanation = () => {
         if (!isExplanationVisible && !expandedExplanation) {
@@ -76,27 +78,35 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
                     </div>
                     <span className="font-bold text-[#1a4080] text-sm tracking-wide uppercase letter-spacing-widest">Review Question</span>
                 </div>
-                {q.domain && (
-                    <span className="text-xs bg-[#e8eef7] text-[#1a4080] px-3 py-1 rounded-full border border-[#c2d0e8] font-semibold">
-                        {q.domain}
-                    </span>
-                )}
-                {isMath && (
-                    <button
-                        onClick={() => setShowCalculator(!showCalculator)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all border ${
-                            showCalculator
-                                ? "bg-[#1a4080] text-white border-[#1a4080] shadow-md"
-                                : "bg-white text-[#1a4080] hover:bg-[#e8eef7] border-[#c2d0e8]"
-                        }`}
-                    >
-                        <Calculator className="w-3.5 h-3.5" /> Desmos
-                    </button>
-                )}
-            </div>
+                <div className="hidden sm:flex items-center gap-1.5 flex-nowrap flex-shrink min-w-0">
+                    {q.domain && (
+                        <span className="text-[10px] sm:text-[11px] bg-[#e8eef7] text-[#1a4080] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-[#c2d0e8] font-bold uppercase tracking-wider whitespace-nowrap truncate shrink min-w-0 block">
+                            {q.domain}
+                        </span>
+                    )}
+                    {q.skill && (
+                        <span className="text-[10px] sm:text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-indigo-200 font-bold uppercase tracking-wider whitespace-nowrap truncate shrink min-w-0 block">
+                            {q.skill}
+                        </span>
+                    )}
+                </div>
+                </div>
 
             {/* Right */}
             <div className="flex items-center gap-2">
+                {isMath && (
+                    <button
+                        onClick={() => setShowCalculator(!showCalculator)}
+                        title="Open Desmos Calculator"
+                        className={`flex items-center justify-center w-8 h-8 rounded-full transition-all border shadow-sm ${
+                            showCalculator
+                                ? "bg-[#1a4080] text-white border-[#1a4080]"
+                                : "bg-white text-slate-500 hover:text-[#1a4080] hover:bg-blue-50 border-[#c2d0e8] hover:border-[#1a4080]"
+                        }`}
+                    >
+                        <Calculator className="w-4 h-4" />
+                    </button>
+                )}
                 {reportContext ? <ReportErrorButton context={reportContext} /> : null}
                 <button
                     onClick={handleToggleExplanation}
@@ -134,7 +144,12 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
         </header>
 
         {/* ── Body ── */}
-        <div className="flex-1 overflow-hidden flex relative">
+        <SelectableTextPanel 
+            annotations={annotations} 
+            onChange={setAnnotations} 
+            sourceQuestionId={q._id}
+            className="flex-1 overflow-hidden flex relative"
+        >
             <div className="flex-1 flex h-full overflow-hidden">
 
                 {/* ── Passage column ── */}
@@ -157,7 +172,7 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
                                 <div className="w-1 h-5 bg-[#1a4080] rounded-full" />
                                 <span className="text-[10px] font-bold text-[#1a4080] uppercase tracking-[0.15em]">Question</span>
                             </div>
-                            <p className="text-[17px] text-[#1a2540] leading-relaxed font-medium">
+                            <p className="text-[17.5px] text-[#1a2540] leading-[1.7] font-[Georgia,serif]">
                                 <Latex>{q.questionText || ""}</Latex>
                             </p>
                         </div>
@@ -215,7 +230,7 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
                     </div>
                 </div>
             )}
-        </div>
+        </SelectableTextPanel>
     </div>
 );
 }

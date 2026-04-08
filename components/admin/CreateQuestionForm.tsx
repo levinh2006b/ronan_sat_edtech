@@ -68,6 +68,8 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                 const payload: any = {
                     testId: selectedTestId,
                     section: String(row.section || "Reading and Writing").trim(),
+                    domain: String(row.domain || "").trim(),
+                    skill: String(row.skill || "").trim(),
                     module: Number(row.module) || 1,
                     questionType: type,
                     questionText: String(row.questionText || "").trim(),

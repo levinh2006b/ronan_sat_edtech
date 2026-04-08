@@ -142,7 +142,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
             <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold ${circleClass}`}>
               {optionLabels[index] || ""}
             </div>
-            <span className="flex-1 text-[15px] font-medium leading-snug">
+            <span className="flex-1 text-[15.5px] font-[Georgia,serif] leading-[1.65]">
               <Latex>{choice ?? ""}</Latex>
             </span>
             {Icon ? <Icon className="h-4.5 w-4.5 shrink-0 opacity-70" /> : null}

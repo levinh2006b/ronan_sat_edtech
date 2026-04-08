@@ -22,7 +22,8 @@ export function useReviewPageController() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [testType, setTestType] = useState<"full" | "sectional">(urlMode === "sectional" ? "sectional" : "full");
-  const [activeTestId, setActiveTestId] = useState<string | null>(urlTestId || null);
+  const [activeTestId, setActiveTestId] = useState<string | null>(null);
+  const [isManuallySelected, setIsManuallySelected] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<{
     answer: ReviewAnswer;
     questionNumber: number;
@@ -100,14 +101,31 @@ export function useReviewPageController() {
       return;
     }
 
-    const isValidActiveTest = filteredResults.some((result) => result._id === activeTestId);
+    const isValidActiveTest = activeTestId ? filteredResults.some((result) => result._id === activeTestId) : false;
+
+    if (isManuallySelected && isValidActiveTest) {
+      return;
+    }
+
+    if (urlTestId && !isManuallySelected) {
+      const matchForUrl = filteredResults.find((r) => {
+        const tId = typeof r.testId === "object" ? r.testId?._id : r.testId;
+        return tId === urlTestId;
+      });
+      if (matchForUrl) {
+        if (activeTestId !== matchForUrl._id) {
+          setActiveTestId(matchForUrl._id);
+        }
+        return;
+      }
+    }
 
     if (!isValidActiveTest && filteredResults.length > 0) {
       setActiveTestId(filteredResults[0]._id);
     } else if (filteredResults.length === 0) {
       setActiveTestId(null);
     }
-  }, [activeTestId, filteredResults, results.length]);
+  }, [activeTestId, filteredResults, results.length, urlTestId, isManuallySelected]);
 
   const activeTest = useMemo(
     () => filteredResults.find((result) => result._id === activeTestId) || filteredResults[0],
@@ -145,7 +163,10 @@ export function useReviewPageController() {
     filteredResults,
     activeTest,
     setTestType,
-    setActiveTestId,
+    setActiveTestId: (id: string | null) => {
+      setIsManuallySelected(true);
+      setActiveTestId(id);
+    },
     setSelectedAnswer,
     handleExpandExplanation,
   };
