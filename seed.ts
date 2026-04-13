@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import * as dotenv from "dotenv";
 import Test from "./lib/models/Test";
 import Question from "./lib/models/Question";
+import 'dotenv/config'; // Dòng này sẽ kích hoạt dotenv
 
 // Load environment variables manually since this is a standalone script
 dotenv.config({ path: ".env.local" });
