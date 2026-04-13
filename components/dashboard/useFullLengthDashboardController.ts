@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import { getClientCache, setClientCache } from "@/lib/clientCache";
 import { fetchDashboardUserResults } from "@/lib/services/dashboardService";
 import {
-  fetchAllTests,
-  filterTestsByPeriod,
+  fetchTestsPage,
   getTestsClientCacheKey,
-  getUniqueTestPeriods,
 } from "@/lib/services/testLibraryService";
 import type {
   CachedTestsPayload,
@@ -28,34 +26,33 @@ export function useFullLengthDashboardController() {
 
   const [hasHydratedClientCache, setHasHydratedClientCache] = useState(false);
   const [tests, setTests] = useState<TestListItem[]>([]);
+  const [uniquePeriods, setUniquePeriods] = useState<string[]>(["All"]);
   const [testsLoading, setTestsLoading] = useState(true);
   const [testsRefreshing, setTestsRefreshing] = useState(false);
   const [userResults, setUserResults] = useState<UserResultSummary[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [page, setPage] = useState(1);
   const [selectedPeriod, setSelectedPeriod] = useState("All");
+  const [totalPages, setTotalPages] = useState(1);
 
   const hasCachedDashboardView = hasHydratedClientCache && Boolean(initialTestsCache);
-  const uniquePeriods = useMemo(() => getUniqueTestPeriods(tests), [tests]);
-  const filteredTests = useMemo(() => filterTestsByPeriod(tests, selectedPeriod), [selectedPeriod, tests]);
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredTests.length / pageSize)), [filteredTests.length, pageSize]);
-  const paginatedTests = useMemo(
-    () => filteredTests.slice((page - 1) * pageSize, page * pageSize),
-    [filteredTests, page, pageSize],
-  );
 
   useEffect(() => {
-    const testsCache = getClientCache<CachedTestsPayload>(getTestsClientCacheKey(1, 0, "newest"));
+    const testsCache = getClientCache<CachedTestsPayload>(
+      getTestsClientCacheKey(1, pageSize, "newest", { selectedPeriod: "All" }),
+    );
 
     initialTestsCacheRef.current = testsCache;
 
     if (testsCache) {
       setTests(testsCache.tests);
+      setUniquePeriods(testsCache.availablePeriods);
+      setTotalPages(testsCache.totalPages);
       setTestsLoading(false);
     }
 
     setHasHydratedClientCache(true);
-  }, []);
+  }, [pageSize]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -81,7 +78,7 @@ export function useFullLengthDashboardController() {
   }, [session]);
 
   useEffect(() => {
-    if (page > totalPages) {
+    if (page > totalPages && totalPages > 0) {
       setPage(totalPages);
     }
   }, [page, totalPages]);
@@ -90,11 +87,14 @@ export function useFullLengthDashboardController() {
     let cancelled = false;
 
     const loadTests = async () => {
-      const cacheKey = getTestsClientCacheKey(1, 0, sortOption);
+      const filters = { selectedPeriod } as const;
+      const cacheKey = getTestsClientCacheKey(page, pageSize, sortOption, filters);
       const cachedTests = getClientCache<CachedTestsPayload>(cacheKey);
 
       if (cachedTests) {
         setTests(cachedTests.tests);
+        setUniquePeriods(cachedTests.availablePeriods);
+        setTotalPages(cachedTests.totalPages);
         setTestsLoading(false);
         setTestsRefreshing(true);
       } else {
@@ -103,13 +103,15 @@ export function useFullLengthDashboardController() {
       }
 
       try {
-        const nextPayload = await fetchAllTests(sortOption);
+        const nextPayload = await fetchTestsPage(page, pageSize, sortOption, filters);
 
         if (cancelled) {
           return;
         }
 
         setTests(nextPayload.tests);
+        setUniquePeriods(nextPayload.availablePeriods);
+        setTotalPages(nextPayload.totalPages);
         setClientCache(cacheKey, nextPayload);
       } catch (error) {
         console.error("Failed to fetch tests", error);
@@ -126,7 +128,7 @@ export function useFullLengthDashboardController() {
     return () => {
       cancelled = true;
     };
-  }, [sortOption]);
+  }, [page, pageSize, selectedPeriod, sortOption]);
 
   return {
     session,
@@ -140,7 +142,7 @@ export function useFullLengthDashboardController() {
     totalPages,
     selectedPeriod,
     uniquePeriods,
-    filteredTests: paginatedTests,
+    filteredTests: tests,
     setSortOption,
     setPage,
     setSelectedPeriod,

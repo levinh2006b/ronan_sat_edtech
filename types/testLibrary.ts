@@ -45,6 +45,7 @@ export type UserResultSummary = {
 export type CachedTestsPayload = {
   tests: TestListItem[];
   totalPages: number;
+  availablePeriods: string[];
 };
 
 export type UserStatsSummary = {

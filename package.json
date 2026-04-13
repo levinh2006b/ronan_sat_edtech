@@ -25,7 +25,6 @@
     "bcryptjs": "^3.0.3",
     "framer-motion": "^11.0.0",
     "html2pdf.js": "^0.14.0",
-    "ioredis": "^5.10.1",
     "katex": "^0.16.44",
     "lucide-react": "^0.575.0",
     "marked": "^17.0.5",

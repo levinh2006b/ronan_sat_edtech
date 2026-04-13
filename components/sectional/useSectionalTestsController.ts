@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { getClientCache, setClientCache } from "@/lib/clientCache";
 import { fetchDashboardUserResults } from "@/lib/services/dashboardService";
 import {
-  fetchAllTests,
-  filterSectionalTestsBySubject,
-  filterTestsByPeriod,
+  fetchTestsPage,
   getTestsClientCacheKey,
-  getUniqueTestPeriods,
 } from "@/lib/services/testLibraryService";
 import type { CachedTestsPayload, SortOption, TestListItem, UserResultSummary } from "@/types/testLibrary";
 
@@ -20,6 +17,7 @@ export function useSectionalTestsController() {
   const initialTestsCacheRef = useRef<CachedTestsPayload | undefined>(undefined);
   const [hasHydratedClientCache, setHasHydratedClientCache] = useState(false);
   const [tests, setTests] = useState<TestListItem[]>([]);
+  const [uniquePeriods, setUniquePeriods] = useState<string[]>(["All"]);
   const [loading, setLoading] = useState(true);
   const [testsRefreshing, setTestsRefreshing] = useState(false);
   const [userResults, setUserResults] = useState<UserResultSummary[]>([]);
@@ -27,40 +25,33 @@ export function useSectionalTestsController() {
   const [page, setPage] = useState(1);
   const [selectedPeriod, setSelectedPeriod] = useState("All");
   const [subjectFilter, setSubjectFilter] = useState<"reading" | "math">("reading");
+  const [totalPages, setTotalPages] = useState(1);
 
   const hasCachedSectionalView = hasHydratedClientCache && Boolean(initialTestsCacheRef.current);
 
   useEffect(() => {
-    const cachedTests = getClientCache<CachedTestsPayload>(getTestsClientCacheKey(1, 0, "newest"));
+    const cachedTests = getClientCache<CachedTestsPayload>(
+      getTestsClientCacheKey(1, pageSize, "newest", {
+        selectedPeriod: "All",
+        subject: "reading",
+      }),
+    );
     initialTestsCacheRef.current = cachedTests;
 
     if (cachedTests) {
       setTests(cachedTests.tests);
+      setUniquePeriods(cachedTests.availablePeriods);
+      setTotalPages(cachedTests.totalPages);
       setLoading(false);
     }
 
     setHasHydratedClientCache(true);
-  }, []);
+  }, [pageSize]);
 
   useEffect(() => {
     setSelectedPeriod("All");
     setPage(1);
   }, [subjectFilter]);
-
-  const testsWithSubject = useMemo(
-    () => filterSectionalTestsBySubject(tests, subjectFilter),
-    [subjectFilter, tests],
-  );
-  const uniquePeriods = useMemo(() => getUniqueTestPeriods(testsWithSubject), [testsWithSubject]);
-  const filteredTests = useMemo(
-    () => filterTestsByPeriod(testsWithSubject, selectedPeriod),
-    [selectedPeriod, testsWithSubject],
-  );
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredTests.length / pageSize)), [filteredTests.length, pageSize]);
-  const paginatedTests = useMemo(
-    () => filteredTests.slice((page - 1) * pageSize, page * pageSize),
-    [filteredTests, page, pageSize],
-  );
 
   useEffect(() => {
     if (!session) {
@@ -80,7 +71,7 @@ export function useSectionalTestsController() {
   }, [session]);
 
   useEffect(() => {
-    if (page > totalPages) {
+    if (page > totalPages && totalPages > 0) {
       setPage(totalPages);
     }
   }, [page, totalPages]);
@@ -93,11 +84,17 @@ export function useSectionalTestsController() {
     let cancelled = false;
 
     const loadTests = async () => {
-      const cacheKey = getTestsClientCacheKey(1, 0, sortOption);
+      const filters = {
+        selectedPeriod,
+        subject: subjectFilter,
+      } as const;
+      const cacheKey = getTestsClientCacheKey(page, pageSize, sortOption, filters);
       const cachedTests = getClientCache<CachedTestsPayload>(cacheKey);
 
       if (cachedTests) {
         setTests(cachedTests.tests);
+        setUniquePeriods(cachedTests.availablePeriods);
+        setTotalPages(cachedTests.totalPages);
         setLoading(false);
         setTestsRefreshing(true);
       } else {
@@ -106,13 +103,15 @@ export function useSectionalTestsController() {
       }
 
       try {
-        const nextPayload = await fetchAllTests(sortOption);
+        const nextPayload = await fetchTestsPage(page, pageSize, sortOption, filters);
 
         if (cancelled) {
           return;
         }
 
         setTests(nextPayload.tests);
+        setUniquePeriods(nextPayload.availablePeriods);
+        setTotalPages(nextPayload.totalPages);
         setClientCache(cacheKey, nextPayload);
       } catch (error) {
         console.error("Failed to fetch tests", error);
@@ -129,7 +128,7 @@ export function useSectionalTestsController() {
     return () => {
       cancelled = true;
     };
-  }, [hasHydratedClientCache, sortOption]);
+  }, [hasHydratedClientCache, page, pageSize, selectedPeriod, sortOption, subjectFilter]);
 
   return {
     status,
@@ -143,7 +142,7 @@ export function useSectionalTestsController() {
     selectedPeriod,
     subjectFilter,
     uniquePeriods,
-    filteredTests: paginatedTests,
+    filteredTests: tests,
     setSortOption,
     setPage,
     setSelectedPeriod,
