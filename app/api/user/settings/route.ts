@@ -15,8 +15,8 @@
                 return NextResponse.json({ error: "Unauthorized" }, { status: 401 }); // Chưa login => Unauthorized
             }
 
-            const body = await req.json();     // lấy request đc gửi từ FE đổi về JSON
-            const { name } = body;             // Lấy tên mới từ req từ FE
+            const body: unknown = await req.json();     // lấy request đc gửi từ FE đổi về JSON
+            const name = typeof body === "object" && body !== null ? (body as { name?: unknown }).name : undefined;             // Lấy tên mới từ req từ FE
 
             if (!name || typeof name !== "string") {     // Nếu k tồn tại name hoặc sai định dạng => Báo lỗi luôn
                 return NextResponse.json({ error: "Invalid name provided" }, { status: 400 });
@@ -37,7 +37,7 @@
 
             return NextResponse.json({ message: "Profile updated successfully", user: { name: updatedUser.name } }, { status: 200 });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("PUT /api/user/settings error:", error);
             return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
         }

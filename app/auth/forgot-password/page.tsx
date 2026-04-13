@@ -1,93 +1,145 @@
-// app/auth/forgot-password/page.tsx
 "use client";
+
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { useSession } from "next-auth/react"; // Thêm dòng này để kiểm tra máy quét đăng nhập
-import { useState, useEffect } from "react"; // Thêm useEffect
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+
+import AuthWorkbookShell from "@/components/auth/AuthWorkbookShell";
+import Loading from "@/components/Loading";
+
+type MessageTone = "success" | "error" | "info";
 
 export default function ForgotPasswordPage() {
-    const router = useRouter();
-    const { data: session, status } = useSession(); // Lấy trạng thái xem đã đăng nhập chưa
+  const router = useRouter();
+  const { status } = useSession();
 
-    useEffect(() => {
-            if (status === "authenticated") {
-                router.push("/full-length");
-            }
-        }, [status, router]);
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<MessageTone>("info");
+  const [isSending, setIsSending] = useState(false);
 
-    const [email, setEmail] = useState("");
-    const [code, setCode] = useState("");
-    const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/auth/redirect");
+    }
+  }, [router, status]);
 
-   
-    // HIỆU ỨNG CHẶN CỬA: Nếu phát hiện đã đăng nhập (authenticated), lập tức đá về trang chủ ("/")
-    useEffect(() => {
-        if (status === "authenticated") {
-            router.push("/full-length");
-        }
-    }, [status, router]);
+  if (status === "loading" || status === "authenticated") {
+    return <Loading showQuote={false} />;
+  }
 
-
-// TRÁNH LỘ GIAO DIỆN: Trong lúc 1 giây hệ thống đang load kiểm tra, không hiện HTML của trang này ra
-    if (status === "loading" || status === "authenticated") {
-        return null; 
+  const handleSendCode = async () => {
+    if (!email) {
+      setMessageTone("error");
+      setMessage("Enter your email first.");
+      return;
     }
 
-    
-    
+    setIsSending(true);
+    setMessageTone("info");
+    setMessage("Sending your verification code...");
 
-    const handleSendCode = async () => {
-        try {
-            setMessage("Đang gửi mã...");
-            await axios.post("/api/auth/forgot-password", { email });
-            setMessage("Mã đã được gửi đến Gmail của bạn!");
-        } catch (error: any) {
-            setMessage(error.response?.data?.message || "Lỗi khi gửi mã");
-        }
-    };
+    try {
+      await axios.post("/api/auth/forgot-password", { email });
+      setMessageTone("success");
+      setMessage("A 6-digit code has been sent to your email.");
+    } catch (error: unknown) {
+      setMessageTone("error");
+      setMessage(
+        axios.isAxiosError(error)
+          ? error.response?.data?.message || "Unable to send the verification code."
+          : "Unable to send the verification code."
+      );
+    } finally {
+      setIsSending(false);
+    }
+  };
 
-    const handleVerifyCode = () => {
-        if (!code || code.length !== 6) {
-            setMessage("Vui lòng nhập mã 6 số hợp lệ.");
-            return;
-        }
-        // Nếu nhập mã thành công, chuyển hướng sang trang đặt lại mật khẩu và mang theo email + mã
-        router.push(`/auth/reset-password?email=${email}&code=${code}`);
-    };
+  const handleVerifyCode = () => {
+    if (!code || code.length !== 6) {
+      setMessageTone("error");
+      setMessage("Enter a valid 6-digit code.");
+      return;
+    }
 
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50">
-            <div className="max-w-md w-full p-8 bg-white rounded-xl border border-slate-100">
-                <h1 className="text-2xl font-bold mb-4">Quên Mật Khẩu</h1>
-                {message && <p className="mb-4 text-blue-600 text-sm">{message}</p>}
-                
-                <div className="mb-4 flex gap-2">
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Nhập email của bạn"
-                        className="flex-1 px-4 py-2 border rounded-lg"
-                    />
-                    <button onClick={handleSendCode} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                        Gửi mã
-                    </button>
-                </div>
+    router.push(`/auth/reset-password?email=${encodeURIComponent(email)}&code=${code}`);
+  };
 
-                <div className="mb-4">
-                    <input
-                        type="text"
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        placeholder="Nhập mã 6 số từ Gmail"
-                        className="w-full px-4 py-2 border rounded-lg"
-                    />
-                </div>
-
-                <button onClick={handleVerifyCode} className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-                    Tiếp tục
-                </button>
-            </div>
+  return (
+    <AuthWorkbookShell
+      badge="Password Reset"
+      title="Recover your study flow without losing momentum."
+      description="Request a short verification code, then move straight into a secure password reset."
+      accentClass="bg-accent-3"
+      notes={[
+        "Codes are short-lived and meant for fast recovery.",
+        "Use the same email you used to create your Ronan SAT account.",
+      ]}
+      cardTitle="Send your code"
+      cardDescription="We will email a 6-digit verification code, then you can continue to the reset screen."
+      backHref="/auth"
+      backLabel="Back to sign in"
+    >
+      {message ? (
+        <div
+          className={`mb-5 rounded-2xl border-2 border-ink-fg px-4 py-3 text-sm font-medium leading-6 ${
+            messageTone === "error"
+              ? "bg-accent-3 text-white"
+              : messageTone === "success"
+                ? "bg-primary text-ink-fg"
+                : "bg-surface-white text-ink-fg"
+          }`}
+        >
+          {message}
         </div>
-    );
+      ) : null}
+
+      <div className="space-y-5">
+        <div>
+          <label className="mb-2 block text-sm font-bold uppercase tracking-[0.16em] text-ink-fg">
+            Account Email
+          </label>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              className="workbook-input flex-1"
+              autoComplete="email"
+            />
+            <button
+              onClick={handleSendCode}
+              className="workbook-button whitespace-nowrap"
+              disabled={isSending}
+              type="button"
+            >
+              {isSending ? "Sending..." : "Send Code"}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-bold uppercase tracking-[0.16em] text-ink-fg">
+            Verification Code
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            value={code}
+            onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="123456"
+            className="workbook-input"
+          />
+        </div>
+
+        <button onClick={handleVerifyCode} className="workbook-button w-full" type="button">
+          Continue to Reset
+        </button>
+      </div>
+    </AuthWorkbookShell>
+  );
 }

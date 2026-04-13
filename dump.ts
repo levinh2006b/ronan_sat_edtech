@@ -1,11 +1,13 @@
-const fs = require("fs");
-const pdf = require("pdf-parse");
+import fs from "node:fs";
+import { PDFParse } from "pdf-parse";
 
 async function main() {
     const dataBuffer = fs.readFileSync("./question_bank/reading_question.pdf");
-    const data = await pdf(dataBuffer);
+    const parser = new PDFParse({ data: dataBuffer });
+    const data = await parser.getText();
 
     fs.writeFileSync("./reading_sample.txt", data.text.substring(0, 3000));
+    await parser.destroy();
     console.log("Written to reading_sample.txt");
 }
 

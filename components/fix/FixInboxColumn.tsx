@@ -25,8 +25,8 @@ export function FixInboxColumn({
 }: FixInboxColumnProps) {
   return (
     <BoardColumnShell
-      accentClass="bg-slate-200"
-      shellClass="border-slate-100/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(248,250,252,0.94)_100%)]"
+      accentClass="bg-paper-bg text-ink-fg"
+      shellClass="border-ink-fg bg-surface-white"
       widthClass="w-[375px]"
       title={<ColumnHeader icon={<Inbox className="h-4 w-4" />} title="Inbox" subtitle={`${cards.length} grouped reports`} hideDefaultMenu />}
       onDrop={onDropCard}

@@ -8,8 +8,6 @@ import {
   FIX_COLUMN_COLOR_KEYS,
   normalizeFixBoard,
   type FixBoardState,
-  type FixCard,
-  type FixColumn,
   type FixColumnColorKey,
 } from "@/lib/fixBoard";
 

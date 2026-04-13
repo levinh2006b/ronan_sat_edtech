@@ -8,6 +8,7 @@ interface DownloadPdfButtonProps {
   testId: string;
   testName?: string;
   sectionName?: string;
+  className?: string;
 }
 
 type PdfDataResponse = {
@@ -68,6 +69,7 @@ export default function DownloadPdfButton({
   testId,
   testName = "Practice Test",
   sectionName,
+  className,
 }: DownloadPdfButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -88,7 +90,7 @@ export default function DownloadPdfButton({
 
       if (!response.ok) {
         const message =
-          response.status === 401 ? "Bạn cần đăng nhập để tải PDF." : "Lỗi khi lấy dữ liệu PDF.";
+          response.status === 401 ? "You need to sign in before downloading the PDF." : "Unable to load the PDF data.";
         throw new Error(message);
       }
 
@@ -105,7 +107,7 @@ export default function DownloadPdfButton({
       const iframeWindow = iframe.contentWindow;
 
       if (!iframeWindow) {
-        throw new Error("Không thể tạo vùng in ẩn.");
+        throw new Error("Unable to create the hidden print frame.");
       }
 
       iframeWindow.document.open();
@@ -127,7 +129,7 @@ export default function DownloadPdfButton({
     } catch (error) {
       console.error("Failed to prepare print PDF", error);
       iframe?.remove();
-      window.alert(error instanceof Error ? error.message : "Đã xảy ra lỗi khi chuẩn bị PDF.");
+      window.alert(error instanceof Error ? error.message : "An error occurred while preparing the PDF.");
     } finally {
       setIsDownloading(false);
     }
@@ -138,11 +140,7 @@ export default function DownloadPdfButton({
       type="button"
       onClick={handleDownload}
       disabled={isDownloading}
-      className={`text-xs font-medium transition-colors underline ${
-        isDownloading
-          ? "cursor-not-allowed text-gray-400"
-          : "cursor-pointer text-black hover:text-blue-600 hover:no-underline"
-      }`}
+      className={`${className ?? "text-xs font-medium underline"} ${isDownloading ? "cursor-not-allowed opacity-60" : ""}`}
     >
       {isDownloading ? "Downloading..." : "Download PDF"}
     </button>

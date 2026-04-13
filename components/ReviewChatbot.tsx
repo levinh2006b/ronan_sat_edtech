@@ -16,7 +16,7 @@ interface ReviewChatbotProps {    // Props => Các thông tin cần cung cấp c
     headless?: boolean;           //  boolean để xem có ẩn tiêu đề thanh chat không
 }
 
-export default function ReviewChatbot({ questionId, questionText, headless = false }: ReviewChatbotProps) {    // Nhận dự liệu như quy định của prop
+export default function ReviewChatbot({ questionId, headless = false }: ReviewChatbotProps) {    // Nhận dự liệu như quy định của prop
     const [input, setInput] = useState("");                                    // Đang gõ gì vào ô chat
     const messagesEndRef = useRef<HTMLDivElement>(null);                       // useRef là 1 mỏ neo điều khiển 1 thẻ giao diện
     //  HTMLDivElement khai báo thẻ này là div ( của AI Chatbot trên màn hình )
@@ -69,7 +69,7 @@ export default function ReviewChatbot({ questionId, questionText, headless = fal
                 ) : messages.length === 0 ? (     // Nếu load lịch sử chat xong mà số tin nhắn = 0 (chưa chat) thì hiện 2 thẻ <p> dưới
                     <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500">
                         <Bot className="w-12 h-12 text-indigo-200 mb-3" />
-                        <p className="text-sm">I'm here to help you understand this question!</p>
+                        <p className="text-sm">I&apos;m here to help you understand this question.</p>
                         <p className="text-xs mt-2 text-slate-400">Ask me anything about the concepts</p>
                     </div>
                 ) : (     // Nếu đã có tin nhắn thì dùng loop đi qua mảng messages vẽ ra từng tin nhắn

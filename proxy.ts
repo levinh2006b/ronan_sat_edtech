@@ -1,6 +1,5 @@
 import { withAuth } from "next-auth/middleware";
 import type { NextAuthMiddlewareOptions } from "next-auth/middleware";
-import type { NextRequest } from "next/server";
 
 const authOptions: NextAuthMiddlewareOptions = {
   callbacks: {
@@ -21,7 +20,7 @@ const authOptions: NextAuthMiddlewareOptions = {
 };
 
 export default withAuth(
-  function proxy(_req: NextRequest) {
+  function proxy() {
     return;
   },
   authOptions

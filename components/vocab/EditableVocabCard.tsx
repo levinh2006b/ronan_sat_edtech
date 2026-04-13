@@ -29,7 +29,7 @@ export function EditableVocabCard({
     <article
       draggable={!isEditing}
       onDragStart={() => onDragStart(card.id)}
-      className="group rounded-[16px] border border-white/90 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-3.5 py-3 text-slate-800 shadow-[0_10px_24px_rgba(148,163,184,0.14)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_26px_rgba(148,163,184,0.18)]"
+      className="group rounded-[16px] border-2 border-ink-fg bg-surface-white px-3.5 py-3 text-ink-fg brutal-shadow-sm transition workbook-press"
     >
       <div className="flex items-start gap-2.5">
         <div className="min-w-0 flex-1">
@@ -49,10 +49,10 @@ export function EditableVocabCard({
                   onCancel();
                 }
               }}
-              className="min-h-[84px] w-full resize-none rounded-[12px] border border-slate-200 bg-white px-3 py-2 text-[15px] leading-6 tracking-[-0.01em] text-slate-900 outline-none focus:border-sky-400"
+              className="min-h-[84px] w-full resize-none rounded-[12px] border-2 border-ink-fg bg-white px-3 py-2 text-[15px] leading-6 tracking-[-0.01em] text-ink-fg outline-none"
             />
           ) : (
-            <button type="button" onClick={onEdit} className="block w-full text-left text-[15px] leading-6 tracking-[-0.01em] text-slate-800">
+            <button type="button" onClick={onEdit} className="block w-full text-left text-[15px] leading-6 tracking-[-0.01em] text-ink-fg">
               {card.text}
             </button>
           )}
@@ -63,7 +63,7 @@ export function EditableVocabCard({
             type="button"
             onClick={onRemove}
             title="Mark as complete"
-            className="rounded-full p-0.5 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:text-sky-500"
+            className="rounded-full border-2 border-ink-fg bg-paper-bg p-0.5 text-ink-fg opacity-0 transition group-hover:opacity-100"
           >
             <CheckCircle2 className="h-4.5 w-4.5" />
           </button>

@@ -1,236 +1,205 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
-import { X, Sparkles, Calculator, BookOpen, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
-import DesmosCalculator from "@/components/DesmosCalculator";
-import { ReportErrorButton } from "@/components/report/ReportErrorButton";
-import ReviewChatbot from "@/components/ReviewChatbot";
-import "katex/dist/katex.min.css";
+import { AlertCircle, BookOpen, Calculator, ChevronDown, ChevronUp, Sparkles, X } from "lucide-react";
 import Latex from "react-latex-next";
-import type { ReviewAnswer } from "@/types/review";
-import SelectableTextPanel, { TextAnnotation } from "@/components/test/SelectableTextPanel";
+import "katex/dist/katex.min.css";
 
-// Import các component con đã được tách
+import DesmosCalculator from "@/components/DesmosCalculator";
+import ReviewChatbot from "@/components/ReviewChatbot";
+import { ReportErrorButton } from "@/components/report/ReportErrorButton";
 import PassageColumn from "@/components/review/PassageCollumn";
 import AnswerDetails from "@/components/review/AnswerDetails";
+import SelectableTextPanel, { type TextAnnotation } from "@/components/test/SelectableTextPanel";
+import type { ReviewAnswer } from "@/types/review";
 
 interface ReviewPopupProps {
-    ans: ReviewAnswer;
-    onClose: () => void;
-    expandedExplanation: string | undefined;
-    loadingExplanation: boolean;
-    onExpandExplanation: (qId: string) => void;
-    reportContext?: {
-        testId: string;
-        questionId: string;
-        section: string;
-        module: number;
-        questionNumber: number;
-        source: "test" | "review";
-    };
+  ans: ReviewAnswer;
+  onClose: () => void;
+  expandedExplanation: string | undefined;
+  loadingExplanation: boolean;
+  onExpandExplanation: (qId: string) => void;
+  reportContext?: {
+    testId: string;
+    questionId: string;
+    section: string;
+    module: number;
+    questionNumber: number;
+    source: "test" | "review";
+  };
 }
 
-export default function ReviewPopup({ ans, onClose, expandedExplanation, loadingExplanation, onExpandExplanation, reportContext }: ReviewPopupProps) {
-    const q = ans?.questionId;
+export default function ReviewPopup({
+  ans,
+  onClose,
+  expandedExplanation,
+  loadingExplanation,
+  onExpandExplanation,
+  reportContext,
+}: ReviewPopupProps) {
+  const q = ans?.questionId;
 
-    const [showCalculator, setShowCalculator] = useState(false);
-    const [showAI, setShowAI] = useState(false);
-    const [isExplanationVisible, setIsExplanationVisible] = useState(false);
-    const [annotations, setAnnotations] = useState<TextAnnotation[]>([]);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [showAI, setShowAI] = useState(false);
+  const [isExplanationVisible, setIsExplanationVisible] = useState(false);
+  const [annotations, setAnnotations] = useState<TextAnnotation[]>([]);
 
-    if (!q) {
-        return (
-            <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
-                <div className="bg-white rounded-2xl p-8 shadow-2xl text-center max-w-sm">
-                    <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-                    <p className="text-slate-800 font-bold text-base">Question data is missing or corrupted.</p>
-                    <button onClick={onClose} className="mt-4 px-6 py-2 bg-slate-900 text-white hover:bg-slate-700 rounded-lg font-medium transition text-sm">Close</button>
-                </div>
-            </div>
-        );
+  if (!q) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-fg/20 p-4">
+        <div className="workbook-modal-card max-w-sm p-8 text-center text-ink-fg">
+          <AlertCircle className="mx-auto mb-3 h-10 w-10 text-accent-3" />
+          <p className="font-display text-3xl font-black uppercase tracking-tight">Question data is missing.</p>
+          <button onClick={onClose} className="workbook-button mt-5" type="button">
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const isMath =
+    q?.subject?.toLowerCase() === "math" ||
+    q?.domain?.toLowerCase()?.includes("math") ||
+    q?.section?.toLowerCase()?.includes("math");
+
+  const handleToggleExplanation = () => {
+    if (!isExplanationVisible && !expandedExplanation) {
+      onExpandExplanation(q._id);
     }
-
-    const isMath = q?.subject?.toLowerCase() === "math" || q?.domain?.toLowerCase()?.includes("math") || q?.section?.toLowerCase()?.includes("math");
-
-    const handleToggleExplanation = () => {
-        if (!isExplanationVisible && !expandedExplanation) {
-            onExpandExplanation(q._id);
-        }
-        setIsExplanationVisible(!isExplanationVisible);
-    };
+    setIsExplanationVisible((current) => !current);
+  };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#f5f7fa] flex flex-col">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-paper-bg">
+      <DesmosCalculator isOpen={showCalculator} onClose={() => setShowCalculator(false)} />
 
-        <DesmosCalculator isOpen={showCalculator} onClose={() => setShowCalculator(false)} />
+      <header className="flex h-20 shrink-0 items-center justify-between border-b-4 border-ink-fg bg-surface-white px-4 sm:px-6">
+        <div className="min-w-0">
+          <div className="workbook-sticker bg-primary text-ink-fg">Review Question</div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {q.domain ? <span className="workbook-sticker bg-paper-bg text-ink-fg">{q.domain}</span> : null}
+            {q.skill ? <span className="workbook-sticker bg-accent-1 text-ink-fg">{q.skill}</span> : null}
+          </div>
+        </div>
 
-        {/* ── Header ── */}
-        <header className="h-16 bg-white border-b-2 border-[#1a4080] flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
-            {/* Left */}
-            <div className="flex items-center gap-3">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-md bg-[#1a4080]">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <rect x="1" y="2" width="14" height="2" rx="1" fill="white"/>
-                            <rect x="1" y="7" width="9" height="2" rx="1" fill="white"/>
-                            <rect x="1" y="12" width="11" height="2" rx="1" fill="white"/>
-                        </svg>
-                    </div>
-                    <span className="font-bold text-[#1a4080] text-sm tracking-wide uppercase letter-spacing-widest">Review Question</span>
+        <div className="flex items-center gap-2">
+          {isMath ? (
+            <button
+              onClick={() => setShowCalculator((current) => !current)}
+              title="Open Desmos Calculator"
+              className={`rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press ${showCalculator ? "bg-accent-2 text-white" : "bg-surface-white text-ink-fg"}`}
+              type="button"
+            >
+              <span className="flex items-center gap-1.5">
+                <Calculator className="h-4 w-4" />
+                Calc
+              </span>
+            </button>
+          ) : null}
+
+          {reportContext ? <ReportErrorButton context={reportContext} /> : null}
+
+          <button
+            onClick={handleToggleExplanation}
+            className={`rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press ${isExplanationVisible ? "bg-primary text-ink-fg" : "bg-surface-white text-ink-fg"}`}
+            type="button"
+          >
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="h-4 w-4" />
+              {loadingExplanation ? "Loading..." : "Explanation"}
+              {isExplanationVisible ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setShowAI((current) => !current)}
+            className={`rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press ${showAI ? "bg-accent-1 text-ink-fg" : "bg-surface-white text-ink-fg"}`}
+            type="button"
+          >
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="h-4 w-4" />
+              AI Tutor
+            </span>
+          </button>
+
+          <button onClick={onClose} className="workbook-button workbook-button-secondary" type="button">
+            <X className="h-4 w-4" />
+            Close
+          </button>
+        </div>
+      </header>
+
+      <SelectableTextPanel
+        annotations={annotations}
+        onChange={setAnnotations}
+        sourceQuestionId={q._id}
+        className="relative flex flex-1 overflow-hidden"
+      >
+        <div className="flex h-full flex-1 overflow-hidden">
+          <PassageColumn q={q} />
+
+          <div className={`${q.passage ? "w-1/2" : "mx-auto w-full max-w-4xl"} h-full overflow-y-auto bg-paper-bg`}>
+            <div className="flex flex-col gap-5 p-6 lg:p-8">
+              {!q.passage && q.imageUrl ? (
+                <div className="flex justify-center rounded-2xl border-2 border-ink-fg bg-surface-white p-4 brutal-shadow-sm">
+                  <Image src={q.imageUrl} alt="Reference" width={1200} height={800} unoptimized className="max-h-[320px] max-w-full rounded-lg object-contain" />
                 </div>
-                <div className="hidden sm:flex items-center gap-1.5 flex-nowrap flex-shrink min-w-0">
-                    {q.domain && (
-                        <span className="text-[10px] sm:text-[11px] bg-[#e8eef7] text-[#1a4080] px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-[#c2d0e8] font-bold uppercase tracking-wider whitespace-nowrap truncate shrink min-w-0 block">
-                            {q.domain}
-                        </span>
+              ) : null}
+
+              <div className="workbook-panel overflow-hidden">
+                <div className="border-b-4 border-ink-fg bg-paper-bg px-6 py-5">
+                  <div className="workbook-sticker bg-primary text-ink-fg">Question</div>
+                  <p className="mt-4 text-[17.5px] leading-[1.7] text-ink-fg font-[Georgia,serif]">
+                    <Latex>{q.questionText || ""}</Latex>
+                  </p>
+                </div>
+              </div>
+
+              <AnswerDetails q={q} ans={ans} />
+
+              {isExplanationVisible ? (
+                <div className="workbook-panel overflow-hidden">
+                  <div className="border-b-4 border-ink-fg bg-paper-bg px-5 py-4">
+                    <div className="workbook-sticker bg-accent-1 text-ink-fg">Explanation</div>
+                  </div>
+                  <div className="p-6">
+                    {expandedExplanation ? (
+                      <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink-fg">
+                        <Latex>{expandedExplanation || ""}</Latex>
+                      </p>
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm text-ink-fg/70">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-ink-fg/20 border-t-ink-fg" />
+                        Loading explanation...
+                      </div>
                     )}
-                    {q.skill && (
-                        <span className="text-[10px] sm:text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md border border-indigo-200 font-bold uppercase tracking-wider whitespace-nowrap truncate shrink min-w-0 block">
-                            {q.skill}
-                        </span>
-                    )}
+                  </div>
                 </div>
-                </div>
-
-            {/* Right */}
-            <div className="flex items-center gap-2">
-                {isMath && (
-                    <button
-                        onClick={() => setShowCalculator(!showCalculator)}
-                        title="Open Desmos Calculator"
-                        className={`flex items-center justify-center w-8 h-8 rounded-full transition-all border shadow-sm ${
-                            showCalculator
-                                ? "bg-[#1a4080] text-white border-[#1a4080]"
-                                : "bg-white text-slate-500 hover:text-[#1a4080] hover:bg-blue-50 border-[#c2d0e8] hover:border-[#1a4080]"
-                        }`}
-                    >
-                        <Calculator className="w-4 h-4" />
-                    </button>
-                )}
-                {reportContext ? <ReportErrorButton context={reportContext} /> : null}
-                <button
-                    onClick={handleToggleExplanation}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all border ${
-                        isExplanationVisible
-                            ? "bg-[#1a4080] text-white border-[#1a4080] shadow-md"
-                            : "bg-white text-[#1a4080] hover:bg-[#e8eef7] border-[#c2d0e8]"
-                    }`}
-                >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    {loadingExplanation ? "Loading..." : "Explanation"}
-                    {isExplanationVisible ? <ChevronUp className="w-3 h-3 ml-0.5" /> : <ChevronDown className="w-3 h-3 ml-0.5" />}
-                </button>
-
-                <button
-                    onClick={() => setShowAI(!showAI)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all border ${
-                        showAI
-                            ? "bg-[#4338ca] text-white border-[#4338ca] shadow-md"
-                            : "bg-white text-[#4338ca] hover:bg-[#ede9fe] border-[#c4b5fd]"
-                    }`}
-                >
-                    <Sparkles className="w-3.5 h-3.5" /> Ask AI Tutor
-                </button>
-
-                <div className="w-px h-5 bg-[#c2d0e8] mx-1" />
-
-                <button
-                    onClick={onClose}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-[#64748b] hover:text-red-600 rounded-md text-xs font-semibold transition-all border border-[#c2d0e8] hover:border-red-300"
-                >
-                    <X className="w-3.5 h-3.5" /> Close
-                </button>
+              ) : null}
             </div>
-        </header>
+          </div>
+        </div>
 
-        {/* ── Body ── */}
-        <SelectableTextPanel 
-            annotations={annotations} 
-            onChange={setAnnotations} 
-            sourceQuestionId={q._id}
-            className="flex-1 overflow-hidden flex relative"
-        >
-            <div className="flex-1 flex h-full overflow-hidden">
-
-                {/* ── Passage column ── */}
-                <PassageColumn q={q} />
-
-                {/* ── Question + Choices column ── */}
-                <div className={`${q.passage ? "w-1/2" : "w-full max-w-3xl mx-auto"} h-full overflow-y-auto bg-[#f5f7fa]`}>
-                    <div className="p-8 lg:p-10 flex flex-col gap-5">
-
-                        {/* Image (no passage case) */}
-                        {!q.passage && q.imageUrl && (
-                            <div className="flex justify-center bg-white p-4 rounded-xl border border-[#dde5f0] shadow-sm">
-                                <img src={q.imageUrl} alt="Reference" className="max-w-full max-h-[320px] object-contain rounded-lg" />
-                            </div>
-                        )}
-
-                        {/* Question text card */}
-                        <div className="bg-white rounded-xl border border-[#dde5f0] shadow-sm p-6">
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="w-1 h-5 bg-[#1a4080] rounded-full" />
-                                <span className="text-[10px] font-bold text-[#1a4080] uppercase tracking-[0.15em]">Question</span>
-                            </div>
-                            <p className="text-[17.5px] text-[#1a2540] leading-[1.7] font-[Georgia,serif]">
-                                <Latex>{q.questionText || ""}</Latex>
-                            </p>
-                        </div>
-
-                        {/* Answer section (Tách thành file riêng) */}
-                        <AnswerDetails q={q} ans={ans} />
-
-                        {/* Explanation panel */}
-                        {isExplanationVisible && (
-                            <div className="bg-white rounded-xl border border-[#c2d0e8] shadow-sm overflow-hidden">
-                                <div className="flex items-center gap-2.5 px-5 py-3.5 bg-[#1a4080] border-b border-[#15336a]">
-                                    <BookOpen className="w-4 h-4 text-blue-200" />
-                                    <span className="font-bold text-sm text-white tracking-wide">Explanation</span>
-                                </div>
-                                <div className="p-6">
-                                    {expandedExplanation ? (
-                                        <p className="text-[#334155] leading-relaxed text-[15px] whitespace-pre-wrap">
-                                            <Latex>{expandedExplanation || ""}</Latex>
-                                        </p>
-                                    ) : (
-                                        <div className="flex items-center gap-2 text-[#94a3b8] text-sm">
-                                            <div className="w-4 h-4 border-2 border-[#dde5f0] border-t-[#1a4080] rounded-full animate-spin" />
-                                            Loading explanation...
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
+        {showAI ? (
+          <div className="z-20 flex w-[420px] shrink-0 flex-col border-l-4 border-ink-fg bg-surface-white">
+            <div className="flex items-center justify-between border-b-4 border-ink-fg bg-paper-bg px-4 py-4">
+              <div>
+                <div className="workbook-sticker bg-accent-1 text-ink-fg">AI Study Tutor</div>
+                <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Powered by Gemini</p>
+              </div>
+              <button onClick={() => setShowAI(false)} className="workbook-button workbook-button-secondary" type="button">
+                <X className="h-4 w-4" />
+                Close
+              </button>
             </div>
-
-            {/* ── AI Tutor panel ── */}
-            {showAI && (
-                <div className="w-[420px] border-l border-[#dde5f0] bg-white flex flex-col shrink-0 shadow-2xl z-20">
-                    <div className="bg-[#4338ca] px-4 py-3 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-2.5">
-                            <div className="p-1.5 bg-[#4f46e5] rounded-lg">
-                                <Sparkles className="w-4 h-4 text-indigo-200" />
-                            </div>
-                            <div>
-                                <p className="font-bold text-white text-sm">AI Study Tutor</p>
-                                <p className="text-xs text-indigo-300">Powered by Gemini</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => setShowAI(false)}
-                            className="p-1.5 hover:bg-[#4f46e5] rounded-lg transition"
-                        >
-                            <X className="w-4 h-4 text-indigo-200" />
-                        </button>
-                    </div>
-                    <div className="flex-1 overflow-hidden relative bg-[#f5f7fa]">
-                        <ReviewChatbot questionId={q._id} questionText={q.questionText || ""} headless />
-                    </div>
-                </div>
-            )}
-        </SelectableTextPanel>
+            <div className="relative flex-1 overflow-hidden bg-paper-bg">
+              <ReviewChatbot questionId={q._id} questionText={q.questionText || ""} headless />
+            </div>
+          </div>
+        ) : null}
+      </SelectableTextPanel>
     </div>
-);
+  );
 }

@@ -11,6 +11,11 @@ type CreateTestFormState = {
   title: string;
 };
 
+const panelHeaderClassName =
+  "flex items-center gap-3 border-b-4 border-ink-fg bg-paper-bg px-5 py-4 text-ink-fg";
+
+const fieldLabelClassName = "mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70";
+
 export default function CreateTestForm({ onSuccess }: { onSuccess: () => void }) {
   const [testForm, setTestForm] = useState<CreateTestFormState>({
     title: "",
@@ -45,18 +50,26 @@ export default function CreateTestForm({ onSuccess }: { onSuccess: () => void })
   };
 
   return (
-    <div className="lg:col-span-1 space-y-8">
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="p-5 border-b border-slate-200 bg-slate-100 flex items-center gap-2 text-slate-800 font-bold">
-          <FileText className="w-5 h-5 text-blue-600" />
-          Step 1: Create Test
+    <div className="space-y-8 lg:col-span-1">
+      <div className="workbook-panel overflow-hidden">
+        <div className={panelHeaderClassName}>
+          <span className="workbook-sticker bg-primary text-ink-fg">
+            <FileText className="h-4 w-4" />
+            Step 1
+          </span>
+          <div>
+            <h2 className="font-display text-2xl font-black uppercase tracking-tight">Create Test</h2>
+            <p className="text-sm text-ink-fg/70">Start a new SAT workbook with the default section structure.</p>
+          </div>
         </div>
 
         <form className="p-5 space-y-5" onSubmit={handleCreateTest}>
           {testMessage && (
             <div
-              className={`p-3 rounded-lg font-medium text-sm ${
-                testMessage.includes("success") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+              className={`rounded-2xl border-2 px-4 py-3 text-sm font-bold brutal-shadow-sm ${
+                testMessage.includes("success")
+                  ? "border-ink-fg bg-primary text-ink-fg"
+                  : "border-ink-fg bg-accent-3 text-white"
               }`}
             >
               {testMessage}
@@ -64,22 +77,23 @@ export default function CreateTestForm({ onSuccess }: { onSuccess: () => void })
           )}
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Test Title</label>
+            <label className={fieldLabelClassName}>Test Title</label>
             <input
               type="text"
               required
               value={testForm.title}
               onChange={(event) => setTestForm({ title: event.target.value })}
               placeholder="e.g. Official Practice Test 1"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white text-slate-900"
+              className="workbook-input text-sm"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg flex justify-center items-center gap-2 font-medium text-sm"
+            className="workbook-button workbook-press w-full text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Plus className="w-4 h-4" /> Create Test
+            <Plus className="h-4 w-4" />
+            Create Test
           </button>
         </form>
       </div>

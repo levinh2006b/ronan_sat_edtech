@@ -169,7 +169,7 @@ function getVisibleLabelIndexes(length: number) {
 
 function ChartEmptyState({ message }: { message: string }) {
   return (
-    <div className="flex h-[20rem] items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+    <div className="flex h-[20rem] items-center justify-center rounded-3xl border-2 border-dashed border-ink-fg bg-paper-bg text-sm text-ink-fg/70">
       {message}
     </div>
   );
@@ -222,11 +222,11 @@ function ScoreHistoryChart({
   }
 
   return (
-    <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
+    <div className="rounded-3xl border-2 border-ink-fg bg-paper-bg p-4 brutal-shadow-sm">
       <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div className="grid gap-3 md:grid-cols-2 xl:max-w-3xl xl:flex-1">
-          <div className="rounded-2xl border border-slate-200 bg-white p-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Display Score</p>
+          <div className="rounded-2xl border-2 border-ink-fg bg-surface-white p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-ink-fg/70">Display Score</p>
             <div className="flex flex-wrap gap-2">
               {SCORE_OPTIONS.map((option) => {
                 const active = option.key === selectedMetric;
@@ -236,7 +236,7 @@ function ScoreHistoryChart({
                     type="button"
                     onClick={() => onSelectMetric(option.key)}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      active ? "text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                      active ? "text-white shadow-sm" : "bg-paper-bg text-ink-fg"
                     }`}
                     style={active ? { backgroundColor: option.color } : undefined}
                   >
@@ -247,8 +247,8 @@ function ScoreHistoryChart({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Time Range</p>
+          <div className="rounded-2xl border-2 border-ink-fg bg-surface-white p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-ink-fg/70">Time Range</p>
             <div className="flex flex-wrap gap-2">
               {TREND_WINDOW_OPTIONS.map((option) => {
                 const active = option === selectedWindow;
@@ -258,7 +258,7 @@ function ScoreHistoryChart({
                     type="button"
                     onClick={() => onSelectWindow(option)}
                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      active ? "bg-slate-900 text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                      active ? "bg-ink-fg text-white shadow-sm" : "bg-paper-bg text-ink-fg"
                     }`}
                   >
                     {option} days
@@ -269,7 +269,7 @@ function ScoreHistoryChart({
           </div>
         </div>
 
-        <div className="text-sm text-slate-500">{scoreRange.label}</div>
+        <div className="text-sm text-ink-fg/70">{scoreRange.label}</div>
       </div>
 
       <div ref={scrollContainerRef} className="overflow-x-auto pb-2">
@@ -353,7 +353,7 @@ function DailyTestsChart({
   }
 
   return (
-    <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
+    <div className="rounded-3xl border-2 border-ink-fg bg-paper-bg p-4 brutal-shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {TREND_WINDOW_OPTIONS.map((option) => {
@@ -364,7 +364,7 @@ function DailyTestsChart({
                 type="button"
                 onClick={() => onSelectWindow(option)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  active ? "bg-slate-900 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-100"
+                  active ? "bg-ink-fg text-white shadow-sm" : "bg-surface-white text-ink-fg"
                 }`}
               >
                 {option} days
@@ -372,7 +372,7 @@ function DailyTestsChart({
             );
           })}
         </div>
-        <div className="text-sm text-slate-500">Tests completed per day</div>
+        <div className="text-sm text-ink-fg/70">Tests completed per day</div>
       </div>
 
       <div ref={scrollContainerRef} className="overflow-x-auto pb-2">
@@ -466,14 +466,14 @@ function TimeSpentChart({
   }
 
   return (
-    <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
+    <div className="rounded-3xl border-2 border-ink-fg bg-paper-bg p-4 brutal-shadow-sm">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="text-sm text-slate-500">Minutes spent per day</div>
-          <div className="mt-2 text-3xl font-bold text-slate-900">{formatMinutes(selectedTotalMinutes)}</div>
-          <div className="mt-1 text-sm text-slate-500">{`Total in the last ${selectedWindow} days`}</div>
+          <div className="text-sm text-ink-fg/70">Minutes spent per day</div>
+          <div className="mt-2 font-display text-3xl font-black text-ink-fg">{formatMinutes(selectedTotalMinutes)}</div>
+          <div className="mt-1 text-sm text-ink-fg/70">{`Total in the last ${selectedWindow} days`}</div>
         </div>
-        <div className="rounded-2xl bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm">
+        <div className="workbook-sticker bg-surface-white text-ink-fg">
           Daily study time
         </div>
       </div>
@@ -534,7 +534,7 @@ function TimeSpentChart({
               type="button"
               onClick={() => onSelectWindow(option)}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                active ? "bg-slate-900 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-100"
+                active ? "bg-ink-fg text-white shadow-sm" : "bg-surface-white text-ink-fg"
               }`}
             >
               {option} days
@@ -560,14 +560,14 @@ function StatCard({
   accentClass: string;
 }) {
   return (
-    <div className="h-fit min-w-[14rem] flex-1 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="h-fit min-w-[14rem] flex-1 rounded-3xl border-2 border-ink-fg bg-surface-white p-5 brutal-shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-slate-500">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
-          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+          <p className="text-sm text-ink-fg/70">{title}</p>
+          <p className="mt-2 font-display text-3xl font-black text-ink-fg">{value}</p>
+          <p className="mt-1 text-sm text-ink-fg/70">{subtitle}</p>
         </div>
-        <div className={`rounded-2xl p-3 ${accentClass}`}>{icon}</div>
+        <div className={`rounded-2xl border-2 border-ink-fg p-3 brutal-shadow-sm ${accentClass}`}>{icon}</div>
       </div>
     </div>
   );
@@ -690,7 +690,7 @@ export default function ParentDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#e0f2fe,_#f8fafc_35%,_#ffffff_75%)] px-6 py-8">
+      <div className="min-h-screen bg-paper-bg px-6 py-8">
         <div className="mx-auto max-w-7xl">
           <DashboardSkeleton />
         </div>
@@ -700,13 +700,13 @@ export default function ParentDashboardPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 px-6 py-10">
-        <div className="mx-auto max-w-3xl rounded-3xl border border-red-200 bg-white p-10 text-center shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">Unable to load the Dashboard</h1>
-          <p className="mt-3 text-slate-600">{error}</p>
+      <div className="min-h-screen bg-paper-bg px-6 py-10">
+        <div className="workbook-panel mx-auto max-w-3xl bg-surface-white p-10 text-center">
+          <h1 className="font-display text-3xl font-black uppercase tracking-tight text-ink-fg">Unable to load the dashboard</h1>
+          <p className="mt-3 text-ink-fg/70">{error}</p>
           <Link
             href="/dashboard"
-            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 font-medium text-white transition hover:bg-slate-800"
+            className="workbook-button mt-6 inline-flex items-center gap-2"
           >
             Retry Dashboard
             <ArrowRight className="h-4 w-4" />
@@ -718,20 +718,20 @@ export default function ParentDashboardPage() {
 
   if (!data?.hasChildren) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#dbeafe,_#f8fafc_40%,_#ffffff_78%)] px-6 py-10">
-        <div className="mx-auto max-w-4xl rounded-[2rem] border border-slate-200/70 bg-white/90 p-10 shadow-xl shadow-slate-200/50 backdrop-blur">
+      <div className="min-h-screen bg-paper-bg px-6 py-10">
+        <div className="workbook-panel mx-auto max-w-4xl p-10">
           <div className="mx-auto max-w-2xl text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-ink-fg bg-primary text-ink-fg brutal-shadow-sm">
               <Users className="h-8 w-8" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-            <p className="mt-4 text-base leading-7 text-slate-600">
+            <h1 className="font-display text-4xl font-black uppercase tracking-tight text-ink-fg">Parent Dashboard</h1>
+            <p className="mt-4 text-base leading-7 text-ink-fg/70">
               You have not linked a child account yet. Link your child&apos;s account to see scores, study
               activity, and recent test history.
             </p>
             <Link
               href="/auth/parent"
-              className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-5 py-3 font-semibold text-white transition hover:bg-sky-700"
+              className="workbook-button mt-8 inline-flex items-center gap-2"
             >
               Link a Child Account
               <ArrowRight className="h-4 w-4" />
@@ -743,29 +743,29 @@ export default function ParentDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,_#f8fbff_0%,_#ffffff_38%,_#f8fafc_100%)] text-slate-900">
-      <header className="border-b border-slate-200/80 bg-white/85 backdrop-blur">
+    <div className="min-h-screen bg-paper-bg text-ink-fg">
+      <header className="border-b-4 border-ink-fg bg-surface-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Dashboard</p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight">
+            <div className="workbook-sticker bg-primary text-ink-fg">Parent Dashboard</div>
+            <h1 className="mt-4 font-display text-4xl font-black uppercase tracking-tight">
               {data.child?.name ? `${data.child.name}'s Progress Dashboard` : "Student Progress Dashboard"}
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-fg/70">
               Track score progress, study consistency, test volume, and recent performance without digging through multiple pages.
             </p>
-            <p className="mt-1 text-sm text-slate-400">{data.child?.email}</p>
+            <p className="mt-1 text-sm text-ink-fg/60">{data.child?.email}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 md:min-w-[300px]">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Last Active</div>
-              <div className="mt-2 text-sm font-semibold text-slate-900">
+            <div className="rounded-2xl border-2 border-ink-fg bg-paper-bg px-4 py-3 brutal-shadow-sm">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-fg/70">Last Active</div>
+              <div className="mt-2 text-sm font-semibold text-ink-fg">
                 {data.overview.lastActiveAt ? new Date(data.overview.lastActiveAt).toLocaleDateString() : "No activity yet"}
               </div>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Study Time</div>
-              <div className="mt-2 text-sm font-semibold text-slate-900">
+            <div className="rounded-2xl border-2 border-ink-fg bg-paper-bg px-4 py-3 brutal-shadow-sm">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-fg/70">Study Time</div>
+              <div className="mt-2 text-sm font-semibold text-ink-fg">
                 {formatMinutes(data.timeSpentByWindow[String(selectedTimeWindow)] ?? 0)}
               </div>
             </div>
@@ -789,27 +789,27 @@ export default function ParentDashboardPage() {
             icon={<Activity className="h-5 w-5 text-emerald-700" />}
             accentClass="bg-emerald-100"
           />
-          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="workbook-panel p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">Activity Last 30 Days</h2>
-                <p className="mt-1 text-sm text-slate-500">A quick view of recent study consistency.</p>
+                <h2 className="text-lg font-semibold text-ink-fg">Activity Last 30 Days</h2>
+                <p className="mt-1 text-sm text-ink-fg/70">A quick view of recent study consistency.</p>
               </div>
-              <div className="rounded-2xl bg-sky-100 p-3">
-                <CalendarRange className="h-5 w-5 text-sky-700" />
+              <div className="rounded-2xl border-2 border-ink-fg bg-primary p-3 brutal-shadow-sm">
+                <CalendarRange className="h-5 w-5 text-ink-fg" />
               </div>
             </div>
-            <div className="mt-4 rounded-3xl border border-slate-100 bg-slate-50/80 px-4 py-5">
+            <div className="mt-4 rounded-3xl border-2 border-ink-fg bg-paper-bg px-4 py-5">
               <ActivityHeatmap results={heatmapResults} />
             </div>
           </div>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)]">
-          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="workbook-panel p-6">
             <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">Score History</h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <h2 className="text-lg font-semibold text-ink-fg">Score History</h2>
+              <p className="mt-1 text-sm text-ink-fg/70">
                 Switch between Reading and Writing, Math, and Total, then focus on the last 7, 15, or 30 days.
               </p>
             </div>
@@ -822,10 +822,10 @@ export default function ParentDashboardPage() {
             />
           </div>
 
-          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="workbook-panel p-6">
             <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">Time Spent Trend</h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <h2 className="text-lg font-semibold text-ink-fg">Time Spent Trend</h2>
+              <p className="mt-1 text-sm text-ink-fg/70">
                 See how much time the student spends by day, then switch the summary window below.
               </p>
             </div>
@@ -839,10 +839,10 @@ export default function ParentDashboardPage() {
         </section>
 
         <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="workbook-panel p-6">
             <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">Test Volume Trend</h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <h2 className="text-lg font-semibold text-ink-fg">Test Volume Trend</h2>
+              <p className="mt-1 text-sm text-ink-fg/70">
                 Review how the number of tests completed changes day by day across 7, 15, or 30 days.
               </p>
             </div>
@@ -853,28 +853,28 @@ export default function ParentDashboardPage() {
             />
           </div>
 
-          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="workbook-panel p-6">
             {leaderboardLoading ? <LeaderboardTableSkeleton /> : <LeaderboardTable leaderboard={leaderboard} />}
           </div>
         </section>
 
-        <section className="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="workbook-panel mt-6 p-6">
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Recent Test History</h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <h2 className="text-lg font-semibold text-ink-fg">Recent Test History</h2>
+              <p className="mt-1 text-sm text-ink-fg/70">
                 Showing 10 tests per page with date, time, section scores, and total score.
               </p>
             </div>
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-ink-fg/70">
               Page {currentPage} of {totalPages}
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
+          <div className="workbook-table overflow-x-auto">
+            <table className="min-w-full">
               <thead>
-                <tr className="text-left text-sm font-semibold text-slate-600">
+                <tr className="text-left text-sm font-semibold text-ink-fg">
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Time</th>
                   <th className="px-4 py-3">Test</th>
@@ -883,21 +883,21 @@ export default function ParentDashboardPage() {
                   <th className="px-4 py-3">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {paginatedTests.length > 0 ? (
                   paginatedTests.map((item) => (
-                    <tr key={item.id} className="text-sm text-slate-700">
+                    <tr key={item.id} className="text-sm text-ink-fg">
                       <td className="px-4 py-4 whitespace-nowrap">{item.dateLabel}</td>
                       <td className="px-4 py-4 whitespace-nowrap">{item.timeLabel}</td>
-                      <td className="px-4 py-4 font-medium text-slate-900">{item.testName}</td>
+                      <td className="px-4 py-4 font-medium text-ink-fg">{item.testName}</td>
                       <td className="px-4 py-4">{item.readingWritingScore}</td>
                       <td className="px-4 py-4">{item.mathScore}</td>
-                      <td className="px-4 py-4 font-semibold text-slate-900">{item.totalScore}</td>
+                      <td className="px-4 py-4 font-semibold text-ink-fg">{item.totalScore}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-ink-fg/70">
                       No test history yet.
                     </td>
                   </tr>
@@ -907,7 +907,7 @@ export default function ParentDashboardPage() {
           </div>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-ink-fg/70">
               {(data.recentTests.length ?? 0) > 0
                 ? `Showing ${(currentPage - 1) * TESTS_PER_PAGE + 1}-${Math.min(
                     currentPage * TESTS_PER_PAGE,
@@ -920,7 +920,7 @@ export default function ParentDashboardPage() {
                 type="button"
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                 disabled={currentPage === 1}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="workbook-button workbook-button-secondary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Previous
@@ -929,7 +929,7 @@ export default function ParentDashboardPage() {
                 type="button"
                 onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                 disabled={currentPage === totalPages}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="workbook-button workbook-button-secondary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Next
                 <ChevronRight className="h-4 w-4" />

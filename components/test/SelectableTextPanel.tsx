@@ -35,9 +35,9 @@ interface SelectableTextPanelProps {
 }
 
 const HIGHLIGHT_COLORS = [
-  { id: "yellow", value: "#fff3bf", label: "Yellow" },
-  { id: "blue", value: "#dbeafe", label: "Blue" },
-  { id: "pink", value: "#fce7f3", label: "Pink" },
+  { id: "yellow", value: "var(--color-primary)", label: "Yellow" },
+  { id: "blue", value: "color-mix(in srgb, var(--color-accent-2) 20%, white)", label: "Blue" },
+  { id: "pink", value: "color-mix(in srgb, var(--color-accent-1) 24%, white)", label: "Pink" },
 ] as const;
 
 export default function SelectableTextPanel({
@@ -277,7 +277,7 @@ export default function SelectableTextPanel({
         <div
           data-annotation-toolbar
           onMouseDown={(event) => event.preventDefault()}
-          className="fixed z-[100] flex flex-col items-center rounded-[18px] border border-slate-300 bg-white px-2.5 py-2 shadow-[0_12px_28px_rgba(15,23,42,0.14)]"
+          className="fixed z-[100] flex flex-col items-center rounded-2xl border-2 border-ink-fg bg-surface-white px-2.5 py-2 brutal-shadow-sm"
           style={{
             top: toolbar.top,
             left: toolbar.left,
@@ -288,7 +288,7 @@ export default function SelectableTextPanel({
             <button
               type="button"
               onClick={handleAddToVocab}
-              className="mb-1.5 text-[11px] font-semibold text-slate-600 underline underline-offset-2 transition hover:text-slate-900 hover:no-underline"
+              className="mb-1.5 rounded-full border-2 border-ink-fg bg-accent-1 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-fg brutal-shadow-sm workbook-press"
             >
               Add to Vocab
             </button>
@@ -305,8 +305,8 @@ export default function SelectableTextPanel({
                   title={`Highlight ${color.label}`}
                   aria-label={`Highlight ${color.label}`}
                   onClick={() => upsertAnnotation({ color: color.value })}
-                  className={`h-9 w-9 rounded-full border transition-transform hover:scale-105 ${
-                    isActive ? "border-slate-700 ring-2 ring-slate-300" : "border-slate-300"
+                  className={`h-9 w-9 rounded-full border-2 border-ink-fg transition-transform workbook-press ${
+                    isActive ? "scale-105" : ""
                   }`}
                   style={{ backgroundColor: color.value }}
                 />
@@ -318,8 +318,8 @@ export default function SelectableTextPanel({
               title="Underline"
               aria-label="Underline"
               onClick={() => upsertAnnotation({ underline: !(activeAnnotation?.underline ?? false) || !activeAnnotation })}
-              className={`flex h-9 w-9 items-center justify-center rounded-full border text-slate-700 transition-colors hover:bg-slate-100 ${
-                activeAnnotation?.underline ? "border-slate-700 bg-slate-100" : "border-slate-300"
+              className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink-fg text-ink-fg transition-colors workbook-press ${
+                activeAnnotation?.underline ? "bg-paper-bg" : "bg-surface-white"
               }`}
             >
               <UnderlineIcon />
@@ -331,7 +331,7 @@ export default function SelectableTextPanel({
               aria-label="Remove annotation"
               onClick={removeActiveAnnotation}
               disabled={!activeAnnotation}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink-fg bg-surface-white text-ink-fg transition-colors workbook-press disabled:cursor-not-allowed disabled:opacity-40"
             >
               <TrashIcon />
             </button>
@@ -355,7 +355,7 @@ function applyAnnotation(root: HTMLElement, annotation: TextAnnotation) {
   wrapper.style.textDecorationStyle = annotation.underline ? "dotted" : "solid";
   wrapper.style.textDecorationThickness = annotation.underline ? "2px" : "initial";
   wrapper.style.textUnderlineOffset = annotation.underline ? "0.24em" : "initial";
-  wrapper.style.textDecorationColor = annotation.underline ? "#475569" : "transparent";
+  wrapper.style.textDecorationColor = annotation.underline ? "var(--color-ink-fg)" : "transparent";
   wrapper.style.boxDecorationBreak = "clone";
   wrapper.style.setProperty("-webkit-box-decoration-break", "clone");
   wrapper.style.cursor = "pointer";
@@ -365,14 +365,14 @@ function applyAnnotation(root: HTMLElement, annotation: TextAnnotation) {
   wrapper.addEventListener("mouseenter", () => {
     wrapper.style.filter = "brightness(0.94)";
     if (annotation.underline) {
-      wrapper.style.textDecorationColor = "#0f172a";
+      wrapper.style.textDecorationColor = "var(--color-ink-fg)";
     }
   });
 
   wrapper.addEventListener("mouseleave", () => {
     wrapper.style.filter = "brightness(1)";
     if (annotation.underline) {
-      wrapper.style.textDecorationColor = "#475569";
+      wrapper.style.textDecorationColor = "var(--color-ink-fg)";
     }
   });
 
@@ -558,4 +558,3 @@ function TrashIcon() {
     </svg>
   );
 }
-

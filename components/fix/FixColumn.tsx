@@ -81,7 +81,7 @@ export function FixColumn({
         isDragging={isDragging}
         title={
           isEditingColumn ? (
-            <div className="rounded-[14px] bg-white/92 p-2">
+            <div className="rounded-[14px] border-2 border-ink-fg bg-surface-white p-2 brutal-shadow-sm">
               <input
                 autoFocus
                 value={editingColumnTitle}
@@ -97,7 +97,7 @@ export function FixColumn({
                     onCancelColumnEdit();
                   }
                 }}
-                className="w-full bg-transparent text-[13px] font-semibold uppercase tracking-[0.04em] text-slate-900 outline-none"
+                className="w-full bg-transparent text-[13px] font-semibold uppercase tracking-[0.04em] text-ink-fg outline-none"
               />
             </div>
           ) : (
@@ -112,14 +112,14 @@ export function FixColumn({
                       event.stopPropagation();
                       onToggleMenu(column.id);
                     }}
-                    className="rounded-full p-1 text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
+                    className="rounded-full border-2 border-ink-fg bg-surface-white p-1 text-ink-fg transition workbook-press"
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </button>
 
                   {isMenuOpen ? (
-                    <div className="absolute right-0 top-8 z-20 w-44 rounded-[16px] border border-slate-200 bg-white/96 p-2 shadow-[0_18px_44px_rgba(148,163,184,0.22)] backdrop-blur-xl">
-                      <div className="px-2 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    <div className="absolute right-0 top-10 z-20 w-44 rounded-[16px] border-2 border-ink-fg bg-surface-white p-2 brutal-shadow">
+                      <div className="px-2 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-fg/70">
                         Column Color
                       </div>
                       <div className="flex flex-wrap gap-2 px-2 pb-2">
@@ -128,8 +128,8 @@ export function FixColumn({
                             key={colorKey}
                             type="button"
                             onClick={() => onUpdateColumnColor(column.id, colorKey)}
-                            className={`h-7 w-7 rounded-full border border-white shadow-sm ${COLUMN_THEME[colorKey].accent} ${
-                              colorKey === column.colorKey ? "ring-2 ring-slate-300" : ""
+                            className={`h-7 w-7 rounded-full border-2 border-ink-fg ${COLUMN_THEME[colorKey].accent} ${
+                              colorKey === column.colorKey ? "ring-2 ring-ink-fg/35" : ""
                             }`}
                             title={`Change color ${colorKey}`}
                           />
@@ -138,7 +138,7 @@ export function FixColumn({
                       <button
                         type="button"
                         onClick={() => onRemoveColumn(column.id)}
-                        className="flex w-full items-center rounded-[12px] px-3 py-2 text-left text-[13px] font-medium text-rose-500 transition hover:bg-rose-50"
+                        className="flex w-full items-center rounded-[12px] border-2 border-transparent px-3 py-2 text-left text-[13px] font-medium text-accent-3 transition hover:border-ink-fg hover:bg-paper-bg"
                       >
                         Delete Column
                       </button>

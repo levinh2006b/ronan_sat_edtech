@@ -1,26 +1,62 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
 import { ListPlus, CheckCircle, Save, Upload, FileUp, ChevronDown } from "lucide-react";
-import { CldUploadWidget } from "next-cloudinary";
+import { CldUploadWidget, type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
-// Đã XÓA thư viện papaparse vì Javascript đọc được JSON tự nhiên
+type TestOption = {
+    _id: string;
+    title: string;
+};
 
-export default function CreateQuestionForm({ tests }: { tests: any[] }) {
-    // State cho việc chọn Bài Test
+type JsonQuestionRow = Record<string, unknown>;
+
+type QuestionPayload = {
+    testId: string;
+    section: string;
+    domain: string;
+    skill: string;
+    module: number;
+    questionType: string;
+    questionText: string;
+    explanation: string;
+    difficulty: string;
+    points: number;
+    passage?: string;
+    imageUrl?: string;
+    choices?: string[];
+    correctAnswer?: string;
+    sprAnswers?: string[];
+};
+
+function getTrimmedString(value: unknown) {
+    return typeof value === "string" ? value.trim() : "";
+}
+
+const panelHeaderClassName =
+    "flex items-center justify-between gap-4 border-b-4 border-ink-fg bg-paper-bg px-5 py-4";
+
+const fieldLabelClassName = "mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70";
+
+const workbookInputClassName = "workbook-input text-sm";
+
+const workbookSelectClassName = "workbook-input appearance-none pr-10 text-sm";
+
+const workbookTextareaClassName = "workbook-input resize-none text-sm";
+
+export default function CreateQuestionForm({ tests }: { tests: TestOption[] }) {
     const [selectedTestId, setSelectedTestId] = useState("");
     const [isTestDropdownOpen, setIsTestDropdownOpen] = useState(false);
 
-    // THAY ĐỔI: State cho việc xử lý JSON (thay vì CSV)
-    const [parsedJSONQuestions, setParsedJSONQuestions] = useState<any[]>([]); // Kho chứa tạm các câu hỏi JSON
-    const [isSavingJSON, setIsSavingJSON] = useState(false); // Trạng thái hiệu ứng xoay khi đang lưu JSON
+    const [parsedJSONQuestions, setParsedJSONQuestions] = useState<QuestionPayload[]>([]);
+    const [isSavingJSON, setIsSavingJSON] = useState(false);
 
     const [isImporting, setIsImporting] = useState(false);
-    const [importProgress, setImportProgress] = useState("");
+    const [importProgress] = useState("");
 
-    // Form tạo 1 câu hỏi thủ công
     const [questionForm, setQuestionForm] = useState({
         section: "Reading and Writing",
         module: 1,
@@ -38,7 +74,6 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
 
     const [questionMessage, setQuestionMessage] = useState("");
 
-    // Auto chọn bài test đầu tiên
     useEffect(() => {
         if (tests.length > 0 && !selectedTestId) {
             setSelectedTestId(tests[0]._id);
@@ -51,7 +86,6 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
         setQuestionForm({ ...questionForm, choices: newChoices });
     };
 
-    // THAY ĐỔI: Hàm xử lý file tải lên - CHỈ ĐỌC JSON
    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedTestId) return;
@@ -61,12 +95,11 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
     
     reader.onload = (event) => {
         try {
-            const rows = JSON.parse(event.target?.result as string);
-            const validQuestions = rows.map((row :any) => {
-                const type = (row.questionType || "multiple_choice").trim();
+            const rows = JSON.parse(event.target?.result as string) as JsonQuestionRow[];
+            const validQuestions = rows.map((row) => {
+                const type = String(row.questionType || "multiple_choice").trim();
                 
-                // Khởi tạo payload cơ bản
-                const payload: any = {
+                const payload: QuestionPayload = {
                     testId: selectedTestId,
                     section: String(row.section || "Reading and Writing").trim(),
                     domain: String(row.domain || "").trim(),
@@ -79,12 +112,12 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                     points: Number(row.points) || 10,
                 };
 
-                // Thêm các trường optional nếu có dữ liệu
-                if (row.passage?.trim()) payload.passage = row.passage.trim();
-                if (row.imageUrl?.trim()) payload.imageUrl = row.imageUrl.trim();
+                const passage = getTrimmedString(row.passage);
+                const imageUrl = getTrimmedString(row.imageUrl);
+                if (passage) payload.passage = passage;
+                if (imageUrl) payload.imageUrl = imageUrl;
 
                 if (type === "multiple_choice") {
-                    // Chỉ gom choices cho câu trắc nghiệm
                     const choices = [
                         String(row.choice_0 || "").trim(),
                         String(row.choice_1 || "").trim(),
@@ -93,8 +126,7 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                     ];
                     payload.choices = choices;
 
-                    // Xử lý correctAnswer
-                    let finalAns = String(row.correctAnswer || "").trim();
+                    const finalAns = String(row.correctAnswer || "").trim();
                     if (finalAns.startsWith("choice_")) {
                         const idx = parseInt(finalAns.split("_")[1]);
                         payload.correctAnswer = choices[idx] || "";
@@ -102,21 +134,21 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                         payload.correctAnswer = finalAns;
                     }
                 } else if (type === "spr") {
-                    // Xử lý thông minh: Nhận cả mảng sprAnswers trực tiếp hoặc các trường lẻ
-                    let spr = [];
+                    let spr: string[] = [];
                     
-                    // Nếu JSON đã có sẵn mảng sprAnswers (Giống như file JSON hiện tại của bạn)
                     if (Array.isArray(row.sprAnswers) && row.sprAnswers.length > 0) {
-                        spr = row.sprAnswers.filter((ans: any) => String(ans).trim() !== "");
+                        spr = row.sprAnswers.filter((ans): ans is unknown => String(ans).trim() !== "").map((ans) => String(ans).trim());
                     } 
-                    // Đề phòng trường hợp JSON cũ viết theo kiểu sprAnswer_0, sprAnswer_1
                     else {
-                        if (row.sprAnswer_0?.trim()) spr.push(row.sprAnswer_0.trim());
-                        if (row.sprAnswer_1?.trim()) spr.push(row.sprAnswer_1.trim());
-                        if (row.sprAnswer_2?.trim()) spr.push(row.sprAnswer_2.trim());
+                        const sprAnswer0 = getTrimmedString(row.sprAnswer_0);
+                        const sprAnswer1 = getTrimmedString(row.sprAnswer_1);
+                        const sprAnswer2 = getTrimmedString(row.sprAnswer_2);
+
+                        if (sprAnswer0) spr.push(sprAnswer0);
+                        if (sprAnswer1) spr.push(sprAnswer1);
+                        if (sprAnswer2) spr.push(sprAnswer2);
                     }
                     
-                    // Nếu sau khi lọc vẫn không có gì, đưa vào 1 mảng rỗng để Zod không chửi
                     payload.sprAnswers = spr.length > 0 ? spr : [];
                 }
 
@@ -124,9 +156,9 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
             });
 
             setParsedJSONQuestions(validQuestions);
-            setQuestionMessage(`Đã chuẩn bị ${validQuestions.length} câu. Hãy nhấn Save.`);
-        } catch (err: any) {
-            setQuestionMessage("Lỗi đọc JSON: " + err.message);
+            setQuestionMessage(`Prepared ${validQuestions.length} questions. Click Save to import them.`);
+        } catch (err: unknown) {
+            setQuestionMessage("JSON read error: " + (err instanceof Error ? err.message : "Unknown error"));
         } finally {
             setIsImporting(false);
             e.target.value = '';
@@ -135,10 +167,9 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
     reader.readAsText(file);
 };
 
-    // THAY ĐỔI: Hàm đẩy kho JSON nháp lên Database
   const handleSaveJSONQuestions = async () => {
     if (parsedJSONQuestions.length === 0 || !selectedTestId) {
-        setQuestionMessage("Lỗi: Chưa chọn bài Test hoặc chưa có dữ liệu JSON!");
+        setQuestionMessage("Error: Select a test and load a JSON file first.");
         return;
     }
     
@@ -148,25 +179,26 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
     let firstError = "";
 
     for (let i = 0; i < parsedJSONQuestions.length; i++) {
-        // Đảm bảo mỗi câu đều có testId chuẩn
         const payload = { ...parsedJSONQuestions[i], testId: selectedTestId };
         
         try {
             await api.post(API_PATHS.QUESTIONS, payload);
             successCount++;
-        } catch (error: any) {
+        } catch (error: unknown) {
             failCount++;
-            // Bóc tách lỗi cực sâu từ Axios
-            const responseData = error.response?.data;
-            console.error(`❌ CHI TIẾT LỖI DÒNG ${i + 1}:`, responseData);
+            const responseData = typeof error === "object" && error !== null && "response" in error
+                ? (error as { response?: { data?: { error?: { details?: Array<{ path: string[]; message: string }> }; message?: string } } }).response?.data
+                : undefined;
+            console.error(`Question import error on row ${i + 1}:`, responseData);
             
             if (!firstError) {
-                // Nếu server trả về mảng lỗi (Zod), lấy cái đầu tiên
                 if (responseData?.error?.details) {
-                    const d = responseData.error.details[0];
-                    firstError = `Trường [${d.path.join('.')}] bị lỗi: ${d.message}`;
+                    const d = responseData.error.details[0] as { path: string[]; message: string };
+                    firstError = `Field [${d.path.join('.')}] failed validation: ${d.message}`;
                 } else {
-                    firstError = responseData?.message || responseData?.error || "Lỗi Database/ObjectId";
+                    firstError = typeof responseData?.message === "string"
+                        ? responseData.message
+                        : "Database/ObjectId error";
                 }
             }
         }
@@ -174,14 +206,13 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
 
     setIsSavingJSON(false);
     if (failCount > 0) {
-        setQuestionMessage(`Thất bại ${failCount} câu. Lỗi cụ thể: ${firstError}`);
+        setQuestionMessage(`Failed to save ${failCount} question(s). First error: ${firstError}`);
     } else {
-        setQuestionMessage(`Thành công! Đã lưu ${successCount} câu.`);
+        setQuestionMessage(`Success! Saved ${successCount} question(s).`);
         setParsedJSONQuestions([]);
     }
 };
 
-    // Tạo câu hỏi thủ công trên Web (Không thay đổi)
     const handleCreateQuestion = async (e: React.FormEvent) => {
         e.preventDefault();
         setQuestionMessage("");
@@ -198,7 +229,7 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
             }
         } else {
             if (!questionForm.sprAnswers[0].trim()) {
-                setQuestionMessage("Vui lòng điền ít nhất 1 đáp án cho câu tự luận.");
+                setQuestionMessage("Please enter at least one student-produced response answer.");
                 return;
             }
         }
@@ -224,7 +255,7 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
             } else {
                 setQuestionMessage(`Error: ${res.data.error || "Unknown database error"}`);
             }
-        } catch (err: any) {
+        } catch {
             setQuestionMessage("Network error");
         }
     };
@@ -232,7 +263,7 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
 
 
     const hasTable = questionForm.passage?.includes('<table') || questionForm.questionText?.includes('<table');
-    const needsImage = questionForm.imageUrl === "Cần thêm ảnh";
+    const needsImage = questionForm.imageUrl === "Cần thêm ảnh" || questionForm.imageUrl === "Need image";
     const hasRealImage = questionForm.imageUrl && questionForm.imageUrl.startsWith("http");
     const selectedTest = tests.find((test) => test._id === selectedTestId);
 
@@ -240,11 +271,17 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
 
     return (
         <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl border border-slate-200 overflow-visible">
-                <div className="p-5 border-b border-slate-200 bg-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-slate-800 font-bold">
-                        <ListPlus className="w-5 h-5 text-blue-600" />
-                        Step 2: Add Questions to Test
+            <div className="workbook-panel overflow-visible">
+                <div className={panelHeaderClassName}>
+                    <div className="flex items-center gap-3 text-ink-fg">
+                        <span className="workbook-sticker bg-accent-2 text-white">
+                            <ListPlus className="h-4 w-4" />
+                            Step 2
+                        </span>
+                        <div>
+                            <h2 className="font-display text-2xl font-black uppercase tracking-tight text-ink-fg">Add Questions</h2>
+                            <p className="text-sm text-ink-fg/70">Load question JSON or build a single question by hand.</p>
+                        </div>
                     </div>
 
                     <div
@@ -256,19 +293,19 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                             }
                         }}
                     >
-                        <label className="text-sm font-semibold text-slate-600">Select Test:</label>
+                        <label className="text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Select Test</label>
                         <button
                             type="button"
                             disabled={tests.length === 0}
                             onClick={() => setIsTestDropdownOpen((isOpen) => !isOpen)}
-                            className="flex min-w-[240px] max-w-[420px] items-center justify-between gap-3 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-left text-sm font-medium text-slate-900 outline-none transition hover:border-blue-400 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="flex min-w-[240px] max-w-[420px] items-center justify-between gap-3 rounded-2xl border-2 border-ink-fg bg-surface-white px-4 py-3 text-left text-sm font-bold text-ink-fg brutal-shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <span className="truncate">{selectedTest?.title || "No tests available"}</span>
-                            <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${isTestDropdownOpen ? "rotate-180" : ""}`} />
+                            <ChevronDown className={`h-4 w-4 shrink-0 text-ink-fg/60 transition-transform ${isTestDropdownOpen ? "rotate-180" : ""}`} />
                         </button>
 
                         {isTestDropdownOpen && tests.length > 0 && (
-                            <div className="absolute right-0 top-full z-50 mt-2 w-[min(32rem,calc(100vw-3rem))] max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl">
+                            <div className="absolute right-0 top-full z-50 mt-2 w-[min(32rem,calc(100vw-3rem))] max-h-[70vh] overflow-y-auto rounded-2xl border-2 border-ink-fg bg-surface-white p-1 brutal-shadow">
                                 {tests.map(t => (
                                     <button
                                         key={t._id}
@@ -277,7 +314,7 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                                             setSelectedTestId(t._id);
                                             setIsTestDropdownOpen(false);
                                         }}
-                                        className={`block w-full px-3 py-2 text-left text-sm transition hover:bg-blue-50 hover:text-blue-700 ${t._id === selectedTestId ? "bg-blue-50 font-semibold text-blue-700" : "text-slate-700"}`}
+                                        className={`block w-full rounded-xl border-2 px-3 py-2 text-left text-sm font-bold transition workbook-press ${t._id === selectedTestId ? "border-ink-fg bg-accent-2 text-white" : "border-transparent bg-surface-white text-ink-fg hover:border-ink-fg hover:bg-paper-bg"}`}
                                     >
                                         {t.title}
                                     </button>
@@ -287,19 +324,18 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                     </div>
                 </div>
 
-                {/* KHU VỰC GIAO DIỆN UPLOAD JSON MỚI */}
-                <div className="p-5 bg-blue-50/50 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex flex-col items-start justify-between gap-4 border-b-4 border-ink-fg bg-paper-bg px-5 py-5 sm:flex-row sm:items-center">
                     <div>
-                        <h3 className="font-bold text-slate-800">Tải lên hàng loạt bằng JSON</h3>
-                        <p className="text-sm text-slate-500">Chọn file .json chứa danh sách câu hỏi để chuẩn bị thêm vào Test.</p>
+                        <h3 className="font-display text-xl font-black uppercase tracking-tight text-ink-fg">Bulk Import with JSON</h3>
+                        <p className="text-sm text-ink-fg/70">Choose a `.json` file of questions to stage them for the selected test.</p>
                         
                         {importProgress && (
-                            <p className="text-sm font-bold text-blue-600 mt-2">{importProgress}</p>
+                            <p className="mt-2 text-sm font-bold text-accent-2">{importProgress}</p>
                         )}
                         
                         {parsedJSONQuestions.length > 0 && !isSavingJSON && (
-                            <p className="text-sm font-bold text-emerald-600 mt-2">
-                                📌 Sẵn sàng: {parsedJSONQuestions.length} câu hỏi đang chờ được lưu.
+                            <p className="mt-2 text-sm font-bold text-accent-2">
+                                Ready: {parsedJSONQuestions.length} question(s) are staged for saving.
                             </p>
                         )}
                     </div>
@@ -308,13 +344,12 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                         <div className="relative">
                             <button 
                                 disabled={isImporting || isSavingJSON || !selectedTestId}
-                                className="w-full bg-white border-2 border-slate-300 text-slate-700 hover:border-blue-500 hover:text-blue-600 px-4 py-2 rounded-lg flex items-center justify-center gap-2 font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="workbook-button workbook-button-secondary workbook-press w-full text-sm disabled:cursor-not-allowed disabled:opacity-50"
                                 type="button"
                             >
-                                <FileUp className="w-5 h-5" /> 
-                                {isImporting ? "Đang đọc file..." : "1. Chọn file JSON"}
+                                <FileUp className="h-5 w-5" /> 
+                                {isImporting ? "Reading file..." : "1. Choose JSON File"}
                             </button>
-                            {/* THAY ĐỔI: Chỉ chấp nhận file có đuôi .json */}
                             <input 
                                 type="file" 
                                 accept=".json"
@@ -324,16 +359,15 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                             />
                         </div>
 
-                        {/* NÚT THỨ 2: CHỈ HIỆN KHI ĐÃ ĐỌC JSON XONG */}
                         {parsedJSONQuestions.length > 0 && (
                             <button
                                 type="button"
                                 onClick={handleSaveJSONQuestions}
                                 disabled={isSavingJSON}
-                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 font-bold shadow-md transition-all disabled:opacity-50"
+                                className="workbook-button workbook-press w-full text-sm disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <Save className="w-5 h-5" />
-                                {isSavingJSON ? "Đang lưu..." : "2. Save JSON Questions"}
+                                <Save className="h-5 w-5" />
+                                {isSavingJSON ? "Saving..." : "2. Save JSON Questions"}
                             </button>
                         )}
                     </div>
@@ -341,19 +375,19 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
 
                 <form className="p-6 space-y-6" onSubmit={handleCreateQuestion}>
                     {questionMessage && (
-                        <div className={`p-4 rounded-lg font-medium text-sm flex items-center gap-2 ${questionMessage.includes('thành công') || questionMessage.includes('success') ? 'bg-green-50 justify-center text-green-700' : 'bg-red-50 text-red-700'}`}>
-                            {(questionMessage.includes('thành công') || questionMessage.includes('success')) && <CheckCircle className="w-5 h-5" />}
+                        <div className={`flex items-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold brutal-shadow-sm ${(questionMessage.includes('Success') || questionMessage.includes('success')) ? 'justify-center border-ink-fg bg-primary text-ink-fg' : 'border-ink-fg bg-accent-3 text-white'}`}>
+                            {(questionMessage.includes('Success') || questionMessage.includes('success')) && <CheckCircle className="h-5 w-5" />}
                             {questionMessage}
                         </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Section</label>
+                            <label className={fieldLabelClassName}>Section</label>
                             <select
                                 value={questionForm.section}
                                 onChange={(e) => setQuestionForm({ ...questionForm, section: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
+                                className={workbookSelectClassName}
                             >
                                 <option value="Reading and Writing">Reading and Writing</option>
                                 <option value="Math">Math</option>
@@ -361,11 +395,11 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Module</label>
+                            <label className={fieldLabelClassName}>Module</label>
                             <select
                                 value={questionForm.module}
                                 onChange={(e) => setQuestionForm({ ...questionForm, module: parseInt(e.target.value) })}
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
+                                className={workbookSelectClassName}
                             >
                                 <option value={1}>Module 1</option>
                                 <option value={2}>Module 2</option>
@@ -373,23 +407,23 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Loại câu hỏi</label>
+                            <label className={fieldLabelClassName}>Question Type</label>
                             <select
                                 value={questionForm.questionType}
                                 onChange={(e) => setQuestionForm({ ...questionForm, questionType: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900 font-medium"
+                                className={workbookSelectClassName}
                             >
-                                <option value="multiple_choice">Trắc nghiệm</option>
-                                <option value="spr">Tự luận</option>
+                                <option value="multiple_choice">Multiple Choice</option>
+                                <option value="spr">Student-Produced Response</option>
                             </select>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Difficulty</label>
+                            <label className={fieldLabelClassName}>Difficulty</label>
                             <select
                                 value={questionForm.difficulty}
                                 onChange={(e) => setQuestionForm({ ...questionForm, difficulty: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
+                                className={workbookSelectClassName}
                             >
                                 <option value="easy">Easy</option>
                                 <option value="medium">Medium</option>
@@ -398,44 +432,42 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                         </div>
                         
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Points</label>
+                            <label className={fieldLabelClassName}>Points</label>
                             <input
                                 type="number"
                                 required
                                 value={Number.isNaN(questionForm.points) ? "" : questionForm.points}
                                 onChange={(e) => setQuestionForm({ ...questionForm, points: parseInt(e.target.value) })}
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
+                                className={workbookInputClassName}
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <div className="space-y-4 border-t-2 border-ink-fg pt-4">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Passage</label>
+                            <label className={fieldLabelClassName}>Passage</label>
                             <textarea
                                 rows={4}
                                 value={questionForm.passage}
                                 onChange={(e) => setQuestionForm({ ...questionForm, passage: e.target.value })}
                                 placeholder="Text passage for reading questions..."
-                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-serif resize-none bg-white text-slate-900"
+                                className={`${workbookTextareaClassName} font-serif`}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Question Image / Chart (Optional)</label>
+                            <label className={fieldLabelClassName}>Question Image / Chart</label>
                             <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Minh họa: Hình ảnh / Bảng dữ liệu</label>
+                            <label className={fieldLabelClassName}>Visual Reference</label>
                             
-                            {/* 1. NẾU AI TẠO BẢNG: Hiển thị Preview bảng ở đây và báo không cần ảnh */}
                             {hasTable && !hasRealImage && (
-                                <div className="mb-3 p-4 border-2 border-emerald-400 bg-emerald-50 rounded-lg">
-                                    <p className="text-sm font-bold text-emerald-800 mb-2 flex items-center gap-2">
-                                        📊 AI đã tự động vẽ Bảng dữ liệu thành công!
+                                <div className="mb-3 rounded-2xl border-2 border-ink-fg bg-primary p-4 text-ink-fg brutal-shadow-sm">
+                                    <p className="mb-2 flex items-center gap-2 text-sm font-bold">
+                                        Table markup detected successfully.
                                     </p>
-                                    <p className="text-xs text-slate-600 mb-3">Mã HTML của bảng đã nằm trong phần Text. Khung dưới là bản xem trước, bạn không cần phải tải ảnh của bảng lên nữa.</p>
+                                    <p className="mb-3 text-xs text-ink-fg/70">The HTML table is already in the text content. The preview below means you do not need to upload a separate table image.</p>
                                     
-                                    {/* Render HTML bảng ra đây để preview (chỉ lấy đoạn table) */}
-                                    <div className="overflow-x-auto bg-white p-2 rounded border border-slate-200 pointer-events-none"
+                                    <div className="pointer-events-none overflow-x-auto rounded-2xl border-2 border-ink-fg bg-surface-white p-2"
                                          dangerouslySetInnerHTML={{
                                              __html: questionForm.passage.includes('<table') 
                                                 ? questionForm.passage.substring(questionForm.passage.indexOf('<table'), questionForm.passage.indexOf('</table>') + 8)
@@ -445,59 +477,53 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                                 </div>
                             )}
 
-                            {/* 2. KHU VỰC UPLOAD ẢNH (Sẽ đổi màu đỏ cảnh báo nếu AI báo "Cần thêm ảnh") */}
-                            <div className={`border rounded-lg p-3 ${needsImage ? 'border-red-400 bg-red-50 shadow-sm' : 'border-slate-300 bg-slate-50'}`}>
+                            <div className={`rounded-2xl border-2 p-3 brutal-shadow-sm ${needsImage ? 'border-ink-fg bg-accent-3 text-white' : 'border-ink-fg bg-paper-bg text-ink-fg'}`}>
                                 {hasRealImage ? (
-                                    // Khi đã upload URL thành công
                                     <div className="relative">
-                                        <img src={questionForm.imageUrl} alt="Question preview" className="max-h-40 mx-auto rounded shadow-sm" />
+                                        <Image src={questionForm.imageUrl} alt="Question preview" width={1200} height={800} unoptimized className="mx-auto max-h-40 w-auto rounded-2xl border-2 border-ink-fg bg-surface-white p-2" />
                                         <button 
                                             type="button" 
                                             onClick={() => setQuestionForm({...questionForm, imageUrl: ""})} 
-                                            className="absolute top-0 right-0 bg-red-500 text-white p-1 px-3 rounded-bl-lg rounded-tr-lg text-xs hover:bg-red-600 font-bold"
+                                            className="absolute right-0 top-0 rounded-bl-2xl rounded-tr-2xl border-2 border-ink-fg bg-accent-3 px-3 py-1 text-xs font-bold text-white workbook-press"
                                         >
-                                            Xóa ảnh
+                                            Remove Image
                                         </button>
                                     </div>
                                 ) : (
-                                    // Khi chưa có ảnh thật
                                     <>
-                                        {/* Cảnh báo đỏ nếu AI trả về chuỗi "Cần thêm ảnh" */}
                                         {needsImage && (
-                                            <p className="text-sm font-bold text-red-600 mb-2 text-center animate-pulse">
-                                                ⚠️ AI phát hiện có đồ thị/hình vẽ. Vui lòng tải ảnh lên!
+                                            <p className="mb-2 text-center text-sm font-bold animate-pulse">
+                                                A chart or graphic is expected here. Please upload the image.
                                             </p>
                                         )}
                                         
                                         <CldUploadWidget
                                             uploadPreset="ronan_sat_edTech"
-                                            onSuccess={(result: any) => {
-                                                if (result?.event === "success") {
-                                                    setQuestionForm(prev => ({ ...prev, imageUrl: result.info.secure_url }));
+                                            onSuccess={(result: CloudinaryUploadWidgetResults) => {
+                                                const info = typeof result.info === "string" ? undefined : result.info;
+                                                if (result.event === "success" && info?.secure_url) {
+                                                    setQuestionForm(prev => ({ ...prev, imageUrl: info.secure_url }));
                                                     document.body.style.overflow = "auto";
                                                 }
                                             }}
                                             onClose={() => {
                                                 document.body.style.overflow = "auto";
                                             }}
-                                        >
-                                            {({ open }) => (
-                                                <button 
-                                                    type="button" 
-                                                    onClick={(e) => { e.preventDefault(); open(); }}
-                                                    // Nếu đang cần ảnh thì nút màu đỏ, nếu đã có Bảng thì thu nhỏ nút lại đỡ vướng
-                                                    className={`w-full border-2 border-dashed rounded-lg transition-all font-medium flex items-center justify-center gap-2 
-                                                        ${hasTable ? 'py-1.5 text-xs text-slate-400 border-slate-200 hover:text-blue-500' : 'py-3 text-sm'} 
-                                                        ${needsImage ? 'border-red-400 text-red-600 hover:bg-red-100 bg-white' : 'border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50'}`}
-                                                >
-                                                    <Upload className="w-5 h-5" /> 
-                                                    {needsImage 
-                                                        ? "Bấm vào đây để tải ảnh đồ thị lên" 
-                                                        : hasTable 
-                                                            ? "(Tùy chọn) Vẫn tải thêm ảnh khác lên" 
-                                                            : "Tải ảnh đồ thị/biểu đồ lên (Không bắt buộc)"}
-                                                </button>
-                                            )}
+                                            >
+                                                {({ open }) => (
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={(e) => { e.preventDefault(); open(); }}
+                                                        className={`flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-fg bg-surface-white font-bold transition-all workbook-press ${hasTable ? 'py-2 text-xs' : 'py-3 text-sm'} ${needsImage ? 'text-accent-3' : 'text-ink-fg'}`}
+                                                    >
+                                                        <Upload className="h-5 w-5" /> 
+                                                        {needsImage 
+                                                            ? "Upload the required chart image" 
+                                                            : hasTable 
+                                                                ? "Optional: upload another image anyway" 
+                                                                : "Upload a chart or figure (optional)"}
+                                                    </button>
+                                                )}
                                         </CldUploadWidget>
                                     </>
                                 )}
@@ -506,24 +532,24 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Question Text *</label>
+                            <label className={fieldLabelClassName}>Question Text *</label>
                             <textarea
                                 rows={3}
                                 required
                                 value={questionForm.questionText}
                                 onChange={(e) => setQuestionForm({ ...questionForm, questionText: e.target.value })}
                                 placeholder="The actual question..."
-                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium resize-none bg-white text-slate-900"
+                                className={`${workbookTextareaClassName} font-medium`}
                             />
                         </div>
 
                         {questionForm.questionType === "multiple_choice" ? (
                             <>
-                                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                    <label className="block text-sm font-bold text-slate-800">Multiple Choice Options</label>
+                                <div className="space-y-3 rounded-2xl border-2 border-ink-fg bg-paper-bg p-4 brutal-shadow-sm">
+                                    <label className="block text-sm font-bold text-ink-fg">Multiple Choice Options</label>
                                     {questionForm.choices.map((choice, i) => (
                                         <div key={i} className="flex items-center gap-3">
-                                            <span className="w-8 h-8 flex items-center justify-center bg-slate-200 text-slate-700 font-bold rounded shrink-0">
+                                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-ink-fg bg-surface-white font-bold text-ink-fg">
                                                 {String.fromCharCode(65 + i)}
                                             </span>
                                             <input
@@ -532,7 +558,7 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                                                 value={choice}
                                                 onChange={(e) => handleChoiceChange(i, e.target.value)}
                                                 placeholder={`Option ${String.fromCharCode(65 + i)}`}
-                                                className="w-full px-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
+                                                className={workbookInputClassName}
                                             />
                                         </div>
                                     ))}
@@ -540,44 +566,44 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-bold text-emerald-700 mb-1">Correct Answer *</label>
+                                        <label className={fieldLabelClassName}>Correct Answer *</label>
                                         <select
                                             required
                                             value={questionForm.correctAnswer}
                                             onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
-                                            className="w-full px-4 py-2 border border-emerald-300 bg-emerald-50 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-slate-900"
+                                            className={`${workbookSelectClassName} bg-primary`}
                                         >
-                                            <option value="" disabled className="">Select correct choice</option>
+                                            <option value="" disabled>Select correct choice</option>
                                             {questionForm.choices.map((choice, i) => (
-                                                <option key={i} value={choice} disabled={!choice} className="">
+                                                <option key={i} value={choice} disabled={!choice}>
                                                     {choice ? `Option ${String.fromCharCode(65 + i)}: ${choice}` : `Option ${String.fromCharCode(65 + i)} (Empty)`}
                                                 </option>
                                             ))}
                                         </select>
-                                        <p className="text-xs text-slate-500 mt-1">Select from the choices above.</p>
+                                        <p className="mt-1 text-xs text-ink-fg/60">Select from the choices above.</p>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1">Explanation *</label>
+                                        <label className={fieldLabelClassName}>Explanation *</label>
                                         <textarea
                                             rows={2}
                                             required
                                             value={questionForm.explanation}
                                             onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
                                             placeholder="Why is this correct?"
-                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-white text-slate-900"
+                                            className={workbookTextareaClassName}
                                         />
                                     </div>
                                 </div>
                             </>
                         ) : (
                             <>
-                                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                    <label className="block text-sm font-bold text-slate-800">Đáp án tự luận (Hỗ trợ tối đa 3 cách viết)</label>
-                                    <p className="text-xs text-slate-500 mb-3">Ví dụ: Điền 1/3 ở cách 1; điền 0.333 ở cách 2; điền .333 ở cách 3</p>
+                                <div className="space-y-3 rounded-2xl border-2 border-ink-fg bg-paper-bg p-4 brutal-shadow-sm">
+                                    <label className="block text-sm font-bold text-ink-fg">Student-Produced Response Answers</label>
+                                    <p className="mb-3 text-xs text-ink-fg/60">You can accept up to three formats, for example `1/3`, `0.333`, and `.333`.</p>
                                     {[0, 1, 2].map((i) => (
                                         <div key={i} className="flex items-center gap-3">
-                                            <span className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-700 font-bold rounded shrink-0">
+                                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-ink-fg bg-accent-2 font-bold text-white">
                                                 {i + 1}
                                             </span>
                                             <input
@@ -589,35 +615,35 @@ export default function CreateQuestionForm({ tests }: { tests: any[] }) {
                                                     newAnswers[i] = e.target.value;
                                                     setQuestionForm({ ...questionForm, sprAnswers: newAnswers });
                                                 }}
-                                                placeholder={i === 0 ? "Cách viết đáp án 1 (Bắt buộc) - VD: 1/3" : `Cách viết đáp án ${i + 1} (Tùy chọn) - VD: 0.333`}
-                                                className={`w-full px-4 py-2 border ${i === 0 ? 'border-blue-300 bg-blue-50' : 'border-slate-300'} rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900`}
+                                                placeholder={i === 0 ? "Answer format 1 (required) - e.g. 1/3" : `Answer format ${i + 1} (optional) - e.g. 0.333`}
+                                                className={`${workbookInputClassName} ${i === 0 ? 'bg-primary' : ''}`}
                                             />
                                         </div>
                                     ))}
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Explanation</label>
+                                    <label className={fieldLabelClassName}>Explanation</label>
                                     <textarea
                                         rows={2}
                                         required
                                         value={questionForm.explanation}
                                         onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
                                         placeholder="Why is this correct?"
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-white text-slate-900"
+                                        className={workbookTextareaClassName}
                                     />
                                 </div>
                             </>
                         )}
                     </div>
 
-                    <div className="pt-6 border-t border-slate-200 flex justify-end">
+                    <div className="flex justify-end border-t-2 border-ink-fg pt-6">
                         <button
                             type="submit"
                             disabled={!selectedTestId || tests.length === 0}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg flex items-center gap-2 font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="workbook-button workbook-press px-8 py-3 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            <Save className="w-5 h-5" /> Save Question
+                            <Save className="h-5 w-5" /> Save Question
                         </button>
                     </div>
                 </form>

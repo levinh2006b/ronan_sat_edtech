@@ -1,33 +1,33 @@
 # Bluebook Main
 
-Nền tảng luyện SAT/Bluebook xây bằng `Next.js 16`, `React 19`, `MongoDB`, `NextAuth`, `Redis`, `Gemini` và một số dịch vụ ngoài như Gmail SMTP, Google OAuth, Cloudinary.
+SAT/Bluebook practice platform built with `Next.js 16`, `React 19`, `MongoDB`, `NextAuth`, `Redis`, `Gemini`, and supporting services such as Gmail SMTP, Google OAuth, and Cloudinary.
 
-README này được viết để người mới clone repo về có thể:
+This README is intended to help a new contributor:
 
-- cài dependency đúng cách
-- cấu hình môi trường local
-- chạy app ở mức tối thiểu
-- bật đủ các tính năng nâng cao nếu cần
-- seed dữ liệu mẫu để thử nhanh
+- install dependencies correctly
+- configure the local environment
+- run the app with the minimum required services
+- enable optional integrations when needed
+- seed sample data for quick testing
 
-## 1. Dự án này có gì
+## 1. What is in this project
 
-Các nhóm tính năng chính hiện có trong repo:
+Main features currently present in the repo:
 
-- đăng ký, đăng nhập bằng email/password
-- đăng nhập bằng Google
-- quên mật khẩu qua email
-- vai trò `STUDENT`, `PARENT`, `ADMIN`
-- làm bài test SAT, xem kết quả, dashboard
-- AI chat giải thích câu hỏi bằng Gemini
-- parent verification qua email
+- email/password registration and login
+- Google login
+- forgot-password flow via email
+- `STUDENT`, `PARENT`, and `ADMIN` roles
+- SAT test taking, results, and dashboard flows
+- AI chat for question explanations through Gemini
+- parent verification via email
 - leaderboard / hall of fame
-- cache dữ liệu bằng Redis
+- Redis-backed caching
 
-Entry flow mặc định:
+Default entry flow:
 
-- nếu chưa đăng nhập, app chuyển về `/auth`
-- sau khi đăng nhập, app chuyển tiếp qua `/auth/redirect`
+- if the user is not logged in, the app redirects to `/auth`
+- after login, the app continues through `/auth/redirect`
 
 ## 2. Tech stack
 
@@ -36,97 +36,104 @@ Entry flow mặc định:
 - `TypeScript`
 - `MongoDB + Mongoose`
 - `NextAuth`
-- `Redis + ioredis`
+- `Redis`
 - `Google Gemini API`
 - `Nodemailer (Gmail SMTP)`
 - `Cloudinary`
 - `Ant Design`
+- `Sentry`
 
-## 3. Yêu cầu trước khi chạy
+## 3. Prerequisites
 
-Khuyến nghị môi trường local:
+Recommended local environment:
 
-- `Node.js 20 LTS` trở lên
-- `npm` (repo hiện dùng `package-lock.json`)
-- một MongoDB instance
-- một Redis instance
+- `Node.js 20 LTS` or newer
+- `bun`
+- a MongoDB instance
+- a Redis instance
 
-Nếu muốn dùng đầy đủ tính năng, bạn cũng nên chuẩn bị:
+Optional services for full functionality:
 
-- 1 Gmail account + App Password để gửi mail
-- 1 Google OAuth app
-- 1 Gemini API key
-- 1 Cloudinary account
+- a Gmail account with an App Password for email sending
+- a Google OAuth app
+- a Gemini API key
+- a Cloudinary account
 
-## 4. Clone và cài dependency
+This repo is now set up around `bun`:
+
+- `bun.lock` is committed
+- `package.json` declares `packageManager: bun@1.3.11`
+- scripts are intended to be run with `bun run ...`
+
+## 4. Install dependencies
 
 ```bash
 git clone <repo-url>
-cd bluebook-main
-npm install
+cd ronansat-edtech
+bun install
 ```
 
-Nếu đang dùng PowerShell và muốn tạo file env từ mẫu:
+## 5. Get started
 
-```powershell
-Copy-Item .env.example .env.local
+Fastest path to a working local setup:
+
+```bash
+bun install
+cp .env.example .env.local
+bun run dev
 ```
 
-Hoặc tạo file `.env.local` thủ công rồi copy nội dung từ `.env.example`.
+The current workspace already has a populated `.env.local`, so on this machine `bun run dev` is ready to use.
 
-## 5. Setup nhanh nhất để app chạy local
+## 6. Fastest local setup
 
-Nếu mục tiêu của bạn chỉ là boot app lên để xem UI và bắt đầu phát triển, tối thiểu hãy cấu hình:
+If you only want to boot the app and start developing, create a `.env.local` file with at least:
 
 ```env
 MONGODB_URI=<mongodb connection string>
-NEXTAUTH_SECRET=<random secret dài>
-REDIS_URL=redis://localhost:6379
+NEXTAUTH_SECRET=<long random secret>
+REDIS_URL=redis://127.0.0.1:6379
 ```
 
-Sau đó chạy:
+Then run:
 
 ```bash
-npm run dev
+bun run dev
 ```
 
-Mở:
+Open:
 
 ```txt
 http://localhost:3000
 ```
 
-Lưu ý quan trọng:
+Important notes:
 
-- MongoDB là bắt buộc, nếu thiếu app sẽ fail ngay khi import `lib/mongodb.ts`
-- `NEXTAUTH_SECRET` là bắt buộc để auth hoạt động ổn định
-- Redis nên được bật ngay từ đầu vì nhiều service đang đọc/ghi cache trực tiếp
+- MongoDB is required; the app reads `lib/mongodb.ts` during startup
+- `NEXTAUTH_SECRET` is required for auth to work reliably
+- Redis should be available because several services read and write cache directly
 
-## 6. File môi trường đầy đủ
+## 7. Environment variables
 
-Repo đang có mẫu:
+The repo now includes a committed `.env.example`. Copy it to `.env.local` or `.env` for local development, then fill in the real values.
 
-```txt
-.env.example
-```
+Environment variables used by the codebase:
 
-Các biến hiện được code sử dụng thật:
-
-| Biến | Bắt buộc | Dùng cho gì |
+| Variable | Required | Purpose |
 | --- | --- | --- |
-| `MONGODB_URI` | Có | Kết nối MongoDB |
-| `NEXTAUTH_SECRET` | Có | Ký session/token cho NextAuth |
-| `REDIS_URL` | Nên có | Cache test/question/user/leaderboard |
-| `GEMINI_API_KEY` | Khi dùng AI chat | Route `/api/chat` |
-| `EMAIL_USER` | Khi dùng email | Quên mật khẩu, parent verification |
-| `EMAIL_PASS` | Khi dùng email | Gmail App Password cho SMTP |
-| `EMAIL_FROM_NAME` | Không | Tên người gửi email, có sẵn default |
-| `GOOGLE_CLIENT_ID` | Khi dùng Google login | NextAuth Google provider |
-| `GOOGLE_CLIENT_SECRET` | Khi dùng Google login | NextAuth Google provider |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Khi dùng upload/ảnh Cloudinary | Client-side Cloudinary config |
-| `NEXT_PUBLIC_DESMOS_URL` | Khi dùng tính năng liên quan Desmos | URL public cho frontend |
+| `MONGODB_URI` | Yes | MongoDB connection |
+| `NEXTAUTH_SECRET` | Yes | NextAuth session/token secret |
+| `REDIS_URL` | Strongly recommended | Cache for tests, questions, users, leaderboard |
+| `GEMINI_API_KEY` | For AI chat | `/api/chat` |
+| `EMAIL_USER` | For email features | Forgot password, parent verification |
+| `EMAIL_PASS` | For email features | Gmail App Password for SMTP |
+| `EMAIL_FROM_NAME` | Optional | Sender name for emails |
+| `GOOGLE_CLIENT_ID` | For Google login | NextAuth Google provider |
+| `GOOGLE_CLIENT_SECRET` | For Google login | NextAuth Google provider |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | For Cloudinary image flows | Client-side Cloudinary config |
+| `NEXT_PUBLIC_DESMOS_URL` | For Desmos-related UI | Public frontend URL |
 
-Mẫu `.env.local` đầy đủ:
+Example `.env.local`:
 
 ```env
 MONGODB_URI=mongodb://127.0.0.1:27017/bluebook-main
@@ -146,22 +153,22 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
 NEXT_PUBLIC_DESMOS_URL=
 ```
 
-## 7. Setup từng dịch vụ
+## 8. Service setup
 
 ### 7.1 MongoDB
 
-Bạn có thể dùng:
+You can use either:
 
-- MongoDB local
+- local MongoDB
 - MongoDB Atlas
 
-Ví dụ local:
+Local example:
 
 ```env
 MONGODB_URI=mongodb://127.0.0.1:27017/bluebook-main
 ```
 
-Ví dụ Atlas:
+Atlas example:
 
 ```env
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db-name>?retryWrites=true&w=majority
@@ -169,9 +176,9 @@ MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db-name>?retryWrites=true
 
 ### 7.2 NEXTAUTH_SECRET
 
-Đây là secret cho NextAuth. Hãy dùng một chuỗi ngẫu nhiên dài.
+Use a long random string.
 
-Ví dụ:
+Example:
 
 ```env
 NEXTAUTH_SECRET=this-should-be-a-long-random-secret-value
@@ -179,46 +186,41 @@ NEXTAUTH_SECRET=this-should-be-a-long-random-secret-value
 
 ### 7.3 Redis
 
-Repo có `lib/redis.ts` và nhiều service gọi Redis trực tiếp:
+Redis is used directly by multiple services, including leaderboard, question, test, and user flows.
 
-- `leaderboardService`
-- `questionService`
-- `testService`
-- `userService`
-
-Vì vậy để tránh lỗi kết nối, nên chạy Redis local:
+Local example:
 
 ```env
 REDIS_URL=redis://127.0.0.1:6379
 ```
 
-Nếu bạn chưa có Redis:
+If you do not already have Redis, you can:
 
-- dùng Docker
-- cài Redis local
-- hoặc trỏ sang Redis cloud
+- run it with Docker
+- install it locally
+- point to a managed Redis instance
 
-Ví dụ Docker:
+Docker example:
 
 ```bash
 docker run -d --name bluebook-redis -p 6379:6379 redis
 ```
 
-### 7.4 Gmail SMTP cho email
+### 7.4 Gmail SMTP
 
-Được dùng cho:
+Used for:
 
-- quên mật khẩu
-- gửi mã xác minh parent
+- forgot-password emails
+- parent verification emails
 
-Thiết lập:
+Setup steps:
 
-1. đăng nhập Gmail
-2. bật 2-Step Verification
-3. tạo App Password
-4. dùng App Password đó cho `EMAIL_PASS`
+1. Sign in to Gmail.
+2. Enable 2-Step Verification.
+3. Create an App Password.
+4. Put that App Password into `EMAIL_PASS`.
 
-Ví dụ:
+Example:
 
 ```env
 EMAIL_USER=your-email@gmail.com
@@ -226,20 +228,20 @@ EMAIL_PASS=your-16-char-app-password
 EMAIL_FROM_NAME=Bluebook Support
 ```
 
-Nếu gặp lỗi kiểu `WebLoginRequired`, hãy mở Gmail trên trình duyệt, hoàn tất các bước xác minh bảo mật rồi tạo lại App Password.
+If you see an error like `WebLoginRequired`, open Gmail in a browser, complete any pending security verification, and create a new App Password.
 
 ### 7.5 Google OAuth
 
-Được dùng cho nút đăng nhập Google ở trang `/auth`.
+Used by the Google login button on `/auth`.
 
-Bạn cần tạo OAuth credentials trong Google Cloud Console và thêm:
+Create OAuth credentials in Google Cloud Console and add:
 
 ```env
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
 
-Khi chạy local, nhớ cấu hình redirect URI phù hợp cho NextAuth, thường là:
+Typical local callback URL for NextAuth:
 
 ```txt
 http://localhost:3000/api/auth/callback/google
@@ -247,176 +249,176 @@ http://localhost:3000/api/auth/callback/google
 
 ### 7.6 Gemini API
 
-Được dùng cho tính năng chat giải thích câu hỏi.
+Used for the question explanation chat feature.
 
 ```env
 GEMINI_API_KEY=
 ```
 
-Nếu biến này trống, route chat sẽ báo lỗi `"Gemini API key not configured"`.
+If this variable is empty, the chat route will return `Gemini API key not configured`.
 
 ### 7.7 Cloudinary
 
-Nếu bạn có tính năng upload/hiển thị ảnh Cloudinary trong luồng đang phát triển, cấu hình:
+If your current work depends on Cloudinary upload/display flows, configure:
 
 ```env
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
 ```
 
-Trong `.env.example` còn có `CLOUDINARY_URL`, nhưng hiện tại biến đang được code đọc trực tiếp là `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`.
-
-## 8. Chạy dự án
+## 9. Running the project
 
 ### Development
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 ### Production build
 
 ```bash
-npm run build
-npm run start
+bun run build
+bun run start
 ```
 
 ### Lint
 
 ```bash
-npm run lint
+bun run lint
 ```
 
-## 9. Seed dữ liệu mẫu
+## 10. Seeding sample data
 
-Repo có sẵn script seed:
+The repo includes a seed script:
 
 ```bash
-npm run seed
+bun run seed
 ```
 
-Script này:
+This script:
 
-- đọc `MONGODB_URI` từ `.env.local`
-- tạo 1 test mẫu
-- thêm 1 số câu hỏi mẫu vào database
+- reads `MONGODB_URI`
+- creates a sample test
+- inserts sample questions into MongoDB
 
-Ngoài ra repo còn có:
+The repo also contains:
 
 - `parse_and_seed.ts`
 - `reading_sample.txt`
 - `math_sample.txt`
 
-Đây là script nhập dữ liệu lớn hơn từ text sample, nhưng hiện chưa có npm script riêng trong `package.json`. Nếu muốn chạy thủ công:
+That script is meant for importing a larger sample set, but it does not have its own `package.json` script. Run it manually if needed:
 
 ```bash
-npx tsx parse_and_seed.ts
+bunx tsx parse_and_seed.ts
 ```
 
-Lưu ý:
+Warning:
 
-- `parse_and_seed.ts` có xóa dữ liệu cũ trong collection `Test` và `Question`
-- chỉ chạy script này khi bạn chấp nhận reset lại dữ liệu test/question
+- `parse_and_seed.ts` deletes old data in the `Test` and `Question` collections
+- only run it if you are okay resetting test/question data
 
-## 10. Cách kiểm tra sau khi setup
+## 11. Suggested verification after setup
 
-Sau khi đã cấu hình xong và chạy `npm run dev`, bạn nên kiểm tra theo thứ tự:
+After configuring the environment and running `bun run dev`, verify in this order:
 
-1. mở `http://localhost:3000`
-2. xác nhận app redirect về `/auth` khi chưa đăng nhập
-3. thử đăng ký tài khoản mới bằng email/password
-4. đăng nhập lại bằng tài khoản vừa tạo
-5. nếu đã seed dữ liệu, kiểm tra danh sách test/question
-6. nếu đã cấu hình email, thử flow quên mật khẩu
-7. nếu đã cấu hình Gemini, thử AI chat trong review flow
-8. nếu đã cấu hình Google OAuth, thử nút đăng nhập Google
+1. Open `http://localhost:3000`.
+2. Confirm the app redirects to `/auth` when logged out.
+3. Create a new account with email/password.
+4. Log back in with that account.
+5. If you seeded data, verify test/question flows.
+6. If email is configured, test forgot password.
+7. If Gemini is configured, test the AI chat in review flow.
+8. If Google OAuth is configured, test Google login.
 
-## 11. Scripts hiện có
+## 12. Available scripts
 
-| Lệnh | Ý nghĩa |
+| Command | Meaning |
 | --- | --- |
-| `npm run dev` | Chạy local development server |
-| `npm run build` | Build production |
-| `npm run start` | Chạy bản production đã build |
-| `npm run lint` | Chạy ESLint |
-| `npm run seed` | Seed dữ liệu mẫu vào MongoDB |
-| `npm run changelog` | Sinh/cập nhật changelog |
+| `bun run dev` | Start the local dev server |
+| `bun run build` | Build for production |
+| `bun run start` | Start the production build |
+| `bun run lint` | Run ESLint |
+| `bun run seed` | Seed sample MongoDB data |
+| `bun run changelog` | Generate/update changelog |
 
-## 12. Cấu trúc thư mục đáng chú ý
+## 13. Notable project structure
 
-| Thư mục / file | Vai trò |
+| Path | Role |
 | --- | --- |
-| `app/` | App Router pages và API routes |
-| `app/api/` | Backend route handlers |
+| `app/` | App Router pages and API routes |
+| `app/api/` | Route handlers |
 | `components/` | UI components |
+| `hooks/` | React hooks |
+| `lib/` | Shared logic and infrastructure |
 | `lib/models/` | Mongoose models |
 | `lib/services/` | Business logic |
-| `lib/controllers/` | API controller layer |
-| `lib/authOptions.ts` | Cấu hình NextAuth |
-| `lib/mongodb.ts` | Kết nối MongoDB |
-| `lib/redis.ts` | Kết nối Redis |
-| `lib/email.ts` | Gửi email qua Gmail SMTP |
-| `docs/RBAC_SYSTEM.md` | Tài liệu RBAC và role design |
-| `seed.ts` | Seed dữ liệu mẫu cơ bản |
-| `parse_and_seed.ts` | Parse text sample rồi import test/question |
+| `lib/controllers/` | Controller layer |
+| `lib/authOptions.ts` | NextAuth configuration |
+| `lib/mongodb.ts` | MongoDB connection |
+| `lib/email.ts` | Gmail SMTP email sending |
+| `next.config.ts` | Next.js config with Sentry and image settings |
+| `seed.ts` | Basic sample data seed |
+| `parse_and_seed.ts` | Larger sample import script |
+| `question_bank/` | Question content/source data |
 
-## 13. Các lỗi thường gặp
+## 14. Common issues
 
 ### `Please define the MONGODB_URI environment variable inside .env.local`
 
-Nguyên nhân:
+Cause:
 
-- chưa tạo `.env.local`
-- chưa điền `MONGODB_URI`
+- `.env.local` is missing
+- `MONGODB_URI` is missing or invalid
 
-Cách xử lý:
+Fix:
 
-- tạo `.env.local`
-- kiểm tra lại connection string MongoDB
+- create `.env.local`
+- check the MongoDB connection string
 
-### Không đăng nhập được bằng Google
+### Google login does not work
 
-Kiểm tra:
+Check:
 
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
-- redirect URI trong Google Cloud Console
+- the redirect URI in Google Cloud Console
 
-### Gửi email thất bại
+### Email sending fails
 
-Kiểm tra:
+Check:
 
 - `EMAIL_USER`
 - `EMAIL_PASS`
-- Gmail App Password
-- Gmail account đã qua bước xác minh bảo mật chưa
+- Gmail App Password setup
+- whether the Gmail account has passed Google security verification
 
-### Chat AI báo lỗi cấu hình
+### AI chat reports configuration errors
 
-Kiểm tra:
+Check:
 
 - `GEMINI_API_KEY`
 
-### Một số route lỗi Redis connection
+### Redis connection errors on some routes
 
-Kiểm tra:
+Check:
 
-- Redis có đang chạy không
-- `REDIS_URL` có đúng không
+- whether Redis is running
+- whether `REDIS_URL` is correct
 
-## 14. Khuyến nghị cho người mới vào repo
+## 15. Recommended onboarding order
 
-Nếu bạn muốn onboard nhanh và ít bị block, hãy đi theo thứ tự này:
+If you want the fastest path to a working local environment:
 
-1. `npm install`
-2. tạo `.env.local`
-3. điền `MONGODB_URI`, `NEXTAUTH_SECRET`, `REDIS_URL`
-4. chạy `npm run dev`
-5. chạy `npm run seed`
-6. xác nhận đăng ký/đăng nhập hoạt động
-7. sau đó mới bật dần email, Google login, Gemini, Cloudinary
+1. Run `bun install`.
+2. Create `.env.local`.
+3. Fill in `MONGODB_URI`, `NEXTAUTH_SECRET`, and `REDIS_URL`.
+4. Run `bun run dev`.
+5. Run `bun run seed`.
+6. Confirm sign-up and login work.
+7. Enable email, Google login, Gemini, and Cloudinary only when needed.
 
-## 15. Ghi chú thêm
+## 16. Additional notes
 
-- Repo hiện có thư mục `.next/` và `node_modules/` trong workspace local; khi clone mới thì bạn vẫn nên chạy lại `npm install`
-- Route `/api/export-pdf` hiện trả về `410` và thông báo dùng client-side print flow thay vì server-side PDF export
-- Role trong hệ thống hiện là `STUDENT`, `PARENT`, `ADMIN`
+- The local workspace may already contain `node_modules/`, but after a fresh clone you should still run `bun install`.
+- `/api/export-pdf` currently returns `410` and points users toward a client-side print flow instead of server-side PDF export.
+- The current application roles are `STUDENT`, `PARENT`, and `ADMIN`.

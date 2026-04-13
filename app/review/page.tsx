@@ -31,7 +31,7 @@ function ReviewContent() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-paper-bg lg:flex">
       <ReviewResultsSidebar
         refreshing={refreshing}
         testType={testType}
@@ -41,7 +41,19 @@ function ReviewContent() {
         onSelectTest={setActiveTestId}
       />
 
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+        <section className="workbook-panel-muted mb-6 overflow-hidden">
+          <div className="border-b-4 border-ink-fg bg-paper-bg px-6 py-5">
+            <div className="workbook-sticker bg-primary text-ink-fg">Review Studio</div>
+            <h1 className="mt-4 font-display text-4xl font-black uppercase tracking-tight text-ink-fg md:text-5xl">
+              Learn from your mistakes.
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-fg md:text-base">
+              Open a result from the left shelf, scan your miss patterns, and jump directly into the questions that need correction.
+            </p>
+          </div>
+        </section>
+
         <ReviewReport testType={testType} activeTest={activeTest} onSelectAnswer={setSelectedAnswer} />
       </main>
 

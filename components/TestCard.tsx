@@ -1,5 +1,6 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { Clock, GraduationCap, RotateCcw } from "lucide-react";
+import { CircleHelp, Clock3, RotateCcw } from "lucide-react";
 
 import DownloadPdfButton from "@/components/DownloadPdfButton";
 import type { TestListItem, UserResultSummary } from "@/types/testLibrary";
@@ -10,6 +11,15 @@ interface TestCardProps {
   subjectFilter?: string;
   userResults?: UserResultSummary[];
 }
+
+type ModuleActionProps = {
+  title: string;
+  available: boolean;
+  result: UserResultSummary | null;
+  scoreDenominator: number;
+  startHref: string;
+  reviewHref?: string;
+};
 
 function getResultTestId(result: UserResultSummary) {
   if (typeof result.testId === "string") {
@@ -51,6 +61,7 @@ export default function TestCard({
   userResults = [],
 }: TestCardProps) {
   const formattedSectionName = subjectFilter === "reading" ? "Reading and Writing" : "Math";
+  const sectionalStickerLabel = subjectFilter === "reading" ? "Verbal Drill" : "Math Drill";
 
   const rw1Count = test.questionCounts?.rw_1 || 0;
   const rw2Count = test.questionCounts?.rw_2 || 0;
@@ -123,126 +134,69 @@ export default function TestCard({
 
   const mod1Result = isSectional ? getModuleResult(1) : null;
   const mod2Result = isSectional ? getModuleResult(2) : null;
+  const stickerClassName = isSectional ? "bg-accent-2 text-white" : "bg-primary text-ink-fg";
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:border-blue-200">
-      <div className="flex-1 p-5">
-        <div className="mb-3 flex items-start justify-between">
-          <div>
-            <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-700">{test.title}</h3>
-            {!isSectional && latestFullLengthResult ? (
-              <div className="mt-2 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                Last score: {getFullLengthScore(latestFullLengthResult)}
-              </div>
-            ) : null}
+    <div className="workbook-panel flex h-full flex-col overflow-hidden">
+      <div className="border-b-4 border-ink-fg bg-paper-bg px-4 py-4">
+        <div className="flex min-h-[6.6rem] items-start justify-between gap-4">
+          <div className="flex min-h-[5rem] min-w-0 flex-1 flex-col">
+            <div className={`workbook-sticker w-fit ${stickerClassName}`}>
+              {isSectional ? sectionalStickerLabel : "Full Practice"}
+            </div>
+            <h3
+              className="mt-3.5 max-w-[13ch] overflow-hidden font-display text-[1.35rem] font-black uppercase leading-[0.96] tracking-tight md:text-[1.5rem]"
+              style={{
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+                WebkitLineClamp: 2,
+              }}
+            >
+              {test.title}
+            </h3>
           </div>
-        </div>
 
-        <div className="mt-4 space-y-2 text-sm text-slate-600">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-slate-400" />
-            <span>{totalTime} Minutes Total</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-4 w-4 text-slate-400" />
-            <span>{totalQuestions} Questions</span>
-          </div>
+          {!isSectional && latestFullLengthResult ? (
+            <div className="rounded-2xl border-2 border-ink-fg bg-surface-white px-3 py-2.5 text-center text-ink-fg brutal-shadow-sm">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.18em]">Last Score</p>
+              <p className="mt-1 font-display text-xl font-black md:text-2xl">{getFullLengthScore(latestFullLengthResult)}</p>
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <div className="mt-auto border-t border-slate-100 bg-slate-50 p-4">
+      <div className="flex-1 p-4">
+        <div className="grid grid-cols-2 gap-2.5">
+          <StatCard icon={<Clock3 className="h-4 w-4" />} label="Minutes" value={String(totalTime)} />
+          <StatCard icon={<CircleHelp className="h-4 w-4" />} label="Questions" value={String(totalQuestions)} />
+        </div>
+      </div>
+
+      <div className="mt-auto border-t-4 border-ink-fg bg-paper-bg p-4">
         {isSectional ? (
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Module 1</span>
-                {mod1Result && mod1Count > 0 ? (
-                  <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                    Last score: {getSectionalScore(mod1Result)} / {subjectFilter === "reading" ? 27 : 22}
-                  </span>
-                ) : null}
-              </div>
-              {mod1Count === 0 ? (
-                <button
-                  title="Coming Soon"
-                  disabled
-                  className="block w-full cursor-not-allowed rounded-lg border bg-slate-200 px-4 py-2.5 text-center font-medium text-slate-400 opacity-50 transition-all"
-                >
-                  Module 1 (Coming Soon)
-                </button>
-              ) : mod1Result?._id ? (
-                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-3">
-                  <Link
-                    href={`/review?mode=sectional&resultId=${mod1Result._id}`}
-                    className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-center font-semibold text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
-                  >
-                    Review
-                  </Link>
-                  <Link
-                    href={`/test/${test._id}?section=${formattedSectionName}&module=1&mode=sectional`}
-                    className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
-                    aria-label="Retake sectional module 1"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Link>
-                </div>
-              ) : (
-                <Link
-                  href={`/test/${test._id}?section=${formattedSectionName}&module=1&mode=sectional`}
-                  className="block w-full rounded-lg bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
-                >
-                  Start Module 1
-                </Link>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Module 2</span>
-                {mod2Result && mod2Count > 0 ? (
-                  <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                    Last score: {getSectionalScore(mod2Result)} / {subjectFilter === "reading" ? 27 : 22}
-                  </span>
-                ) : null}
-              </div>
-              {mod2Count === 0 ? (
-                <button
-                  title="Coming Soon"
-                  disabled
-                  className="block w-full cursor-not-allowed rounded-lg border bg-slate-200 px-4 py-2.5 text-center font-medium text-slate-400 opacity-50 transition-all"
-                >
-                  Module 2 (Coming Soon)
-                </button>
-              ) : mod2Result?._id ? (
-                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-3">
-                  <Link
-                    href={`/review?mode=sectional&resultId=${mod2Result._id}`}
-                    className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-center font-semibold text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
-                  >
-                    Review
-                  </Link>
-                  <Link
-                    href={`/test/${test._id}?section=${formattedSectionName}&module=2&mode=sectional`}
-                    className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
-                    aria-label="Retake sectional module 2"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Link>
-                </div>
-              ) : (
-                <Link
-                  href={`/test/${test._id}?section=${formattedSectionName}&module=2&mode=sectional`}
-                  className="block w-full rounded-lg bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
-                >
-                  Start Module 2
-                </Link>
-              )}
-            </div>
+            <ModuleAction
+              title="Module 1"
+              available={mod1Count > 0}
+              result={mod1Result}
+              scoreDenominator={subjectFilter === "reading" ? 27 : 22}
+              startHref={`/test/${test._id}?section=${formattedSectionName}&module=1&mode=sectional`}
+              reviewHref={mod1Result?._id ? `/review?mode=sectional&resultId=${mod1Result._id}` : undefined}
+            />
+            <ModuleAction
+              title="Module 2"
+              available={mod2Count > 0}
+              result={mod2Result}
+              scoreDenominator={subjectFilter === "reading" ? 27 : 22}
+              startHref={`/test/${test._id}?section=${formattedSectionName}&module=2&mode=sectional`}
+              reviewHref={mod2Result?._id ? `/review?mode=sectional&resultId=${mod2Result._id}` : undefined}
+            />
 
             <DownloadPdfButton
               testId={test._id}
               testName={test.title}
               sectionName={formattedSectionName}
+              className="workbook-button workbook-button-secondary w-full justify-center"
             />
           </div>
         ) : latestFullLengthResult?._id ? (
@@ -250,32 +204,98 @@ export default function TestCard({
             <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-3">
               <Link
                 href={`/review?mode=full&resultId=${latestFullLengthResult._id}`}
-                className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-center font-semibold text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                className="workbook-button workbook-button-secondary justify-center"
               >
                 Review
               </Link>
               <Link
                 href={`/test/${test._id}?mode=full`}
-                className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                className="workbook-button workbook-button-secondary justify-center px-0"
                 aria-label="Retake full-length test"
               >
                 <RotateCcw className="h-4 w-4" />
               </Link>
             </div>
-            <DownloadPdfButton testId={test._id} testName={test.title} />
+            <DownloadPdfButton
+              testId={test._id}
+              testName={test.title}
+              className="workbook-button workbook-button-secondary w-full justify-center"
+            />
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <Link
-              href={`/test/${test._id}?mode=full`}
-              className="block w-full rounded-lg bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
-            >
+            <Link href={`/test/${test._id}?mode=full`} className="workbook-button w-full justify-center">
               Start Practice
             </Link>
-            <DownloadPdfButton testId={test._id} testName={test.title} />
+            <DownloadPdfButton
+              testId={test._id}
+              testName={test.title}
+              className="workbook-button workbook-button-secondary w-full justify-center"
+            />
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl border-2 border-ink-fg bg-surface-white p-3 brutal-shadow-sm">
+      <div className="flex items-center gap-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-ink-fg sm:text-[0.65rem]">
+        <span className="shrink-0">{icon}</span>
+        <span className="min-w-0 truncate">{label}</span>
+      </div>
+      <div className="mt-2.5 font-display text-[2rem] font-black leading-none tracking-tight text-ink-fg">{value}</div>
+    </div>
+  );
+}
+
+function ModuleAction({
+  title,
+  available,
+  result,
+  scoreDenominator,
+  startHref,
+  reviewHref,
+}: ModuleActionProps) {
+  return (
+    <section className="rounded-2xl border-2 border-ink-fg bg-surface-white p-3.5 brutal-shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-xs font-bold uppercase tracking-[0.18em] text-ink-fg">{title}</span>
+        {result ? <span className="workbook-sticker bg-primary">{getSectionalScore(result)} / {scoreDenominator}</span> : null}
+      </div>
+
+      {!available ? (
+        <button
+          title="Coming soon"
+          disabled
+          className="w-full rounded-2xl border-2 border-ink-fg bg-paper-bg px-4 py-3 text-center text-sm font-bold uppercase tracking-[0.16em] text-ink-fg opacity-60"
+        >
+          Coming Soon
+        </button>
+      ) : result?._id && reviewHref ? (
+        <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-3">
+          <Link href={reviewHref} className="workbook-button workbook-button-secondary justify-center">
+            Review
+          </Link>
+          <Link href={startHref} className="workbook-button workbook-button-secondary justify-center px-0" aria-label={`Retake ${title.toLowerCase()}`}>
+            <RotateCcw className="h-4 w-4" />
+          </Link>
+        </div>
+      ) : (
+        <Link href={startHref} className="workbook-button w-full justify-center">
+          Start {title}
+        </Link>
+      )}
+    </section>
   );
 }

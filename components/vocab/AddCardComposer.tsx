@@ -26,7 +26,7 @@ export function AddCardComposer({
       <button
         type="button"
         onClick={onOpen}
-        className="flex w-full items-center gap-2 rounded-[14px] px-2 py-2 text-left text-[14px] font-medium text-slate-500 transition hover:bg-white/50 hover:text-slate-900"
+        className="flex w-full items-center gap-2 rounded-[14px] border-2 border-dashed border-ink-fg bg-paper-bg px-3 py-3 text-left text-[14px] font-medium text-ink-fg transition workbook-press"
       >
         <Plus className="h-4 w-4" />
         Add card
@@ -38,7 +38,7 @@ export function AddCardComposer({
 
   return (
     <div
-      className={`border border-slate-200/90 bg-white/90 shadow-[0_14px_34px_rgba(148,163,184,0.12)] ${
+      className={`border-2 border-ink-fg bg-surface-white brutal-shadow-sm ${
         isEmptyVariant ? "rounded-[18px] p-3" : "rounded-[16px] p-2.5"
       }`}
     >
@@ -53,7 +53,7 @@ export function AddCardComposer({
           }
         }}
         placeholder={placeholder}
-        className={`w-full resize-none rounded-[12px] border border-slate-200 bg-white px-3 py-2.5 text-[14px] leading-6 text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 ${
+        className={`w-full resize-none rounded-[12px] border-2 border-ink-fg bg-white px-3 py-2.5 text-[14px] leading-6 text-ink-fg outline-none transition ${
           isEmptyVariant ? "min-h-[56px]" : "min-h-[86px]"
         }`}
       />
@@ -61,12 +61,12 @@ export function AddCardComposer({
         <button
           type="button"
           onClick={onAdd}
-          className="rounded-full bg-[#0071e3] px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#0077ed]"
+          className="workbook-button px-3.5 py-2 text-[13px]"
         >
           Add card
         </button>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onClose} className="text-slate-500 transition hover:text-slate-900" aria-label="Close">
+          <button type="button" onClick={onClose} className="text-ink-fg transition" aria-label="Close">
             <X className="h-4.5 w-4.5" />
           </button>
         </div>

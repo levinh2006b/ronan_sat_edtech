@@ -108,7 +108,7 @@ async function seed() {
         const insertedQuestions = await Question.insertMany(questionsWithTestId);
 
         // Update Test with Question IDs
-        newTest.questions = insertedQuestions.map(q => q._id as any);
+        newTest.questions = insertedQuestions.map((q) => q._id);
         await newTest.save();
 
         console.log(`Added ${insertedQuestions.length} questions to the test.`);

@@ -1,17 +1,22 @@
-// Táº¡o ra setting page cho phÃ©p 
-// 1. Thay Ä‘á»•i tÃªn
-// 2. Thay Ä‘á»•i pass
 "use client";
 
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { User, Save, CheckCircle, Lock, TriangleAlert } from "lucide-react";
+import { CheckCircle, Lock, MonitorPlay, Save, TriangleAlert, User } from "lucide-react";
+
 import Loading from "@/components/Loading";
+import { useTestingRoomTheme } from "@/hooks/useTestingRoomTheme";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
+import {
+    getTestingRoomThemePreset,
+    listTestingRoomThemePresets,
+    type TestingRoomTheme,
+} from "@/lib/testingRoomTheme";
 
 export default function SettingsPage() {
     const { data: session, status, update } = useSession();
+    const { theme: testingRoomTheme, setTheme: setTestingRoomTheme, hasHydrated: testingRoomThemeHydrated } = useTestingRoomTheme();
 
     const [mounted, setMounted] = useState(false);
 
@@ -38,8 +43,8 @@ export default function SettingsPage() {
 
     if (status === "unauthenticated" || !session) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 border-t border-slate-200">
-                <div className="p-8 text-black font-bold bg-white rounded-lg">
+            <div className="min-h-screen flex items-center justify-center bg-paper-bg border-t-4 border-ink-fg">
+                <div className="workbook-panel p-8 text-ink-fg font-bold bg-surface-white">
                     Please log in to view settings.
                 </div>
             </div>
@@ -113,25 +118,59 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-8 pb-24 duration-200">
-            <div className="max-w-3xl mx-auto space-y-8">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Settings</h1>
+        <div className="min-h-screen bg-paper-bg p-8 pb-24 duration-200">
+            <div className="max-w-4xl mx-auto space-y-8">
+                <section className="workbook-panel-muted overflow-hidden">
+                    <div className="border-b-4 border-ink-fg bg-paper-bg px-6 py-5">
+                        <div className="workbook-sticker bg-primary text-ink-fg">Settings</div>
+                        <h1 className="mt-4 font-display text-4xl font-black uppercase tracking-tight text-ink-fg">Tune your workbook account.</h1>
+                    </div>
+                </section>
+
+                <div className="workbook-panel overflow-hidden">
+                    <div className="p-5 border-b-4 border-ink-fg bg-paper-bg flex items-center gap-2 text-ink-fg font-bold">
+                        <MonitorPlay className="w-5 h-5 text-accent-2" />
+                        Testing Room Theme
+                    </div>
+
+                    <div className="p-6 space-y-5">
+                        <div className="max-w-3xl">
+                            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-ink-fg">Room Style</p>
+                            <p className="mt-2 text-sm leading-6 text-ink-fg/70">
+                                Choose which exam room chrome you want during live tests. This preference is saved locally on this device.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            {listTestingRoomThemePresets().map(({ theme }) => {
+                                const isActive = testingRoomThemeHydrated && testingRoomTheme === theme;
+
+                                return (
+                                    <ThemeOptionCard
+                                        key={theme}
+                                        theme={theme}
+                                        isActive={isActive}
+                                        onSelect={() => setTestingRoomTheme(theme)}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                    <div className="p-5 border-b border-slate-200 bg-white flex items-center gap-2 text-slate-800 font-bold">
-                        <User className="w-5 h-5 text-blue-600" />
+                <div className="workbook-panel overflow-hidden">
+                    <div className="p-5 border-b-4 border-ink-fg bg-paper-bg flex items-center gap-2 text-ink-fg font-bold">
+                        <User className="w-5 h-5 text-accent-2" />
                         Profile Details
                     </div>
 
                     <form className="p-6 space-y-5" onSubmit={handleUpdateProfile}>
                         {message && (
                             <div
-                                className={`p-4 rounded-lg font-medium text-sm flex items-center gap-2 ${message.includes("success")
-                                    ? "bg-green-50 text-green-700"
-                                    : "bg-red-50 text-red-700"
-                                    }`}
+                                className={`p-4 rounded-2xl border-2 border-ink-fg font-medium text-sm flex items-center gap-2 ${message.includes("success")
+                                    ? "bg-primary text-ink-fg"
+                                    : "bg-accent-3 text-white"
+                                     }`}
                             >
                                 {message.includes("success") && <CheckCircle className="w-5 h-5" />}
                                 {message}
@@ -139,7 +178,7 @@ export default function SettingsPage() {
                         )}
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
+                            <label className="block text-sm font-semibold text-ink-fg mb-1 uppercase tracking-[0.16em]">
                                 Display Name
                             </label>
                             <input
@@ -147,19 +186,19 @@ export default function SettingsPage() {
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="What should we call you?"
-                                className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
+                                className="workbook-input max-w-md"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
+                            <label className="block text-sm font-semibold text-ink-fg mb-1 uppercase tracking-[0.16em]">
                                 Email Address
                             </label>
                             <input
                                 type="email"
                                 disabled
                                 value={session.user.email!}
-                                className="w-full max-w-md px-4 py-2 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed"
+                                className="workbook-input max-w-md cursor-not-allowed bg-paper-bg text-ink-fg/60"
                             />
                         </div>
 
@@ -167,7 +206,7 @@ export default function SettingsPage() {
                             <button
                                 type="submit"
                                 disabled={isSaving || name === session.user.name}
-                                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg flex items-center gap-2 font-medium"
+                                className="workbook-button disabled:opacity-60"
                             >
                                 <Save className="w-4 h-4" /> {isSaving ? "Saving..." : "Save Profile"}
                             </button>
@@ -175,19 +214,19 @@ export default function SettingsPage() {
                     </form>
                 </div>
 
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                    <div className="p-5 border-b border-slate-200 bg-white flex items-center gap-2 text-slate-800 font-bold">
-                        <Lock className="w-5 h-5 text-indigo-600" />
+                <div className="workbook-panel overflow-hidden">
+                    <div className="p-5 border-b-4 border-ink-fg bg-paper-bg flex items-center gap-2 text-ink-fg font-bold">
+                        <Lock className="w-5 h-5 text-accent-1" />
                         Security
                     </div>
 
                     <form className="p-6 space-y-5" onSubmit={handleUpdatePassword}>
                         {passwordMessage && (
                             <div
-                                className={`p-4 rounded-lg font-medium text-sm flex items-center gap-2 ${passwordMessage.includes("success")
-                                    ? "bg-green-50 text-green-700"
-                                    : "bg-red-50 text-red-700"
-                                    }`}
+                                className={`p-4 rounded-2xl border-2 border-ink-fg font-medium text-sm flex items-center gap-2 ${passwordMessage.includes("success")
+                                    ? "bg-primary text-ink-fg"
+                                    : "bg-accent-3 text-white"
+                                     }`}
                             >
                                 {passwordMessage.includes("success") && <CheckCircle className="w-5 h-5" />}
                                 {passwordMessage}
@@ -195,7 +234,7 @@ export default function SettingsPage() {
                         )}
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
+                            <label className="block text-sm font-semibold text-ink-fg mb-1 uppercase tracking-[0.16em]">
                                 Current Password
                             </label>
                             <input
@@ -203,12 +242,12 @@ export default function SettingsPage() {
                                 required
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
-                                className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
+                                className="workbook-input max-w-md"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
+                            <label className="block text-sm font-semibold text-ink-fg mb-1 uppercase tracking-[0.16em]">
                                 New Password
                             </label>
                             <input
@@ -217,12 +256,12 @@ export default function SettingsPage() {
                                 minLength={6}
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
+                                className="workbook-input max-w-md"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
+                            <label className="block text-sm font-semibold text-ink-fg mb-1 uppercase tracking-[0.16em]">
                                 Confirm New Password
                             </label>
                             <input
@@ -231,7 +270,7 @@ export default function SettingsPage() {
                                 minLength={6}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
+                                className="workbook-input max-w-md"
                             />
                         </div>
 
@@ -239,7 +278,7 @@ export default function SettingsPage() {
                             <button
                                 type="submit"
                                 disabled={isPasswordSaving || !currentPassword || !newPassword || !confirmPassword}
-                                className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-400 text-white px-6 py-2 rounded-lg flex items-center gap-2 font-medium"
+                                className="workbook-button workbook-button-ink disabled:opacity-60"
                             >
                                 <Lock className="w-4 h-4" /> {isPasswordSaving ? "Updating..." : "Change Password"}
                             </button>
@@ -247,16 +286,16 @@ export default function SettingsPage() {
                     </form>
                 </div>
 
-                <div className="bg-white rounded-xl border border-red-200 overflow-hidden">
-                    <div className="p-5 border-b border-red-100 bg-red-50 flex items-center gap-2 text-red-700 font-bold">
+                <div className="workbook-panel overflow-hidden border-accent-3">
+                    <div className="p-5 border-b-4 border-ink-fg bg-accent-3 flex items-center gap-2 text-white font-bold">
                         <TriangleAlert className="w-5 h-5" />
                         Danger Zone
                     </div>
 
                     <div className="p-6 flex flex-col gap-4">
                         <div>
-                            <h2 className="text-base font-semibold text-slate-900">Delete Account</h2>
-                            <p className="mt-1 text-sm text-slate-600">
+                            <h2 className="text-base font-semibold text-ink-fg">Delete Account</h2>
+                            <p className="mt-1 text-sm text-ink-fg/70">
                                 Permanently remove your account and all associated access. This action cannot be undone.
                             </p>
                         </div>
@@ -265,7 +304,7 @@ export default function SettingsPage() {
                             <button
                                 type="button"
                                 onClick={handleDeleteAccount}
-                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                                className="workbook-button bg-accent-3 text-white"
                             >
                                 Delete Account
                             </button>
@@ -273,6 +312,81 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function ThemeOptionCard({
+    theme,
+    isActive,
+    onSelect,
+}: {
+    theme: TestingRoomTheme;
+    isActive: boolean;
+    onSelect: () => void;
+}) {
+    const preset = getTestingRoomThemePreset(theme);
+
+    return (
+        <button
+            type="button"
+            onClick={onSelect}
+            className={`rounded-2xl border-2 p-4 text-left transition-all active:translate-x-0.5 active:translate-y-0.5 ${isActive
+                ? "border-ink-fg bg-surface-white brutal-shadow"
+                : "border-ink-fg bg-paper-bg hover:-translate-x-0.5 hover:-translate-y-0.5 hover:brutal-shadow-sm"
+                }`}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <span className={`workbook-sticker ${preset.accentClass}`}>{preset.label}</span>
+            </div>
+
+            <div className="mt-3 overflow-hidden rounded-xl border-2 border-ink-fg bg-surface-white">
+                <ThemeRoomPreview theme={theme} isActive={isActive} />
+            </div>
+
+            <p className="mt-3 text-[15px] font-semibold text-ink-fg">{preset.cardTitle}</p>
+            <p className="mt-2 text-sm leading-6 text-ink-fg/75">{preset.description}</p>
+        </button>
+    );
+}
+
+function ThemeRoomPreview({ theme, isActive }: { theme: TestingRoomTheme; isActive: boolean }) {
+    const previewTheme = getTestingRoomThemePreset(theme).preview;
+
+    return (
+        <div className={`relative p-2.5 ${previewTheme.canvasClass}`}>
+            <div
+                className={`overflow-hidden rounded-lg transition-opacity ${isActive ? "opacity-55" : "opacity-100"} ${previewTheme.frameClass}`}
+            >
+                <div
+                    className={`flex items-center justify-between px-2.5 py-1.5 ${previewTheme.topBarClass}`}
+                >
+                    <div className={`h-2 w-20 rounded-full ${previewTheme.topBarAccentClass}`} />
+                    <div className={`h-5 w-11 rounded-full ${previewTheme.topBarControlClass}`} />
+                </div>
+
+                <div className="flex h-18">
+                    <div className={`w-[46%] p-2 ${previewTheme.leftPaneClass}`}>
+                        <div className={`h-full rounded-md ${previewTheme.leftPaneCardClass}`} />
+                    </div>
+                    <div className="flex-1 space-y-1.5 p-2">
+                        <div className={`h-2.5 w-16 rounded-full ${previewTheme.rightMetaClass}`} />
+                        <div className="space-y-1.5">
+                            <div className={`h-5 ${previewTheme.rightAnswerSelectedClass}`} />
+                            <div className={`h-5 ${previewTheme.rightAnswerIdleClass}`} />
+                            <div className={`h-5 ${previewTheme.rightAnswerIdleClass}`} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {isActive ? (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
+                    <div className="-rotate-[16deg] rounded-full border-2 border-ink-fg bg-primary px-5 py-1.5 text-xs font-black uppercase tracking-[0.28em] text-ink-fg brutal-shadow-sm">
+                        Active
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

@@ -1,12 +1,17 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import api from "@/lib/axios";
 import { Trophy, CheckCircle, Save, Upload } from "lucide-react";
-import { CldUploadWidget } from "next-cloudinary";
+import { CldUploadWidget, type CloudinaryUploadWidgetResults } from "next-cloudinary";
+
+const panelHeaderClassName =
+    "flex items-center gap-3 border-b-4 border-ink-fg bg-paper-bg px-5 py-4 text-ink-fg";
+
+const fieldLabelClassName = "mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70";
 
 export default function CreateStudentForm() {
-    // Thẻ học sinh
     const [studentForm, setStudentForm] = useState({
         name: "",
         school: "",
@@ -16,125 +21,127 @@ export default function CreateStudentForm() {
     });
     const [studentMessage, setStudentMessage] = useState("");
 
-    // Hàm xử lý khi bấm lưu Học sinh
     const handleCreateStudent = async (e: React.FormEvent) => {
         e.preventDefault();
         setStudentMessage("");
 
         if (!studentForm.imageUrl) {
-            setStudentMessage("Lỗi: Bạn chưa tải ảnh học sinh lên!");
+            setStudentMessage("Error: Please upload a student photo first.");
             return;
         }
 
         try {
-            // Gửi dữ liệu vào API sinh ra ở bài trước
             const res = await api.post("/api/students", studentForm);
 
             if (res.status === 200 || res.status === 201) {
-                setStudentMessage("Đã thêm học sinh vào bảng vàng thành công!");
-                // Xóa form để nhập em tiếp theo
+                setStudentMessage("Student added to the Hall of Fame successfully!");
                 setStudentForm({ name: "", school: "", score: 0, examDate: "", imageUrl: "" });
             } else {
-                setStudentMessage(`Lỗi: ${res.data?.error || "Không thể thêm học sinh"}`);
+                setStudentMessage(`Error: ${res.data?.error || "Could not add student."}`);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setStudentMessage("Lỗi kết nối tới máy chủ.");
+            setStudentMessage("Server connection error.");
         }
     };
 
     return (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mt-8">
-            <div className="p-5 border-b border-slate-200 bg-slate-100 flex items-center gap-2 text-slate-800 font-bold">
-                <Trophy className="w-5 h-5 text-yellow-500" />
-                Step 3: Add Students to Hall of Fame
+        <div className="workbook-panel mt-8 overflow-hidden">
+            <div className={panelHeaderClassName}>
+                <span className="workbook-sticker bg-accent-1 text-ink-fg">
+                    <Trophy className="h-4 w-4" />
+                    Step 3
+                </span>
+                <div>
+                    <h2 className="font-display text-2xl font-black uppercase tracking-tight">Add Hall of Fame Students</h2>
+                    <p className="text-sm text-ink-fg/70">Save standout student results with a photo and score details.</p>
+                </div>
             </div>
 
             <form className="p-6 space-y-6" onSubmit={handleCreateStudent}>
                 {studentMessage && (
-                    <div className={`p-4 rounded-lg font-medium text-sm flex items-center gap-2 ${studentMessage.includes('thành công') ? 'bg-green-50 justify-center text-green-700' : 'bg-red-50 text-red-700'}`}>
-                        {studentMessage.includes('thành công') && <CheckCircle className="w-5 h-5" />}
+                    <div className={`flex items-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold brutal-shadow-sm ${studentMessage.includes('successfully') ? 'justify-center border-ink-fg bg-primary text-ink-fg' : 'border-ink-fg bg-accent-3 text-white'}`}>
+                        {studentMessage.includes('successfully') && <CheckCircle className="h-5 w-5" />}
                         {studentMessage}
                     </div>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Cột trái: Điền thông tin chữ */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 rounded-2xl border-2 border-ink-fg bg-paper-bg p-5 brutal-shadow-sm">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Tên học sinh *</label>
+                            <label className={fieldLabelClassName}>Student Name *</label>
                             <input
                                 type="text" required
                                 value={studentForm.name}
                                 onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white text-slate-900"
-                                placeholder="VD: Nguyễn Văn A"
+                                className="workbook-input text-sm"
+                                placeholder="e.g. Nguyen Van A"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">Trường học *</label>
+                            <label className={fieldLabelClassName}>School *</label>
                             <input
                                 type="text" required
                                 value={studentForm.school}
                                 onChange={(e) => setStudentForm({ ...studentForm, school: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white text-slate-900"
-                                placeholder="VD: THPT Chuyên Hà Nội - Amsterdam"
+                                className="workbook-input text-sm"
+                                placeholder="e.g. Hanoi Amsterdam High School"
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Điểm SAT *</label>
+                                <label className={fieldLabelClassName}>SAT Score *</label>
                                 <input
                                     type="number" required min="400" max="1600"
                                     value={Number.isNaN(studentForm.score) ? "" : studentForm.score}
                                     onChange={(e) => setStudentForm({ ...studentForm, score: parseInt(e.target.value) })}
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white text-slate-900"
+                                    className="workbook-input text-sm"
                                     placeholder="1500"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Tháng/Năm thi *</label>
+                                <label className={fieldLabelClassName}>Exam Month / Year *</label>
                                 <input
                                     type="text" required
                                     value={studentForm.examDate}
                                     onChange={(e) => setStudentForm({ ...studentForm, examDate: e.target.value })}
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm bg-white text-slate-900"
-                                    placeholder="VD: August 2023"
+                                    className="workbook-input text-sm"
+                                    placeholder="e.g. August 2023"
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* Cột phải: Khối Upload Ảnh Cloudinary */}
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-6 bg-slate-50 relative">
+                    <div className="relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-ink-fg bg-paper-bg p-6 brutal-shadow-sm">
                         {studentForm.imageUrl ? (
                             <div className="text-center">
-                                {/* Nếu đã có ảnh thì hiện ảnh đó lên cho Admin xem trước */}
-                                <img src={studentForm.imageUrl} alt="Preview" className="h-48 object-contain rounded-lg mb-4 mx-auto shadow-sm" />
+                                <Image src={studentForm.imageUrl} alt="Preview" width={800} height={800} unoptimized className="mx-auto mb-4 h-48 w-auto rounded-2xl border-2 border-ink-fg object-contain bg-surface-white p-2 brutal-shadow-sm" />
                                 <button 
                                     type="button" 
                                     onClick={() => setStudentForm({...studentForm, imageUrl: ""})} 
-                                    className="text-red-600 text-sm font-bold hover:underline"
+                                    className="text-sm font-bold text-accent-3 underline underline-offset-4"
                                 >
-                                    Xóa ảnh và Chọn lại
+                                    Remove photo and choose another
                                 </button>
                             </div>
                         ) : (
                             <>
-                            {/* @ts-ignore */}
                             <CldUploadWidget     
                                 uploadPreset="ronan_sat_edTech"
-                                onSuccess={(result: any) => {
-                                    // Sau khi Cloudinary tải xong, nó sẽ trả về 1 đường link (secure_url), ta lấy link đó nhét vào biến imageUrl
-                                    setStudentForm(prev => ({ ...prev, imageUrl: result.info.secure_url }));                                        }}
+                                onSuccess={(result: CloudinaryUploadWidgetResults) => {
+                                    const info = typeof result.info === "string" ? undefined : result.info;
+                                    if (info?.secure_url) {
+                                        setStudentForm(prev => ({ ...prev, imageUrl: info.secure_url }));
+                                    }
+                                }}
                             >
                                 {({ open }) => (
-                                    <div className="text-center cursor-pointer p-4" onClick={() => open()}>
-                                        <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform hover:scale-110">
-                                            <Upload className="w-8 h-8" />
+                                    <div className="text-center cursor-pointer p-4" onClick={() => open?.()}>
+                                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink-fg bg-accent-1 text-ink-fg brutal-shadow-sm transition-transform hover:-translate-y-0.5">
+                                            <Upload className="h-8 w-8" />
                                         </div>
-                                        <p className="font-bold text-slate-700">Click để chọn ảnh học sinh</p>
-                                        <p className="text-xs text-slate-500 mt-2">Được hỗ trợ bởi Cloudinary</p>
+                                        <p className="font-bold text-ink-fg">Click to choose a student photo</p>
+                                        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-ink-fg/60">Powered by Cloudinary</p>
                                     </div>
                                 )}
                             </CldUploadWidget>
@@ -145,13 +152,13 @@ export default function CreateStudentForm() {
                                 
                 </div>
 
-                <div className="pt-6 border-t border-slate-200 flex justify-end">
+                <div className="flex justify-end border-t-2 border-ink-fg pt-6">
                     <button
                         type="submit"
                         disabled={!studentForm.imageUrl} 
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-8 py-3 rounded-lg flex items-center gap-2 font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="workbook-button workbook-press px-8 py-3 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        <Save className="w-5 h-5" /> Save Student
+                        <Save className="h-5 w-5" /> Save Student
                     </button>
                 </div>
             </form>

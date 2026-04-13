@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { Bookmark, ChevronDown, MapPin, X } from "lucide-react";
 
+import { getTestingRoomThemePreset, type TestingRoomTheme } from "@/lib/testingRoomTheme";
+
 interface TestFooterProps {
+    theme?: TestingRoomTheme;
     moduleName?: string;
     currentIndex: number;
     totalQuestions: number;
@@ -16,6 +19,7 @@ interface TestFooterProps {
 }
 
 export default function TestFooter({
+    theme = "ronan",
     moduleName,
     currentIndex,
     totalQuestions,
@@ -27,6 +31,7 @@ export default function TestFooter({
     questions
 }: TestFooterProps) {
     const [isGridOpen, setIsGridOpen] = useState(false);
+    const footerTheme = getTestingRoomThemePreset(theme).footer;
     const headerTitle = moduleName ?? "Question Navigator";
     const displayName = typeof window === "undefined"
         ? "Practice Test"
@@ -37,37 +42,37 @@ export default function TestFooter({
             {isGridOpen && (
                 <>
                     <div
-                        className="fixed inset-0 z-30 bg-black/5"
+                        className="fixed inset-0 z-30 bg-ink-fg/20"
                         onClick={() => setIsGridOpen(false)}
                     />
 
-                    <div className="fixed bottom-[78px] left-1/2 z-40 w-[min(92vw,595px)] -translate-x-1/2 rounded-[14px] border border-slate-200 bg-white px-6 pb-7 pt-5 shadow-[0_10px_28px_rgba(15,23,42,0.18)] transition-all animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
+                    <div className={`fixed bottom-[84px] left-1/2 z-40 w-[min(92vw,595px)] -translate-x-1/2 px-6 pb-7 pt-5 transition-all animate-in fade-in zoom-in-95 duration-200 ${footerTheme.modalClass}`}>
+                        <div className={`flex items-start justify-between gap-4 pb-4 ${footerTheme.modalHeaderClass}`}>
                             <div className="w-8 shrink-0" />
-                            <h3 className="flex-1 text-center text-[18px] font-semibold leading-[1.15] text-[#0f172a] sm:text-[19px]">
+                            <h3 className={`flex-1 text-center text-[22px] leading-[1.05] tracking-tight ${footerTheme.modalTitleClass}`}>
                                 {headerTitle}
                             </h3>
                             <button
                                 type="button"
                                 onClick={() => setIsGridOpen(false)}
-                                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                                className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${footerTheme.modalCloseButtonClass}`}
                                 aria-label="Close question navigator"
                             >
                                 <X className="h-4 w-4" strokeWidth={2} />
                             </button>
                         </div>
 
-                        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-b border-slate-200 py-3 text-[12px] font-medium text-slate-700">
+                        <div className={`flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-3 text-[12px] font-medium ${footerTheme.modalLegendClass}`}>
                             <div className="flex items-center gap-1.5">
-                                <MapPin className="h-4 w-4 text-slate-700" strokeWidth={2} />
+                                <MapPin className={`h-4 w-4 ${footerTheme.currentPinClass}`} strokeWidth={2} />
                                 <span>Current</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <div className="h-4 w-4 border border-dashed border-slate-500 bg-white" />
+                                <div className={`h-4 w-4 bg-surface-white ${footerTheme.unansweredLegendClass}`} />
                                 <span>Unanswered</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <Bookmark className="h-3 w-3 fill-[#d9485f] text-[#d9485f]" strokeWidth={1.9} />
+                                <Bookmark className="h-3 w-3 fill-current text-accent-3" strokeWidth={1.9} />
                                 <span>For Review</span>
                             </div>
                         </div>
@@ -87,18 +92,18 @@ export default function TestFooter({
                                         }}
                                         className={`relative flex h-[30px] w-[30px] shrink-0 items-center justify-center overflow-visible text-[14px] font-semibold transition-all ${
                                             isAnswered
-                                                ? "border border-[#3557d6] bg-[#3557d6] text-white shadow-[0_0_0_1px_rgba(53,87,214,0.12)]"
-                                                : "border border-dashed border-slate-500 bg-white text-[#3557d6] hover:border-slate-700"
+                                                ? footerTheme.gridAnsweredClass
+                                                : footerTheme.gridUnansweredClass
                                         }`}
                                         aria-label={`Jump to question ${i + 1}`}
                                     >
                                         {isCurrent ? (
-                                            <MapPin className="pointer-events-none absolute -top-[15px] left-1/2 h-4 w-4 -translate-x-1/2 text-slate-700" strokeWidth={2} />
+                                            <MapPin className={`pointer-events-none absolute -top-[18px] left-1/2 h-4 w-4 -translate-x-1/2 ${footerTheme.currentPinClass}`} strokeWidth={2} />
                                         ) : null}
                                         <span>{i + 1}</span>
                                         {isFlagged ? (
                                             <div className="pointer-events-none absolute -right-[3px] -top-[6px]">
-                                                <Bookmark className="h-3 w-3 fill-[#d9485f] text-[#d9485f] drop-shadow-[0_1px_1px_rgba(255,255,255,0.7)]" strokeWidth={1.9} />
+                                                <Bookmark className="h-3 w-3 fill-current text-accent-3" strokeWidth={1.9} />
                                             </div>
                                         ) : null}
                                     </button>
@@ -110,25 +115,19 @@ export default function TestFooter({
                             <button
                                 type="button"
                                 onClick={() => setIsGridOpen(false)}
-                                className="rounded-full border border-[#5d7cff] px-6 py-2 text-sm font-semibold text-[#3557d6] transition hover:bg-[#eef2ff]"
+                                className={footerTheme.modalActionButtonClass}
                             >
                                 Go to Review Page
                             </button>
                         </div>
-
-                        <div className="absolute -bottom-[9px] left-1/2 h-[18px] w-[18px] -translate-x-1/2 rotate-45 border-b border-r border-slate-200 bg-white" />
                     </div>
                 </>
             )}
 
-            <footer className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-t border-slate-300 bg-[#ebf0f7] px-6">
-                <div
-                    className="absolute left-0 top-0 h-[2px] w-full"
-                    style={{ backgroundImage: "repeating-linear-gradient(to right, #2d3642 0, #1c2128 19px, transparent 19px, transparent 20px)" }}
-                />
+            <footer className={`fixed bottom-0 left-0 right-0 z-50 flex h-20 items-center justify-between px-4 sm:px-6 ${footerTheme.barClass}`}>
 
                 <div className="flex-1">
-                    <span suppressHydrationWarning className="text-sm font-semibold text-slate-800 sm:text-base">
+                    <span suppressHydrationWarning className={`text-sm font-semibold sm:text-base ${footerTheme.displayNameClass}`}>
                         {displayName}
                     </span>
                 </div>
@@ -137,7 +136,7 @@ export default function TestFooter({
                     <button
                         type="button"
                         onClick={() => setIsGridOpen(!isGridOpen)}
-                        className="flex items-center rounded-md bg-[#1a1c23] px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-black"
+                        className={footerTheme.navigatorButtonClass}
                     >
                         <span>Question {currentIndex + 1} of {totalQuestions}</span>
                         <ChevronDown className={`ml-2 inline-block h-4 w-4 transition-transform ${isGridOpen ? "rotate-180" : ""}`} />
@@ -149,7 +148,7 @@ export default function TestFooter({
                         <button
                             type="button"
                             onClick={onPrev}
-                            className="rounded-full bg-[#3b5bd9] px-6 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-[#2e4bb5]"
+                            className={footerTheme.secondaryNavButtonClass}
                         >
                             Back
                         </button>
@@ -159,7 +158,7 @@ export default function TestFooter({
                         <button
                             type="button"
                             onClick={onNext}
-                            className="rounded-full bg-[#3b5bd9] px-6 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-[#2e4bb5]"
+                            className={footerTheme.primaryNavButtonClass}
                         >
                             Next
                         </button>

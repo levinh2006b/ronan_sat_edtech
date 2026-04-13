@@ -5,10 +5,14 @@ import QuestionViewer from "@/components/QuestionViewer";
 import TestEntryLoading from "@/components/test/TestEntryLoading";
 import TestFooter from "@/components/test/TestFooter";
 import TestHeader from "@/components/test/TestHeader";
+import { useTestingRoomTheme } from "@/hooks/useTestingRoomTheme";
+import { getTestingRoomThemePreset } from "@/lib/testingRoomTheme";
 import { useResizableDivider } from "@/hooks/useResizableDivider";
 import { useTestEngine } from "@/hooks/useTestEngine";
 
 export default function TestEngine({ testId }: { testId: string }) {
+  const { theme: testingRoomTheme } = useTestingRoomTheme();
+  const themePreset = getTestingRoomThemePreset(testingRoomTheme);
   const {
     mode,
     loading,
@@ -44,14 +48,19 @@ export default function TestEngine({ testId }: { testId: string }) {
 
   if (questions.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6">
-        <h1 className="mb-4 text-2xl font-bold text-slate-900">No questions found!</h1>
-        <button
-          onClick={() => router.push("/full-length")}
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          Return to Dashboard
-        </button>
+      <div className="bg-dot-pattern flex min-h-screen items-center justify-center bg-paper-bg p-6">
+        <div className="workbook-panel max-w-lg px-8 py-10 text-center">
+          <div className="workbook-sticker bg-accent-3 text-white">Test Unavailable</div>
+          <h1 className="mt-5 font-display text-4xl font-black uppercase tracking-tight text-ink-fg">No questions found</h1>
+          <p className="mt-3 text-base leading-7 text-ink-fg/75">
+            This test could not be loaded, so there is nothing to start right now.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <button onClick={() => router.push("/full-length")} className="workbook-button" type="button">
+              Return to Library
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -68,8 +77,11 @@ export default function TestEngine({ testId }: { testId: string }) {
         : "Are you sure you want to end this section?";
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-white selection:bg-yellow-200">
+    <div
+      className={`relative flex min-h-screen flex-col overflow-hidden ${themePreset.shell.rootClass}`}
+    >
       <TestHeader
+        theme={testingRoomTheme}
         sectionName={`${currentStage.section} - Module ${currentStage.module}`}
         timeRemaining={timeRemaining}
         onTimeUp={handleSubmit}
@@ -92,11 +104,11 @@ export default function TestEngine({ testId }: { testId: string }) {
         }}
       />
 
-      <DesmosCalculator isOpen={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
+      <DesmosCalculator theme={testingRoomTheme} isOpen={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
 
       <main
         ref={containerRef}
-        className="relative flex-1 overflow-hidden bg-white"
+        className={`relative flex-1 overflow-hidden ${themePreset.shell.mainClass}`}
         style={{ userSelect: isDragging.current ? "none" : "auto" }}
         onMouseDown={(event) => {
           const target = event.target as HTMLElement;
@@ -106,6 +118,7 @@ export default function TestEngine({ testId }: { testId: string }) {
         }}
       >
         <QuestionViewer
+          theme={testingRoomTheme}
           question={currentQuestion}
           userAnswer={answers[currentQuestion._id]}
           onAnswerSelect={handleAnswerSelect}
@@ -117,6 +130,7 @@ export default function TestEngine({ testId }: { testId: string }) {
       </main>
 
       <TestFooter
+        theme={testingRoomTheme}
         moduleName={`Section ${currentStage.section === "Math" ? 2 : 1}, Module ${currentStage.module}: ${currentStage.section}`}
         currentIndex={currentIndex}
         totalQuestions={currentModuleQuestions.length}

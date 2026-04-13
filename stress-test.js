@@ -19,7 +19,7 @@ export const options = {
 const BASE_URL = 'https://ronansatedtech.vercel.app';
 
 // 2. Kịch bản người dùng (User Journey)
-export default function () {
+export default function stressTest() {
   
   // Hành động 1: Người dùng truy cập Trang chủ
   group('1. Truy cap Trang Chu', function () {

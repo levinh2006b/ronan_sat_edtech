@@ -71,16 +71,16 @@ export default function VocabPage() {
   } = useVocabPageController();
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.92),_rgba(232,240,247,0.88)_26%,_rgba(225,233,241,0.96)_100%)] px-4 py-4 sm:px-5 lg:px-6">
+    <main className="min-h-[calc(100vh-4rem)] bg-paper-bg bg-dot-pattern px-4 py-4 sm:px-5 lg:px-6">
       <div className="mx-auto max-w-[1640px]">
         <VocabPageHeader />
 
-        <section className="rounded-[28px] border border-white/75 bg-white/38 p-3 shadow-[0_18px_50px_rgba(148,163,184,0.14)] backdrop-blur-xl">
+        <section className="workbook-panel p-3">
           <div className="mb-3 flex items-center justify-between px-1">
             <div>
-              <div className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">Collections</div>
+              <div className="text-[13px] font-semibold uppercase tracking-[0.16em] text-ink-fg/70">Collections</div>
             </div>
-            <div className="text-[12px] text-slate-500">{board.columns.length} lists</div>
+            <div className="workbook-sticker bg-accent-1 text-ink-fg">{board.columns.length} lists</div>
           </div>
 
           <div

@@ -1,11 +1,26 @@
 "use client";
 
-import { Button, Popconfirm } from "antd";
-import { Calculator, CircleX, Eye, EyeOff } from "lucide-react";
+import { Button } from "antd";
+import { AlertTriangle, Calculator, CircleX, Eye, EyeOff } from "lucide-react";
 
 import { ReportErrorButton } from "@/components/report/ReportErrorButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogActionButton,
+  AlertDialogCancel,
+  AlertDialogCancelButton,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { getTestingRoomThemePreset, type TestingRoomTheme } from "@/lib/testingRoomTheme";
 
 interface TestHeaderProps {
+  theme?: TestingRoomTheme;
   sectionName: string;
   timeRemaining: number;
   onTimeUp: () => void;
@@ -30,6 +45,7 @@ interface TestHeaderProps {
 }
 
 export default function TestHeader({
+  theme = "ronan",
   sectionName,
   timeRemaining,
   onTimeUp,
@@ -45,6 +61,11 @@ export default function TestHeader({
   onLeave,
   reportContext,
 }: TestHeaderProps) {
+  const themePreset = getTestingRoomThemePreset(theme);
+  const headerTheme = themePreset.header;
+  const submitButtonLabel = buttonText || (isLastModule ? "Submit Test" : "Next Module");
+  const isFinalSubmit = submitButtonLabel === "Submit Test" || isLastModule;
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -52,34 +73,43 @@ export default function TestHeader({
   };
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between border-b border-slate-300 bg-[#ebf0f7] px-6 shadow-sm">
+    <header
+      className={`fixed left-0 right-0 top-0 z-50 flex h-20 items-center justify-between px-4 sm:px-6 ${headerTheme.shellClass}`}
+    >
       <div className="flex flex-1 items-center">
-        <h1 className="text-lg font-bold tracking-tight text-slate-800">{sectionName}</h1>
+        <div>
+          <h1 className={`text-2xl tracking-tight ${headerTheme.titleClass}`}>
+            {sectionName}
+          </h1>
+        </div>
       </div>
 
       <div className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center">
-        <div className="flex flex-col items-center">
+        <div
+          className={`flex flex-col items-center px-4 py-2 ${headerTheme.timerShellClass}`}
+        >
           <div className="flex items-center gap-3">
             {!isTimerHidden ? (
               <span
                 className={`text-xl font-mono font-bold tracking-wider ${
-                  timeRemaining < 300 ? "animate-pulse text-red-600" : "text-slate-900"
+                  timeRemaining < 300
+                    ? headerTheme.timerWarningTextClass
+                    : headerTheme.timerTextClass
                 }`}
               >
                 {formatTime(timeRemaining)}
               </span>
             ) : (
-              <span className="text-xl font-mono tracking-wider text-slate-400">--:--</span>
+              <span className={`text-xl font-mono tracking-wider ${headerTheme.timerHiddenTextClass}`}>--:--</span>
             )}
 
-            <Button
+            <button
               onClick={() => setIsTimerHidden(!isTimerHidden)}
-              type="text"
-              icon={isTimerHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              className="text-slate-500 hover:text-slate-800"
+              type="button"
+              className={`rounded-full p-2 ${headerTheme.iconButtonClass}`}
             >
-              <span className="ml-1 hidden sm:inline">{isTimerHidden ? "Show" : "Hide"}</span>
-            </Button>
+              {isTimerHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            </button>
           </div>
         </div>
       </div>
@@ -92,63 +122,88 @@ export default function TestHeader({
             onClick={onToggleCalculator}
             type="button"
             title="Calculator"
-            className="flex cursor-pointer items-center justify-center rounded-full p-2 text-slate-500 transition-colors hover:bg-blue-50 hover:text-blue-600 outline-none"
+            className={`flex items-center justify-center rounded-full p-2 outline-none ${headerTheme.iconButtonClass}`}
           >
             <Calculator className="h-5 w-5" />
           </button>
         ) : null}
 
-        <Popconfirm
-          title={confirmTitle || (isLastModule ? "Submit Entire Test?" : "Finish This Module?")}
-          description={
-            confirmDescription ||
-            (isLastModule
-              ? "You are about to finish the test. You cannot go back to any module after this."
-              : "Once you move to the next module, you cannot return to the current questions.")
-          }
-          onConfirm={onTimeUp}
-          disabled={isSubmitting}
-          okText="Yes"
-          cancelText="No"
-          placement="bottomRight"
-        >
-          <Button
-            type="default"
-            loading={isSubmitting}
-            disabled={isSubmitting}
-            danger={buttonText === "Submit Module" || buttonText === "Submit Test" || isLastModule}
-            className={`rounded-full border-2 px-8 font-semibold transition-all h-10 ${
-              buttonText === "Submit Module" || buttonText === "Submit Test" || isLastModule
-                ? "!border-[#fb2a57] !text-[#fb2a57] bg-transparent hover:!bg-[#fb2a57]/10"
-                : ""
-            }`}
-          >
-            {buttonText || (isLastModule ? "Submit Test" : "Next Module")}
-          </Button>
-        </Popconfirm>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="default"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+              danger={isFinalSubmit}
+              className={`!h-11 !px-6 !font-bold ${isFinalSubmit ? headerTheme.submitDangerClass : headerTheme.submitPrimaryClass}`}
+            >
+              {submitButtonLabel}
+            </Button>
+          </AlertDialogTrigger>
 
-        <Popconfirm
-          title="Leave Exam?"
-          description="Are you sure you want to leave? Your progress will not be saved."
-          onConfirm={onLeave}
-          okText="Leave"
-          cancelText="Stay"
-          placement="bottomRight"
-          okButtonProps={{ danger: true }}
-        >
-          <button
-            type="button"
-            className="flex cursor-pointer items-center justify-center rounded-full p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 outline-none"
-          >
-            <CircleX className="h-5 w-5" />
-          </button>
-        </Popconfirm>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink-fg bg-primary text-ink-fg brutal-shadow-sm">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <AlertDialogTitle>{confirmTitle || (isLastModule ? "Submit Entire Test?" : "Finish This Module?")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirmDescription ||
+                  (isLastModule
+                    ? "You are about to finish the test. You cannot go back to any module after this."
+                    : "Once you move to the next module, you cannot return to the current questions.")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel asChild>
+                <AlertDialogCancelButton>No</AlertDialogCancelButton>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <AlertDialogActionButton
+                  className={isFinalSubmit ? "!bg-accent-3 !text-surface-white" : "!bg-primary !text-ink-fg"}
+                  onClick={onTimeUp}
+                >
+                  Yes
+                </AlertDialogActionButton>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              type="button"
+              className={`flex items-center justify-center rounded-full p-2 text-ink-fg outline-none ${headerTheme.leaveButtonClass}`}
+            >
+              <CircleX className="h-5 w-5" />
+            </button>
+          </AlertDialogTrigger>
+
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink-fg bg-[var(--color-accent-3)] text-surface-white brutal-shadow-sm">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <AlertDialogTitle>Leave Exam?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to leave? Your progress will not be saved.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel asChild>
+                <AlertDialogCancelButton>Stay</AlertDialogCancelButton>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <AlertDialogActionButton onClick={onLeave}>Leave</AlertDialogActionButton>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
-      <div
-        className="absolute bottom-0 left-0 h-[2px] w-full"
-        style={{ backgroundImage: "repeating-linear-gradient(to right, #2d3642 0, #1c2128 19px, transparent 19px, transparent 20px)" }}
-      />
     </header>
   );
 }

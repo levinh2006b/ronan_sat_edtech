@@ -66,8 +66,8 @@ export default function AdminDashboard() {
 
   if (!session || session.user.role !== "ADMIN") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="rounded-lg border border-slate-200 bg-white p-8 font-bold text-red-600">
+      <div className="flex min-h-screen items-center justify-center bg-paper-bg">
+        <div className="workbook-panel bg-accent-3 p-8 font-bold text-white">
           Unauthorized. Admin access required.
         </div>
       </div>
@@ -75,8 +75,15 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8 pb-24">
+    <div className="min-h-screen bg-paper-bg p-8 pb-24">
       <div className="mx-auto max-w-5xl space-y-8">
+        <section className="workbook-panel-muted overflow-hidden">
+          <div className="border-b-4 border-ink-fg bg-paper-bg px-6 py-5">
+            <div className="workbook-sticker bg-accent-3 text-white">Admin Desk</div>
+            <h1 className="mt-4 font-display text-4xl font-black uppercase tracking-tight text-ink-fg">Manage tests, questions, and showcase students.</h1>
+          </div>
+        </section>
+
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <CreateTestForm onSuccess={fetchTests} />
           <CreateQuestionForm tests={tests} />

@@ -5,6 +5,10 @@ import { BookOpen } from "lucide-react";
 
 import TestCard from "@/components/TestCard";
 import TestCardSkeleton from "@/components/TestCardSkeleton";
+import { LibraryFilterSidebar } from "@/components/dashboard/LibraryFilterSidebar";
+import { LibraryHeader } from "@/components/dashboard/LibraryHeader";
+import { LibraryPagination } from "@/components/dashboard/LibraryPagination";
+import { LibrarySelect } from "@/components/dashboard/LibrarySelect";
 import type { SortOption, TestListItem, UserResultSummary } from "@/types/testLibrary";
 
 interface TestLibraryProps {
@@ -37,102 +41,80 @@ export default function TestLibrary({
   userResults,
 }: TestLibraryProps) {
   return (
-    <section>
-      <div className="flex flex-col gap-8 md:flex-row">
-        <div className="w-full flex-shrink-0 md:w-1/4">
-          <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-5">
-            <h2 className="mb-4 border-b border-slate-100 pb-3 text-lg font-bold text-slate-800">
-              Filter by Date
-            </h2>
-            <div className="flex flex-col gap-2">
-              {uniquePeriods.map((period, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setSelectedPeriod(period);
-                    setPage(1);
-                  }}
-                  className={`cursor-pointer rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-all ${
-                    selectedPeriod === period
-                      ? "border border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
-                      : "border border-transparent text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  {period === "All" ? "All Tests" : period}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+    <section className="grid items-start gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
+      <LibraryFilterSidebar
+        title="Date"
+        accentClassName="bg-primary text-ink-fg"
+        options={uniquePeriods}
+        selectedValue={selectedPeriod}
+        allLabel="All tests"
+        onSelect={(period) => {
+          setSelectedPeriod(period);
+          setPage(1);
+        }}
+      />
 
-        <div className="w-full md:w-3/4">
-          <div className="mb-6 flex flex-col items-start justify-between gap-4 border-b border-transparent sm:flex-row sm:items-center">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-slate-900">Practice Test Library</h2>
-              {syncing ? <span className="animate-pulse text-sm text-slate-500">Syncing...</span> : null}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label htmlFor="sort-tests" className="text-sm font-medium text-slate-600">
-                Sort by:
+      <div className="space-y-6">
+        <LibraryHeader
+          title="Practice Test Library"
+          description="Browse every full-length exam in one shelf."
+          accentClassName="bg-primary text-ink-fg"
+          stickerLabel="Full-Length Shelf"
+          syncing={syncing}
+        >
+          <div className="flex flex-col gap-2 lg:items-end">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label htmlFor="sort-tests" className="text-sm font-bold uppercase tracking-[0.16em] text-ink-fg">
+                Sort
               </label>
-              <select
+              <LibrarySelect
                 id="sort-tests"
                 value={sortOption}
-                onChange={(e) => {
-                  setSortOption(e.target.value as SortOption);
+                onValueChange={(value) => {
+                  setSortOption(value as SortOption);
                   setPage(1);
                 }}
-                className="block cursor-pointer rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="title_asc">Title (A-Z)</option>
-                <option value="title_desc">Title (Z-A)</option>
-              </select>
+                className="min-w-[15rem]"
+                options={[
+                  { value: "newest", label: "Newest First" },
+                  { value: "oldest", label: "Oldest First" },
+                  { value: "title_asc", label: "Title (A-Z)" },
+                  { value: "title_desc", label: "Title (Z-A)" },
+                ]}
+              />
             </div>
           </div>
+        </LibraryHeader>
 
+        <div>
           {loading ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((index) => (
-                <TestCardSkeleton key={index} />
-              ))}
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((index) => (
+                  <TestCardSkeleton key={index} />
+                ))}
             </div>
           ) : filteredTests.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
-              <BookOpen className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-              <h3 className="text-lg font-medium text-slate-900">No tests found for this period</h3>
+            <div className="workbook-panel-muted py-16 text-center">
+              <BookOpen className="mx-auto mb-4 h-12 w-12 text-ink-fg/45" />
+              <h3 className="font-display text-3xl font-black uppercase tracking-tight text-ink-fg">No tests on this tab</h3>
+              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-ink-fg">
+                Try another date filter to pull a different workbook stack into view.
+              </p>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {filteredTests.map((test) => (
                   <TestCard key={test._id} test={test} userResults={userResults} />
                 ))}
               </div>
 
-              {totalPages > 1 ? (
-                <div className="mt-8 flex items-center justify-center gap-4">
-                  <button
-                    onClick={() => setPage((p: number) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm font-medium text-slate-600">
-                    Page {page} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              ) : null}
+              <LibraryPagination
+                page={page}
+                totalPages={totalPages}
+                onPrevious={() => setPage((currentPage: number) => Math.max(1, currentPage - 1))}
+                onNext={() => setPage((currentPage: number) => Math.min(totalPages, currentPage + 1))}
+              />
             </>
           )}
         </div>

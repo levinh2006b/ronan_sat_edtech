@@ -5,6 +5,7 @@
 
     import { NextResponse } from "next/server";
     import { getServerSession } from "next-auth";
+    import { ZodError } from "zod";
     import { authOptions } from "@/lib/authOptions";
     import { questionService } from "@/lib/services/questionService";  // Công nhân được Controller giao việc
 
@@ -25,8 +26,8 @@
                         },
                     }
                 );
-            } catch (error: any) {
-                return NextResponse.json({ error: error.message }, { status: 500 });
+            } catch (error: unknown) {
+                return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to fetch questions" }, { status: 500 });
             }
         },
 
@@ -42,18 +43,18 @@
                 try {
                     const newQuestion = await questionService.createQuestion(body);            // Gửi nội dung câu dạng JSON đi
                     return NextResponse.json({ question: newQuestion }, { status: 201 });
-                } catch (error: any) {
-                    if (error.name === "ZodError") {                                           // Zod là thư hiện rà soát lỗi chính tả gắt gao, nếu thiếu thông tin required thì báo lỗi
-                        return NextResponse.json({ error: error.errors }, { status: 400 });
+                } catch (error: unknown) {
+                    if (error instanceof ZodError) {                                           // Zod là thư hiện rà soát lỗi chính tả gắt gao, nếu thiếu thông tin required thì báo lỗi
+                        return NextResponse.json({ error: error.issues }, { status: 400 });
                     }
-                    if (error.message === "Test not found") {                 // Không tìm thấy bài thi cần bổ sung câu hỏi
+                    if (error instanceof Error && error.message === "Test not found") {                 // Không tìm thấy bài thi cần bổ sung câu hỏi
                         return NextResponse.json({ error: "Test not found" }, { status: 404 });
                     }
                     throw error;
                 }
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("POST /api/questions error:", error);   
-                return NextResponse.json({ error: error.message || "Failed to create question" }, { status: 500 });
+                return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to create question" }, { status: 500 });
             }
         }
     };

@@ -3,22 +3,194 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { BarChart2, BookOpen, LayoutDashboard, LibraryBig, LogOut, Settings, Target, Trophy, Wrench } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  BarChart2,
+  BookOpen,
+  LayoutDashboard,
+  LibraryBig,
+  LogOut,
+  Settings,
+  ShieldCheck,
+  Target,
+  Trophy,
+  Wrench,
+} from "lucide-react";
+
+import BrandLogo from "@/components/BrandLogo";
+
+type NavItemConfig = {
+  href: string;
+  label: string;
+  mobileLabel: string;
+  icon: LucideIcon;
+  tone: "primary" | "accent-1" | "accent-2" | "accent-3" | "surface";
+  matches: string[];
+};
+
+const STUDENT_ITEMS: NavItemConfig[] = [
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    mobileLabel: "Home",
+    icon: LayoutDashboard,
+    tone: "primary",
+    matches: ["/dashboard", "/parent/dashboard"],
+  },
+  {
+    href: "/full-length",
+    label: "Full-length",
+    mobileLabel: "Tests",
+    icon: BookOpen,
+    tone: "primary",
+    matches: ["/full-length"],
+  },
+  {
+    href: "/sectional",
+    label: "Sectional",
+    mobileLabel: "Skills",
+    icon: Target,
+    tone: "accent-2",
+    matches: ["/sectional"],
+  },
+  {
+    href: "/review",
+    label: "Results",
+    mobileLabel: "Review",
+    icon: BarChart2,
+    tone: "primary",
+    matches: ["/review"],
+  },
+  {
+    href: "/vocab",
+    label: "Vocab",
+    mobileLabel: "Vocab",
+    icon: LibraryBig,
+    tone: "accent-1",
+    matches: ["/vocab"],
+  },
+  {
+    href: "/hall-of-fame",
+    label: "Hall of Fame",
+    mobileLabel: "Hall",
+    icon: Trophy,
+    tone: "primary",
+    matches: ["/hall-of-fame"],
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    mobileLabel: "Settings",
+    icon: Settings,
+    tone: "surface",
+    matches: ["/settings"],
+  },
+];
+
+const PARENT_ITEMS: NavItemConfig[] = [
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    mobileLabel: "Home",
+    icon: LayoutDashboard,
+    tone: "primary",
+    matches: ["/dashboard", "/parent/dashboard"],
+  },
+  {
+    href: "/hall-of-fame",
+    label: "Hall of Fame",
+    mobileLabel: "Hall",
+    icon: Trophy,
+    tone: "primary",
+    matches: ["/hall-of-fame"],
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    mobileLabel: "Settings",
+    icon: Settings,
+    tone: "surface",
+    matches: ["/settings"],
+  },
+];
+
+const ADMIN_ITEMS: NavItemConfig[] = [
+  {
+    href: "/full-length",
+    label: "Full-length",
+    mobileLabel: "Tests",
+    icon: BookOpen,
+    tone: "primary",
+    matches: ["/full-length"],
+  },
+  {
+    href: "/sectional",
+    label: "Sectional",
+    mobileLabel: "Skills",
+    icon: Target,
+    tone: "accent-2",
+    matches: ["/sectional"],
+  },
+  {
+    href: "/review",
+    label: "Results",
+    mobileLabel: "Review",
+    icon: BarChart2,
+    tone: "surface",
+    matches: ["/review"],
+  },
+  {
+    href: "/vocab",
+    label: "Vocab",
+    mobileLabel: "Vocab",
+    icon: LibraryBig,
+    tone: "accent-1",
+    matches: ["/vocab"],
+  },
+  {
+    href: "/hall-of-fame",
+    label: "Hall of Fame",
+    mobileLabel: "Hall",
+    icon: Trophy,
+    tone: "surface",
+    matches: ["/hall-of-fame"],
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    mobileLabel: "Settings",
+    icon: Settings,
+    tone: "surface",
+    matches: ["/settings"],
+  },
+  {
+    href: "/fix",
+    label: "Fix Board",
+    mobileLabel: "Fix",
+    icon: Wrench,
+    tone: "accent-3",
+    matches: ["/fix"],
+  },
+  {
+    href: "/admin",
+    label: "Admin",
+    mobileLabel: "Admin",
+    icon: ShieldCheck,
+    tone: "accent-3",
+    matches: ["/admin"],
+  },
+];
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-
-  if (pathname.startsWith("/auth")) {
-    return null;
-  }
 
   if (
     status === "loading" ||
     status === "unauthenticated" ||
     !session ||
     pathname.startsWith("/test/") ||
-    pathname === "/auth"
+    pathname.startsWith("/auth")
   ) {
     return null;
   }
@@ -26,148 +198,100 @@ export default function Navbar() {
   const isParent = session.user.role === "PARENT";
   const isAdmin = session.user.role === "ADMIN";
   const homeHref = isAdmin ? "/admin" : "/dashboard";
+  const navItems = isAdmin ? ADMIN_ITEMS : isParent ? PARENT_ITEMS : STUDENT_ITEMS;
+  const roleLabel = isAdmin ? "Admin Desk" : isParent ? "Parent View" : "Student Workbook";
+  const displayName = session.user.name || session.user.email?.split("@")[0] || "Scholar";
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2">
-          <Link href={homeHref} className="flex items-center gap-2">
-            <span className="text-xl font-bold text-slate-900 transition hover:text-blue-600">Ronan SAT</span>
+    <>
+      <aside className="app-shell-navigation fixed inset-y-0 left-0 z-40 hidden w-64 border-r-4 border-ink-fg bg-surface-white lg:flex lg:flex-col">
+        <div className="border-b-4 border-ink-fg bg-paper-bg px-5 py-5">
+          <Link href={homeHref} className="group block rounded-2xl border-2 border-ink-fg bg-surface-white p-3.5 brutal-shadow-sm workbook-press">
+            <BrandLogo
+              priority
+              size={48}
+              className="items-center gap-2.5"
+              iconClassName="rounded-full border-2 border-ink-fg bg-surface-white p-1"
+              labelClassName="text-[1.15rem] font-extrabold tracking-[0.02em]"
+            />
           </Link>
         </div>
 
-        <div className="flex items-center gap-4">
-          {isParent ? (
-            <>
-              <NavItem
-                href="/dashboard"
-                active={pathname === "/dashboard" || pathname === "/parent/dashboard"}
-                icon={<LayoutDashboard className="h-4 w-4" />}
-                label="Dashboard"
-              />
+        <div className="workbook-scrollbar bg-dot-pattern flex-1 overflow-y-auto px-3 py-4">
+          <div className="space-y-2.5">
+            {navItems.map((item) => (
+              <NavItem key={item.href} item={item} pathname={pathname} compact={false} />
+            ))}
+          </div>
+        </div>
 
-              <NavItem
-                href="/hall-of-fame"
-                active={pathname === "/hall-of-fame"}
-                icon={<Trophy className="h-4 w-4" />}
-                label="Hall of Fame"
-              />
-
-              <NavItem
-                href="/settings"
-                active={pathname === "/settings"}
-                icon={<Settings className="h-4 w-4" />}
-                label="Settings"
-              />
-            </>
-          ) : (
-            <>
-              {isAdmin ? (
-                <>
-                  <NavItem
-                    href="/fix"
-                    active={pathname === "/fix"}
-                    icon={<Wrench className="h-4 w-4" />}
-                    label="Fix"
-                  />
-                  <NavItem
-                    href="/admin"
-                    active={pathname === "/admin"}
-                    icon={<Settings className="h-4 w-4" />}
-                    label="Admin"
-                  />
-                </>
-              ) : null}
-
-              <NavItem
-                href="/full-length"
-                active={pathname === "/full-length"}
-                icon={<BookOpen className="h-4 w-4" />}
-                label="Full-length tests"
-              />
-
-              <NavItem
-                href="/sectional"
-                active={pathname === "/sectional"}
-                icon={<Target className="h-4 w-4" />}
-                label="Sectional tests"
-              />
-
-              <NavItem
-                href="/review"
-                active={pathname === "/review"}
-                icon={<BarChart2 className="h-4 w-4" />}
-                label="Results"
-              />
-
-              <NavItem
-                href="/vocab"
-                active={pathname === "/vocab"}
-                icon={<LibraryBig className="h-4 w-4" />}
-                label="Vocab"
-              />
-
-              <NavItem
-                href="/dashboard"
-                active={pathname === "/dashboard" || pathname === "/parent/dashboard"}
-                icon={<LayoutDashboard className="h-4 w-4" />}
-                label="Dashboard"
-              />
-
-              <NavItem
-                href="/hall-of-fame"
-                active={pathname === "/hall-of-fame"}
-                icon={<Trophy className="h-4 w-4" />}
-                label="Hall of Fame"
-              />
-
-              <NavItem
-                href="/settings"
-                active={pathname === "/settings"}
-                icon={<Settings className="h-4 w-4" />}
-                label="Settings"
-              />
-            </>
-          )}
-
-          <div className="mx-2 h-6 w-px bg-slate-200" />
-
-          <span className="hidden text-sm font-medium text-slate-700 sm:block">
-            Hi, {session.user.name || session.user.email?.split("@")[0]}
-          </span>
+        <div className="border-t-4 border-ink-fg bg-surface-white px-3 py-3">
+          <div className="rounded-2xl border-2 border-ink-fg bg-paper-bg p-3.5 brutal-shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-ink-fg">Current Seat</p>
+            <p className="mt-2 font-display text-[1.05rem] font-extrabold leading-snug tracking-tight">{displayName}</p>
+            <p className="mt-1 truncate text-[0.82rem] text-ink-fg">{session.user.email}</p>
+          </div>
           <button
             onClick={() => signOut({ callbackUrl: "/auth" })}
-            className="cursor-pointer rounded-full p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
-            title="Log out"
+            className="workbook-button mt-3 w-full justify-center bg-accent-3 text-white"
+            type="button"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-4 w-4" />
+            Log out
           </button>
         </div>
-      </div>
-    </nav>
+      </aside>
+
+      <nav className="app-shell-navigation fixed inset-x-0 bottom-0 z-50 border-t-4 border-ink-fg bg-surface-white lg:hidden">
+        <div className="bg-dot-pattern overflow-x-auto px-3 py-3">
+          <div className="flex min-w-max gap-2">
+            {navItems.map((item) => (
+              <NavItem key={item.href} item={item} pathname={pathname} compact />
+            ))}
+            <button
+              onClick={() => signOut({ callbackUrl: "/auth" })}
+              className="flex min-w-[5.75rem] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-ink-fg bg-surface-white px-3 py-3 text-center brutal-shadow-sm workbook-press"
+              type="button"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="text-[0.68rem] font-bold uppercase tracking-[0.16em]">Exit</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </>
   );
 }
 
 function NavItem({
-  href,
-  active,
-  icon,
-  label,
+  item,
+  pathname,
+  compact,
 }: {
-  href: string;
-  active: boolean;
-  icon: React.ReactNode;
-  label: string;
+  item: NavItemConfig;
+  pathname: string;
+  compact: boolean;
 }) {
+  const active = item.matches.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  const Icon = item.icon;
+
   return (
     <Link
-      href={href}
-      className={`flex items-center gap-1 text-sm font-medium transition hover:text-blue-600 ${
-        active ? "text-blue-600" : "text-slate-600"
-      }`}
-    >
-      {icon}
-      {label}
+      href={item.href}
+        className={[
+          active ? "border-4 border-ink-fg brutal-shadow-sm workbook-press" : "border-2 border-ink-fg brutal-shadow-sm workbook-press",
+          compact
+            ? "flex min-w-[5.75rem] flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-center"
+            : "flex items-center gap-3 rounded-2xl px-3.5 py-2.5",
+          active ? "bg-paper-bg text-ink-fg" : "bg-surface-white text-ink-fg",
+        ].join(" ")}
+      >
+      <Icon className={compact ? "h-4 w-4" : "h-[1.15rem] w-[1.15rem]"} />
+      <div className={compact ? "space-y-0.5" : "min-w-0"}>
+        <p className={compact ? "text-[0.68rem] font-bold uppercase tracking-[0.16em]" : "font-display text-[1.15rem] font-bold leading-none tracking-tight"}>
+          {compact ? item.mobileLabel : item.label}
+        </p>
+      </div>
     </Link>
   );
 }

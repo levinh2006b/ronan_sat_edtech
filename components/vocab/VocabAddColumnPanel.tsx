@@ -22,7 +22,7 @@ export function VocabAddColumnPanel({
   return (
     <div className={`${COLUMN_WIDTH} shrink-0 self-start`}>
       {isAddingColumn ? (
-        <div className="rounded-[18px] border border-white/70 bg-white/72 p-3 shadow-[0_12px_34px_rgba(148,163,184,0.14)] backdrop-blur-xl">
+        <div className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4 brutal-shadow">
           <input
             autoFocus
             value={newColumnTitle}
@@ -38,20 +38,20 @@ export function VocabAddColumnPanel({
               }
             }}
             placeholder="New list name"
-            className="w-full rounded-[12px] border border-slate-200 bg-white px-3 py-2.5 text-[14px] text-slate-900 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+            className="workbook-input text-[15px]"
           />
           <div className="mt-3 flex items-center gap-3">
             <button
               type="button"
               onClick={onCreateColumn}
-              className="rounded-full bg-[#0071e3] px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#0077ed]"
+              className="inline-flex h-11 items-center justify-center rounded-2xl border-2 border-ink-fg bg-accent-1 px-4 text-[14px] font-bold text-ink-fg brutal-shadow-sm workbook-press"
             >
               Create list
             </button>
             <button
               type="button"
               onClick={onCancel}
-              className="text-[13px] font-medium text-slate-500 transition hover:text-slate-900"
+              className="inline-flex h-11 items-center justify-center rounded-2xl border-2 border-ink-fg bg-paper-bg px-4 text-[14px] font-bold text-ink-fg brutal-shadow-sm workbook-press"
             >
               Cancel
             </button>
@@ -61,10 +61,12 @@ export function VocabAddColumnPanel({
         <button
           type="button"
           onClick={onStart}
-          className="flex w-full items-center gap-2 rounded-[18px] border border-dashed border-slate-200 bg-white/52 px-4 py-3.5 text-left shadow-[0_12px_30px_rgba(148,163,184,0.1)] backdrop-blur-xl transition hover:bg-white/76"
+          className="flex w-full items-center gap-2 rounded-2xl border-2 border-dashed border-ink-fg bg-paper-bg px-4 py-3.5 text-left brutal-shadow-sm transition hover:bg-surface-white"
         >
-          <Plus className="h-4.5 w-4.5 text-slate-700" />
-          <span className="text-[15px] font-medium tracking-[-0.02em] text-slate-800">Add another list</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink-fg bg-accent-1 text-ink-fg">
+            <Plus className="h-4 w-4" />
+          </div>
+          <span className="text-[15px] font-bold tracking-[-0.02em] text-ink-fg">Add another list</span>
         </button>
       )}
     </div>
