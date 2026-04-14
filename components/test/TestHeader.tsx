@@ -63,10 +63,18 @@ export default function TestHeader({
   reportContext,
 }: TestHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileConfirmOpen, setMobileConfirmOpen] = useState(false);
+  const [mobileLeaveOpen, setMobileLeaveOpen] = useState(false);
   const themePreset = getTestingRoomThemePreset(theme);
   const headerTheme = themePreset.header;
   const submitButtonLabel = buttonText || (isLastModule ? "Submit Test" : "Next Module");
   const submitButtonClass = headerTheme.submitPrimaryClass;
+  const confirmDialogTitle = confirmTitle || (isLastModule ? "Submit Entire Test?" : "Finish This Module?");
+  const confirmDialogDescription =
+    confirmDescription ||
+    (isLastModule
+      ? "You are about to finish the test. You cannot go back to any module after this."
+      : "Once you move to the next module, you cannot return to the current questions.");
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -132,13 +140,8 @@ export default function TestHeader({
             </AlertDialogTrigger>
 
             <ConfirmDialogContent
-              title={confirmTitle || (isLastModule ? "Submit Entire Test?" : "Finish This Module?")}
-              description={
-                confirmDescription ||
-                (isLastModule
-                  ? "You are about to finish the test. You cannot go back to any module after this."
-                  : "Once you move to the next module, you cannot return to the current questions.")
-              }
+              title={confirmDialogTitle}
+              description={confirmDialogDescription}
               onConfirm={onTimeUp}
             />
           </AlertDialog>
@@ -174,10 +177,10 @@ export default function TestHeader({
       {mobileMenuOpen ? <button type="button" className="fixed inset-0 top-14 z-40 bg-ink-fg/10 sm:hidden" onClick={() => setMobileMenuOpen(false)} aria-label="Close mobile controls" /> : null}
 
       {mobileMenuOpen ? (
-        <div className="fixed left-3 right-3 top-[4.2rem] z-50 rounded-2xl border-2 border-ink-fg bg-surface-white p-3 brutal-shadow sm:hidden">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border-2 border-ink-fg bg-paper-bg px-3 py-2">
+        <div className={`fixed left-3 right-3 top-[4.2rem] z-50 sm:hidden ${headerTheme.mobileMenuClass}`}>
+          <div className={`flex items-center justify-between gap-3 ${headerTheme.mobileMenuSectionClass}`}>
             <div>
-              <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-ink-fg/70">Clock</p>
+              <p className={`text-[0.65rem] font-bold uppercase tracking-[0.14em] ${headerTheme.mobileMenuLabelClass}`}>Clock</p>
               <p className={`mt-0.5 font-mono text-lg font-bold ${timeRemaining < 300 ? headerTheme.timerWarningTextClass : headerTheme.timerTextClass}`}>
                 {isTimerHidden ? "--:--" : formatTime(timeRemaining)}
               </p>
@@ -189,8 +192,8 @@ export default function TestHeader({
 
           <div className="mt-3 space-y-2">
             {reportContext ? (
-              <div className="flex items-center justify-between rounded-2xl border-2 border-ink-fg bg-paper-bg px-3 py-2">
-                <span className="text-sm font-bold uppercase tracking-[0.12em] text-ink-fg">Feedback</span>
+              <div className={`flex items-center justify-between ${headerTheme.mobileMenuSectionClass}`}>
+                <span className="text-sm font-bold uppercase tracking-[0.12em]">Feedback</span>
                 <ReportErrorButton context={reportContext} compact />
               </div>
             ) : null}
@@ -202,52 +205,57 @@ export default function TestHeader({
                   setMobileMenuOpen(false);
                   onToggleCalculator?.();
                 }}
-                className={`flex w-full items-center justify-between rounded-2xl border-2 border-ink-fg px-3 py-3 text-sm font-bold uppercase tracking-[0.12em] ${headerTheme.iconButtonClass}`}
+                className={`flex w-full items-center justify-between px-3 py-3 text-sm font-bold uppercase tracking-[0.12em] ${headerTheme.mobileMenuSecondaryActionClass} ${theme === "ronan" ? "rounded-2xl" : "rounded-full"}`}
               >
                 Calculator
                 <Calculator className="h-4 w-4" />
               </button>
             ) : null}
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex w-full items-center justify-center rounded-2xl border-2 px-4 py-3 text-sm font-bold ${submitButtonClass}`}
-                >
-                  {submitButtonLabel}
-                </button>
-              </AlertDialogTrigger>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setMobileConfirmOpen(true);
+              }}
+              className={`flex w-full items-center justify-center rounded-2xl border-2 px-4 py-3 text-sm font-bold ${submitButtonClass}`}
+            >
+              {submitButtonLabel}
+            </button>
 
-              <ConfirmDialogContent
-                title={confirmTitle || (isLastModule ? "Submit Entire Test?" : "Finish This Module?")}
-                description={
-                  confirmDescription ||
-                  (isLastModule
-                    ? "You are about to finish the test. You cannot go back to any module after this."
-                    : "Once you move to the next module, you cannot return to the current questions.")
-                }
-                onConfirm={onTimeUp}
-              />
-            </AlertDialog>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex w-full items-center justify-center rounded-2xl border-2 border-ink-fg px-4 py-3 text-sm font-bold ${headerTheme.leaveButtonClass}`}
-                >
-                  Quit
-                </button>
-              </AlertDialogTrigger>
-
-              <LeaveDialogContent onLeave={onLeave} />
-            </AlertDialog>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setMobileLeaveOpen(true);
+              }}
+              className={`flex w-full items-center justify-center px-4 py-3 text-sm font-bold ${headerTheme.leaveButtonClass} ${theme === "ronan" ? "rounded-2xl border-2" : "rounded-full border"}`}
+            >
+              Quit
+            </button>
           </div>
         </div>
       ) : null}
+
+      <AlertDialog open={mobileConfirmOpen} onOpenChange={setMobileConfirmOpen}>
+        <ConfirmDialogContent
+          title={confirmDialogTitle}
+          description={confirmDialogDescription}
+          onConfirm={() => {
+            setMobileConfirmOpen(false);
+            onTimeUp();
+          }}
+        />
+      </AlertDialog>
+
+      <AlertDialog open={mobileLeaveOpen} onOpenChange={setMobileLeaveOpen}>
+        <LeaveDialogContent
+          onLeave={() => {
+            setMobileLeaveOpen(false);
+            onLeave();
+          }}
+        />
+      </AlertDialog>
     </>
   );
 }
@@ -264,8 +272,8 @@ function ConfirmDialogContent({
   return (
     <AlertDialogContent>
       <AlertDialogHeader>
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink-fg bg-primary text-ink-fg brutal-shadow-sm">
-          <AlertTriangle className="h-5 w-5" />
+        <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink-fg bg-primary text-ink-fg brutal-shadow-sm sm:h-11 sm:w-11">
+          <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
         <AlertDialogTitle>{title}</AlertDialogTitle>
         <AlertDialogDescription>{description}</AlertDialogDescription>
@@ -289,8 +297,8 @@ function LeaveDialogContent({ onLeave }: { onLeave: () => void }) {
   return (
     <AlertDialogContent>
       <AlertDialogHeader>
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-ink-fg bg-[var(--color-accent-3)] text-surface-white brutal-shadow-sm">
-          <AlertTriangle className="h-5 w-5" />
+        <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink-fg bg-[var(--color-accent-3)] text-surface-white brutal-shadow-sm sm:h-11 sm:w-11">
+          <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
         </div>
         <AlertDialogTitle>Leave Exam?</AlertDialogTitle>
         <AlertDialogDescription>Are you sure you want to leave? Your progress will not be saved.</AlertDialogDescription>

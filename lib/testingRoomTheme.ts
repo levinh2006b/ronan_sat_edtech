@@ -17,6 +17,10 @@ type TestingRoomThemePresetDefinition = {
     timerWarningTextClass: string;
     timerHiddenTextClass: string;
     iconButtonClass: string;
+    mobileMenuClass: string;
+    mobileMenuSectionClass: string;
+    mobileMenuLabelClass: string;
+    mobileMenuSecondaryActionClass: string;
     submitPrimaryClass: string;
     submitDangerClass: string;
     leaveButtonClass: string;
@@ -114,6 +118,13 @@ export const TESTING_ROOM_THEME_PRESETS = {
       timerWarningTextClass: "animate-pulse text-accent-3",
       timerHiddenTextClass: "text-ink-fg/40",
       iconButtonClass:
+        "border-2 border-ink-fg bg-surface-white text-ink-fg workbook-press",
+      mobileMenuClass:
+        "rounded-2xl border-2 border-ink-fg bg-surface-white p-3 brutal-shadow",
+      mobileMenuSectionClass:
+        "rounded-2xl border-2 border-ink-fg bg-paper-bg px-3 py-2",
+      mobileMenuLabelClass: "text-ink-fg/70",
+      mobileMenuSecondaryActionClass:
         "border-2 border-ink-fg bg-surface-white text-ink-fg workbook-press",
       submitPrimaryClass:
         "!rounded-2xl !border-2 !border-ink-fg !bg-primary !text-ink-fg",
@@ -232,6 +243,13 @@ export const TESTING_ROOM_THEME_PRESETS = {
       timerWarningTextClass: "animate-pulse text-[#b3261e]",
       timerHiddenTextClass: "text-[#5f6368]",
       iconButtonClass:
+        "border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8]",
+      mobileMenuClass:
+        "rounded-[28px] border border-[#c7c7c7] bg-white p-3 shadow-[0_14px_40px_rgba(0,0,0,0.12)]",
+      mobileMenuSectionClass:
+        "rounded-[22px] border border-[#d0d4d9] bg-[#f8f9fa] px-3 py-2",
+      mobileMenuLabelClass: "text-[#5f6368]",
+      mobileMenuSecondaryActionClass:
         "border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8]",
       submitPrimaryClass:
         "!rounded-full !border !border-[#1a73e8] !bg-[#1a73e8] !text-white",
