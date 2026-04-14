@@ -1,6 +1,6 @@
 "use client";
 
-import { Medal, Sparkles } from "lucide-react";
+import { Medal } from "lucide-react";
 
 interface LeaderboardTableProps {
   leaderboard: Array<{
@@ -14,7 +14,7 @@ interface LeaderboardTableProps {
 export default function LeaderboardTable({ leaderboard }: LeaderboardTableProps) {
   return (
     <section>
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-5">
         <div className="flex items-center gap-3">
           <div className="rounded-2xl border-2 border-ink-fg bg-primary p-3 brutal-shadow-sm">
             <Medal className="h-5 w-5 text-ink-fg" />
@@ -23,10 +23,6 @@ export default function LeaderboardTable({ leaderboard }: LeaderboardTableProps)
             <h2 className="font-display text-3xl font-black uppercase tracking-tight text-ink-fg">Weekly Top Achievers</h2>
             <p className="mt-1 text-sm text-ink-fg/70">Students scoring above 1450 this week.</p>
           </div>
-        </div>
-        <div className="workbook-sticker bg-surface-white text-ink-fg">
-          <Sparkles className="h-4 w-4" />
-          Updated weekly
         </div>
       </div>
 

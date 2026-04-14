@@ -15,13 +15,13 @@ export default function SectionalTestsPage() {
     page,
     totalPages,
     selectedPeriod,
-    subjectFilter,
+    moduleFilter,
     uniquePeriods,
     filteredTests,
     setSortOption,
     setPage,
     setSelectedPeriod,
-    setSubjectFilter,
+    setModuleFilter,
   } = useSectionalTestsController();
 
   if (status === "loading" && !hasCachedSectionalView) {
@@ -45,7 +45,7 @@ export default function SectionalTestsPage() {
               Zoom in on one weak spot at a time.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 md:text-base">
-              Pick a subject, run the exact module you need, and use short feedback loops instead of waiting for a full exam.
+              Pick a module, run the exact module you need, and use short feedback loops instead of waiting for a full exam.
             </p>
           </div>
         </section>
@@ -62,8 +62,8 @@ export default function SectionalTestsPage() {
           syncing={testsRefreshing}
           filteredTests={filteredTests}
           totalPages={totalPages}
-          subjectFilter={subjectFilter}
-          setSubjectFilter={setSubjectFilter}
+          moduleFilter={moduleFilter}
+          setModuleFilter={setModuleFilter}
           userResults={userResults}
         />
       </main>

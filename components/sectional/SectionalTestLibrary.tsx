@@ -20,8 +20,8 @@ type SectionalTestLibraryProps = {
   syncing: boolean;
   filteredTests: TestListItem[];
   totalPages: number;
-  subjectFilter: "reading" | "math";
-  setSubjectFilter: (value: "reading" | "math") => void;
+  moduleFilter: "reading" | "math";
+  setModuleFilter: (value: "reading" | "math") => void;
   userResults: UserResultSummary[];
 };
 
@@ -37,8 +37,8 @@ export function SectionalTestLibrary({
   syncing,
   filteredTests,
   totalPages,
-  subjectFilter,
-  setSubjectFilter,
+  moduleFilter,
+  setModuleFilter,
   userResults,
 }: SectionalTestLibraryProps) {
   const accentClassName = "bg-accent-2 text-white";
@@ -60,17 +60,17 @@ export function SectionalTestLibrary({
       <div className="space-y-6">
         <LibraryHeader
           title="Sectional Practice Library"
-          description="Target one subject at a time."
+          description="Target one module at a time."
           accentClassName={accentClassName}
-          stickerLabel={subjectFilter === "reading" ? "Verbal" : "Math Modules"}
+          stickerLabel={moduleFilter === "reading" ? "Verbal Modules" : "Math Modules"}
           syncing={syncing}
         >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <label className="text-sm font-bold uppercase tracking-[0.16em] text-ink-fg">Subject</label>
+              <label className="text-sm font-bold uppercase tracking-[0.16em] text-ink-fg">Module</label>
               <LibrarySelect
-                value={subjectFilter}
-                onValueChange={(value) => setSubjectFilter(value as "reading" | "math")}
+                value={moduleFilter}
+                onValueChange={(value) => setModuleFilter(value as "reading" | "math")}
                 className="min-w-[15rem]"
                 options={[
                   { value: "reading", label: "Verbal" },
@@ -111,7 +111,7 @@ export function SectionalTestLibrary({
               <BookOpen className="mx-auto mb-4 h-12 w-12 text-ink-fg/45" />
               <h3 className="font-display text-3xl font-black uppercase tracking-tight text-ink-fg">No drills here yet</h3>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-ink-fg">
-                Switch the subject or date tab to pull a different practice stack into view.
+                Switch the module or date tab to pull a different practice stack into view.
               </p>
             </div>
           ) : (
@@ -122,7 +122,7 @@ export function SectionalTestLibrary({
                     key={test._id}
                     test={test}
                     isSectional
-                    subjectFilter={subjectFilter}
+                    moduleFilter={moduleFilter}
                     userResults={userResults}
                   />
                 ))}

@@ -8,7 +8,7 @@ import type { TestListItem, UserResultSummary } from "@/types/testLibrary";
 interface TestCardProps {
   test: TestListItem;
   isSectional?: boolean;
-  subjectFilter?: string;
+  moduleFilter?: string;
   userResults?: UserResultSummary[];
 }
 
@@ -57,11 +57,11 @@ function getSectionalScore(result: UserResultSummary | null) {
 export default function TestCard({
   test,
   isSectional = false,
-  subjectFilter,
+  moduleFilter,
   userResults = [],
 }: TestCardProps) {
-  const formattedSectionName = subjectFilter === "reading" ? VERBAL_SECTION : "Math";
-  const sectionalStickerLabel = subjectFilter === "reading" ? "Verbal Drill" : "Math Drill";
+  const formattedSectionName = moduleFilter === "reading" ? VERBAL_SECTION : "Math";
+  const sectionalStickerLabel = moduleFilter === "reading" ? "Verbal Drill" : "Math Drill";
 
   const rw1Count = test.questionCounts?.rw_1 || 0;
   const rw2Count = test.questionCounts?.rw_2 || 0;
@@ -72,7 +72,7 @@ export default function TestCard({
   let totalTime = 0;
 
   if (isSectional) {
-    if (subjectFilter === "reading") {
+    if (moduleFilter === "reading") {
       if (rw1Count > 0) {
         totalQuestions += 27;
         totalTime += 32;
@@ -81,7 +81,7 @@ export default function TestCard({
         totalQuestions += 27;
         totalTime += 32;
       }
-    } else if (subjectFilter === "math") {
+    } else if (moduleFilter === "math") {
       if (math1Count > 0) {
         totalQuestions += 22;
         totalTime += 35;
@@ -110,7 +110,7 @@ export default function TestCard({
     }
   }
 
-  const secPrefix = subjectFilter === "reading" ? "rw" : "math";
+  const secPrefix = moduleFilter === "reading" ? "rw" : "math";
   const mod1Count = test.questionCounts?.[`${secPrefix}_1` as keyof NonNullable<TestListItem["questionCounts"]>] || 0;
   const mod2Count = test.questionCounts?.[`${secPrefix}_2` as keyof NonNullable<TestListItem["questionCounts"]>] || 0;
 
@@ -127,7 +127,7 @@ export default function TestCard({
       userResults.filter(
         (result) =>
           getResultTestId(result) === test._id &&
-          (subjectFilter === "reading"
+          (moduleFilter === "reading"
             ? isVerbalSection(result.sectionalSubject)
             : result.sectionalSubject === formattedSectionName) &&
           result.sectionalModule === moduleNumber,
@@ -174,7 +174,7 @@ export default function TestCard({
               title="Module 1"
               available={mod1Count > 0}
               result={mod1Result}
-              scoreDenominator={subjectFilter === "reading" ? 27 : 22}
+              scoreDenominator={moduleFilter === "reading" ? 27 : 22}
               startHref={`/test/${test._id}?section=${formattedSectionName}&module=1&mode=sectional`}
               reviewHref={mod1Result?._id ? `/review?mode=sectional&resultId=${mod1Result._id}` : undefined}
             />
@@ -182,7 +182,7 @@ export default function TestCard({
               title="Module 2"
               available={mod2Count > 0}
               result={mod2Result}
-              scoreDenominator={subjectFilter === "reading" ? 27 : 22}
+              scoreDenominator={moduleFilter === "reading" ? 27 : 22}
               startHref={`/test/${test._id}?section=${formattedSectionName}&module=2&mode=sectional`}
               reviewHref={mod2Result?._id ? `/review?mode=sectional&resultId=${mod2Result._id}` : undefined}
             />

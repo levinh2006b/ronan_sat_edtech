@@ -24,7 +24,7 @@ export function useSectionalTestsController() {
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [page, setPage] = useState(1);
   const [selectedPeriod, setSelectedPeriod] = useState("All");
-  const [subjectFilter, setSubjectFilter] = useState<"reading" | "math">("reading");
+  const [moduleFilter, setModuleFilter] = useState<"reading" | "math">("reading");
   const [totalPages, setTotalPages] = useState(1);
 
   const hasCachedSectionalView = hasHydratedClientCache && Boolean(initialTestsCacheRef.current);
@@ -51,7 +51,7 @@ export function useSectionalTestsController() {
   useEffect(() => {
     setSelectedPeriod("All");
     setPage(1);
-  }, [subjectFilter]);
+  }, [moduleFilter]);
 
   useEffect(() => {
     if (!session) {
@@ -86,7 +86,7 @@ export function useSectionalTestsController() {
     const loadTests = async () => {
       const filters = {
         selectedPeriod,
-        subject: subjectFilter,
+        subject: moduleFilter,
       } as const;
       const cacheKey = getTestsClientCacheKey(page, pageSize, sortOption, filters);
       const cachedTests = getClientCache<CachedTestsPayload>(cacheKey);
@@ -128,7 +128,7 @@ export function useSectionalTestsController() {
     return () => {
       cancelled = true;
     };
-  }, [hasHydratedClientCache, page, pageSize, selectedPeriod, sortOption, subjectFilter]);
+  }, [hasHydratedClientCache, page, pageSize, selectedPeriod, sortOption, moduleFilter]);
 
   return {
     status,
@@ -140,12 +140,12 @@ export function useSectionalTestsController() {
     page,
     totalPages,
     selectedPeriod,
-    subjectFilter,
+    moduleFilter,
     uniquePeriods,
     filteredTests: tests,
     setSortOption,
     setPage,
     setSelectedPeriod,
-    setSubjectFilter,
+    setModuleFilter,
   };
 }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import api from "@/lib/axios";
-import { Trophy, CheckCircle, Save, Upload } from "lucide-react";
+import { CheckCircle, Save, Upload } from "lucide-react";
 import { CldUploadWidget, type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
 const panelHeaderClassName =
@@ -48,10 +48,6 @@ export default function CreateStudentForm() {
     return (
         <div className="workbook-panel mt-8 overflow-hidden">
             <div className={panelHeaderClassName}>
-                <span className="workbook-sticker bg-accent-1 text-ink-fg">
-                    <Trophy className="h-4 w-4" />
-                    Step 3
-                </span>
                 <div>
                     <h2 className="font-display text-2xl font-black uppercase tracking-tight">Add Hall of Fame Students</h2>
                     <p className="text-sm text-ink-fg/70">Save standout student results with a photo and score details.</p>

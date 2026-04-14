@@ -141,19 +141,21 @@ export default function SettingsPage() {
                             </p>
                         </div>
 
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            {listTestingRoomThemePresets().map(({ theme }) => {
-                                const isActive = testingRoomThemeHydrated && testingRoomTheme === theme;
+                        <div className="-mx-1 overflow-x-auto pb-2 sm:mx-0 sm:overflow-visible">
+                            <div className="flex gap-3 px-1 sm:grid sm:grid-cols-2 xl:grid-cols-3 sm:px-0">
+                                {listTestingRoomThemePresets().map(({ theme }) => {
+                                    const isActive = testingRoomThemeHydrated && testingRoomTheme === theme;
 
-                                return (
-                                    <ThemeOptionCard
-                                        key={theme}
-                                        theme={theme}
-                                        isActive={isActive}
-                                        onSelect={() => setTestingRoomTheme(theme)}
-                                    />
-                                );
-                            })}
+                                    return (
+                                        <ThemeOptionCard
+                                            key={theme}
+                                            theme={theme}
+                                            isActive={isActive}
+                                            onSelect={() => setTestingRoomTheme(theme)}
+                                        />
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -331,7 +333,7 @@ function ThemeOptionCard({
         <button
             type="button"
             onClick={onSelect}
-            className={`rounded-2xl border-2 p-4 text-left transition-all active:translate-x-0.5 active:translate-y-0.5 ${isActive
+            className={`w-[min(20rem,calc(100vw-4.5rem))] min-w-[min(20rem,calc(100vw-4.5rem))] shrink-0 rounded-2xl border-2 p-4 text-left transition-all active:translate-x-0.5 active:translate-y-0.5 sm:w-auto sm:min-w-0 ${isActive
                 ? "border-ink-fg bg-surface-white brutal-shadow"
                 : "border-ink-fg bg-paper-bg hover:-translate-x-0.5 hover:-translate-y-0.5 hover:brutal-shadow-sm"
                 }`}

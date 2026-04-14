@@ -42,41 +42,44 @@ export default function ActivityHeatmap({ results }: ActivityHeatmapProps) {
 
   const getColorClass = (count: number) => {
     if (count === 0) {
-      return "bg-slate-100 dark:bg-slate-800";
+      return "border-ink-fg/15 bg-surface-white";
     }
 
     if (count === 1) {
-      return "bg-blue-300 dark:bg-blue-900";
+      return "border-ink-fg/20 bg-accent-3/20";
     }
 
     if (count === 2) {
-      return "bg-blue-400 dark:bg-blue-700";
+      return "border-ink-fg/25 bg-accent-3/40";
     }
 
     if (count === 3) {
-      return "bg-blue-500 dark:bg-blue-600";
+      return "border-ink-fg/30 bg-accent-3/70";
     }
 
-    return "bg-blue-600 dark:bg-blue-500";
+    return "border-ink-fg bg-accent-3";
   };
 
   return (
     <div className="flex h-full w-full justify-center">
-      <div className="grid grid-cols-10 gap-1 sm:gap-1.5">
-          {heatmapData.map((day) => (
-            <div key={day.dateKey} className="group relative">
-              <div
-                className={`h-3 w-3 shrink-0 rounded-sm transition-colors duration-200 hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 sm:h-4 sm:w-4 ${getColorClass(
-                  day.count,
-                )}`}
-              />
-              <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-auto -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                {day.count} test{day.count !== 1 ? "s" : ""} on{" "}
+      <div className="grid grid-cols-10 gap-2">
+        {heatmapData.map((day) => (
+          <div key={day.dateKey} className="group relative">
+            <div
+              className={`h-5 w-5 shrink-0 rounded-md border transition-transform duration-150 group-hover:-translate-y-0.5 ${getColorClass(
+                day.count,
+              )}`}
+            />
+            <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-3 w-max max-w-[12rem] -translate-x-1/2 rounded-xl border-2 border-ink-fg bg-surface-white px-3 py-2 text-center text-xs font-medium text-ink-fg opacity-0 brutal-shadow-sm transition-opacity duration-150 group-hover:opacity-100">
+              <div>
+                {day.count} test{day.count !== 1 ? "s" : ""}
+              </div>
+              <div className="text-ink-fg/70">
                 {day.date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-                <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
               </div>
             </div>
-          ))}
+          </div>
+        ))}
       </div>
     </div>
   );

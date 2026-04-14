@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import DesmosCalculator from "@/components/DesmosCalculator";
 import QuestionViewer from "@/components/QuestionViewer";
 import TestEntryLoading from "@/components/test/TestEntryLoading";
 import TestFooter from "@/components/test/TestFooter";
 import TestHeader from "@/components/test/TestHeader";
+import TestReviewPage from "@/components/test/TestReviewPage";
 import { useTestingRoomTheme } from "@/hooks/useTestingRoomTheme";
 import { getTestingRoomThemePreset } from "@/lib/testingRoomTheme";
 import { useResizableDivider } from "@/hooks/useResizableDivider";
@@ -39,6 +42,7 @@ export default function TestEngine({ testId }: { testId: string }) {
     handleSubmit,
     router,
   } = useTestEngine(testId);
+  const [isReviewPageOpen, setIsReviewPageOpen] = useState(false);
 
   const { leftWidth, isDragging, containerRef, handleDividerMouseDown } = useResizableDivider(50);
 
@@ -117,30 +121,54 @@ export default function TestEngine({ testId }: { testId: string }) {
           }
         }}
       >
-        <QuestionViewer
-          theme={testingRoomTheme}
-          question={currentQuestion}
-          userAnswer={answers[currentQuestion._id]}
-          onAnswerSelect={handleAnswerSelect}
-          isFlagged={!!flagged[currentQuestion._id]}
-          onToggleFlag={toggleFlag}
-          index={currentIndex}
-          leftWidth={leftWidth}
-        />
+        {isReviewPageOpen ? (
+          <TestReviewPage
+            theme={testingRoomTheme}
+            moduleName={`Section ${currentStage.section === "Math" ? 2 : 1}, Module ${currentStage.module}: ${currentStage.section}`}
+            currentIndex={currentIndex}
+            questions={currentModuleQuestions}
+            answers={answers}
+            flagged={flagged}
+            submitLabel={buttonText}
+            onJump={(index) => {
+              handleJump(index);
+              setIsReviewPageOpen(false);
+            }}
+            onReturn={() => setIsReviewPageOpen(false)}
+            onSubmit={() => {
+              setIsReviewPageOpen(false);
+              void handleSubmit();
+            }}
+          />
+        ) : (
+          <QuestionViewer
+            theme={testingRoomTheme}
+            question={currentQuestion}
+            userAnswer={answers[currentQuestion._id]}
+            onAnswerSelect={handleAnswerSelect}
+            isFlagged={!!flagged[currentQuestion._id]}
+            onToggleFlag={toggleFlag}
+            index={currentIndex}
+            leftWidth={leftWidth}
+          />
+        )}
       </main>
 
-      <TestFooter
-        theme={testingRoomTheme}
-        moduleName={`Section ${currentStage.section === "Math" ? 2 : 1}, Module ${currentStage.module}: ${currentStage.section}`}
-        currentIndex={currentIndex}
-        totalQuestions={currentModuleQuestions.length}
-        onNext={handleNext}
-        onPrev={handlePrev}
-        onJump={handleJump}
-        answers={answers}
-        flagged={flagged}
-        questions={currentModuleQuestions}
-      />
+      {isReviewPageOpen ? null : (
+        <TestFooter
+          theme={testingRoomTheme}
+          moduleName={`Section ${currentStage.section === "Math" ? 2 : 1}, Module ${currentStage.module}: ${currentStage.section}`}
+          currentIndex={currentIndex}
+          totalQuestions={currentModuleQuestions.length}
+          onNext={handleNext}
+          onPrev={handlePrev}
+          onJump={handleJump}
+          answers={answers}
+          flagged={flagged}
+          questions={currentModuleQuestions}
+          onOpenReviewPage={() => setIsReviewPageOpen(true)}
+        />
+      )}
     </div>
   );
 }

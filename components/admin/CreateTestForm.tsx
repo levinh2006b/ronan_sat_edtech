@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { AxiosError } from "axios";
-import { FileText, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
@@ -52,17 +52,13 @@ export default function CreateTestForm({ onSuccess }: { onSuccess: () => void })
 
   return (
     <div className="space-y-8 lg:col-span-1">
-      <div className="workbook-panel overflow-hidden">
-        <div className={panelHeaderClassName}>
-          <span className="workbook-sticker bg-primary text-ink-fg">
-            <FileText className="h-4 w-4" />
-            Step 1
-          </span>
-          <div>
-            <h2 className="font-display text-2xl font-black uppercase tracking-tight">Create Test</h2>
-            <p className="text-sm text-ink-fg/70">Start a new SAT workbook with the default section structure.</p>
+        <div className="workbook-panel overflow-hidden">
+          <div className={panelHeaderClassName}>
+            <div>
+              <h2 className="font-display text-2xl font-black uppercase tracking-tight">Create Test</h2>
+              <p className="text-sm text-ink-fg/70">Start a new SAT workbook with the default section structure.</p>
+            </div>
           </div>
-        </div>
 
         <form className="p-5 space-y-5" onSubmit={handleCreateTest}>
           {testMessage && (

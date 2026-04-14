@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
 import { normalizeSectionName, VERBAL_SECTION } from "@/lib/sections";
-import { ListPlus, CheckCircle, Save, Upload, FileUp, ChevronDown } from "lucide-react";
+import { CheckCircle, Save, Upload, FileUp, ChevronDown } from "lucide-react";
 import { CldUploadWidget, type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
 type TestOption = {
@@ -275,10 +275,6 @@ export default function CreateQuestionForm({ tests }: { tests: TestOption[] }) {
             <div className="workbook-panel overflow-visible">
                 <div className={panelHeaderClassName}>
                     <div className="flex items-center gap-3 text-ink-fg">
-                        <span className="workbook-sticker bg-accent-2 text-white">
-                            <ListPlus className="h-4 w-4" />
-                            Step 2
-                        </span>
                         <div>
                             <h2 className="font-display text-2xl font-black uppercase tracking-tight text-ink-fg">Add Questions</h2>
                             <p className="text-sm text-ink-fg/70">Load question JSON or build a single question by hand.</p>

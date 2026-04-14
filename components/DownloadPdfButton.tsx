@@ -12,6 +12,7 @@ interface DownloadPdfButtonProps {
 }
 
 type PdfDataResponse = {
+  testId: string;
   testTitle: string;
   questions: Array<Record<string, unknown>>;
   sectionName?: string;
@@ -97,10 +98,12 @@ export default function DownloadPdfButton({
       const data = (await response.json()) as PdfDataResponse;
       const fileName = buildFileName(testName || data.testTitle, sectionName || data.sectionName);
       const htmlString = generatePDFTemplate({
+        testId: data.testId,
         testTitle: data.testTitle,
         questions: data.questions,
         sectionName: data.sectionName,
         documentTitle: fileName.replace(/\.pdf$/i, ""),
+        assetBaseUrl: window.location.origin,
       });
 
       iframe = createHiddenPrintFrame();

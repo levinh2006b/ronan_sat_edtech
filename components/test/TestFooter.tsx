@@ -16,6 +16,7 @@ interface TestFooterProps {
     answers: Record<string, string>;
     flagged: Record<string, boolean>;
     questions: Array<{ _id: string }>;
+    onOpenReviewPage: () => void;
 }
 
 export default function TestFooter({
@@ -28,7 +29,8 @@ export default function TestFooter({
     onJump,
     answers,
     flagged,
-    questions
+    questions,
+    onOpenReviewPage
 }: TestFooterProps) {
     const [isGridOpen, setIsGridOpen] = useState(false);
     const footerTheme = getTestingRoomThemePreset(theme).footer;
@@ -113,7 +115,10 @@ export default function TestFooter({
                         <div className="mt-6 flex justify-center">
                             <button
                                 type="button"
-                                onClick={() => setIsGridOpen(false)}
+                                onClick={() => {
+                                    setIsGridOpen(false);
+                                    onOpenReviewPage();
+                                }}
                                 className={footerTheme.modalActionButtonClass}
                             >
                                 Go to Review Page

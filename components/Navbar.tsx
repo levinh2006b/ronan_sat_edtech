@@ -116,6 +116,14 @@ const PARENT_ITEMS: NavItemConfig[] = [
 
 const ADMIN_ITEMS: NavItemConfig[] = [
   {
+    href: "/dashboard",
+    label: "Dashboard",
+    mobileLabel: "Home",
+    icon: LayoutDashboard,
+    tone: "primary",
+    matches: ["/dashboard", "/parent/dashboard"],
+  },
+  {
     href: "/full-length",
     label: "Full-length",
     mobileLabel: "Tests",
@@ -199,7 +207,6 @@ export default function Navbar() {
   const isAdmin = session.user.role === "ADMIN";
   const homeHref = isAdmin ? "/admin" : "/dashboard";
   const navItems = isAdmin ? ADMIN_ITEMS : isParent ? PARENT_ITEMS : STUDENT_ITEMS;
-  const roleLabel = isAdmin ? "Admin Desk" : isParent ? "Parent View" : "Student Workbook";
   const displayName = session.user.name || session.user.email?.split("@")[0] || "Scholar";
 
   return (

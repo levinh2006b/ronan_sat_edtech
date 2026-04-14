@@ -8,6 +8,7 @@ import Test from "@/lib/models/Test";
 import { getSectionQueryNames, normalizeSectionName } from "@/lib/sections";
 
 type PdfDataTest = {
+  _id: string;
   title: string;
 };
 
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
     const sectionNames = getSectionQueryNames(sectionName);
 
     const [rawTest, rawQuestions] = await Promise.all([
-      Test.findById(testId).select("title").lean<PdfDataTest | null>(),
+      Test.findById(testId).select("_id title").lean<PdfDataTest | null>(),
       Question.find(sectionNames.length > 0 ? { testId, section: { $in: sectionNames } } : { testId }).lean(),
     ]);
 
@@ -49,6 +50,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       {
+        testId: rawTest._id,
         testTitle: rawTest.title,
         questions: rawQuestions,
         sectionName,

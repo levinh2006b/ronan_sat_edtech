@@ -32,11 +32,6 @@ export default function DashboardPage() {
       return;
     }
 
-    if (session.user.role === "ADMIN") {
-      router.replace("/admin");
-      return;
-    }
-
     let cancelled = false;
 
     const loadDashboard = async () => {
@@ -82,7 +77,7 @@ export default function DashboardPage() {
     return null;
   }
 
-  if (session?.user.role === "PARENT" || session?.user.role === "ADMIN") {
+  if (session?.user.role === "PARENT") {
     return null;
   }
 
@@ -93,7 +88,7 @@ export default function DashboardPage() {
           <div className="border-b-4 border-ink-fg bg-paper-bg px-6 py-5">
             <div className="workbook-sticker bg-primary text-ink-fg">Student Dashboard</div>
             <h1 className="mt-4 font-display text-4xl font-black uppercase tracking-tight text-ink-fg md:text-5xl">
-              Keep the whole workbook moving from one home base.
+              Keep the whole workbook moving.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-fg md:text-base">
               Check your latest score signals, jump into the next practice block, and keep review momentum visible without leaving the dashboard.
