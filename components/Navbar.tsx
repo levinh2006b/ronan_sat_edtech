@@ -243,18 +243,18 @@ export default function Navbar() {
       </aside>
 
       <nav className="app-shell-navigation fixed inset-x-0 bottom-0 z-50 border-t-4 border-ink-fg bg-surface-white lg:hidden">
-        <div className="bg-dot-pattern overflow-x-auto px-3 py-3">
-          <div className="flex min-w-max gap-2">
+        <div className="bg-dot-pattern overflow-x-auto px-2 py-2 sm:px-3 sm:py-3">
+          <div className="flex min-w-max gap-1.5 sm:gap-2">
             {navItems.map((item) => (
               <NavItem key={item.href} item={item} pathname={pathname} compact />
             ))}
             <button
               onClick={() => signOut({ callbackUrl: "/auth" })}
-              className="flex min-w-[5.75rem] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-ink-fg bg-surface-white px-3 py-3 text-center brutal-shadow-sm workbook-press"
+              className="flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-ink-fg bg-surface-white px-2 py-2.5 text-center brutal-shadow-sm workbook-press sm:min-w-[5.75rem] sm:px-3 sm:py-3"
               type="button"
             >
-              <LogOut className="h-4 w-4" />
-              <span className="text-[0.68rem] font-bold uppercase tracking-[0.16em]">Exit</span>
+              <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="text-[0.62rem] font-bold uppercase tracking-[0.14em] sm:text-[0.68rem] sm:tracking-[0.16em]">Exit</span>
             </button>
           </div>
         </div>
@@ -281,14 +281,14 @@ function NavItem({
         className={[
           active ? "border-4 border-ink-fg brutal-shadow-sm workbook-press" : "border-2 border-ink-fg brutal-shadow-sm workbook-press",
           compact
-            ? "flex min-w-[5.75rem] flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-center"
+            ? "flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2.5 text-center sm:min-w-[5.75rem] sm:px-3 sm:py-3"
             : "flex items-center gap-3 rounded-2xl px-3.5 py-2.5",
           active ? "bg-paper-bg text-ink-fg" : "bg-surface-white text-ink-fg",
         ].join(" ")}
       >
-      <Icon className={compact ? "h-4 w-4" : "h-[1.15rem] w-[1.15rem]"} />
+      <Icon className={compact ? "h-3.5 w-3.5 sm:h-4 sm:w-4" : "h-[1.15rem] w-[1.15rem]"} />
       <div className={compact ? "space-y-0.5" : "min-w-0"}>
-        <p className={compact ? "text-[0.68rem] font-bold uppercase tracking-[0.16em]" : "font-display text-[1.15rem] font-bold leading-none tracking-tight"}>
+        <p className={compact ? "text-[0.62rem] font-bold uppercase tracking-[0.14em] sm:text-[0.68rem] sm:tracking-[0.16em]" : "font-display text-[1.15rem] font-bold leading-none tracking-tight"}>
           {compact ? item.mobileLabel : item.label}
         </p>
       </div>

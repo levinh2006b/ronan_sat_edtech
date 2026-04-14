@@ -62,7 +62,7 @@ export function SectionalTestLibrary({
           title="Sectional Practice Library"
           description="Target one subject at a time."
           accentClassName={accentClassName}
-          stickerLabel={subjectFilter === "reading" ? "Reading & Writing" : "Math Modules"}
+          stickerLabel={subjectFilter === "reading" ? "Verbal" : "Math Modules"}
           syncing={syncing}
         >
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -73,7 +73,7 @@ export function SectionalTestLibrary({
                 onValueChange={(value) => setSubjectFilter(value as "reading" | "math")}
                 className="min-w-[15rem]"
                 options={[
-                  { value: "reading", label: "Reading & Writing" },
+                  { value: "reading", label: "Verbal" },
                   { value: "math", label: "Math" },
                 ]}
               />

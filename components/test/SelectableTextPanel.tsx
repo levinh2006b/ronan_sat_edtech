@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "re
 import { flushSync } from "react-dom";
 
 import { useVocabBoard } from "@/components/vocab/VocabBoardProvider";
+import { getTestingRoomThemePreset, type TestingRoomTheme } from "@/lib/testingRoomTheme";
 
 export type TextAnnotation = {
   id: string;
@@ -29,6 +30,7 @@ type ToolbarState = {
 interface SelectableTextPanelProps {
   annotations: TextAnnotation[];
   onChange: (annotations: TextAnnotation[]) => void;
+  theme?: TestingRoomTheme;
   className?: string;
   children: ReactNode;
   sourceQuestionId?: string;
@@ -43,6 +45,7 @@ const HIGHLIGHT_COLORS = [
 export default function SelectableTextPanel({
   annotations,
   onChange,
+  theme = "ronan",
   className,
   children,
   sourceQuestionId,
@@ -52,6 +55,7 @@ export default function SelectableTextPanel({
   const lastAppliedSignatureRef = useRef<string | null>(null);
   const [toolbar, setToolbar] = useState<ToolbarState | null>(null);
   const { addVocabCard } = useVocabBoard();
+  const viewerTheme = getTestingRoomThemePreset(theme).viewer;
   const pendingSelection = toolbar?.pendingSelection ?? null;
   const pendingText = toolbar?.pendingText ?? "";
 
@@ -144,11 +148,11 @@ export default function SelectableTextPanel({
 
       const startRaw = getTextOffset(root, range.startContainer, range.startOffset);
       const endRaw = getTextOffset(root, range.endContainer, range.endOffset);
-      
-      // Đảm bảo start luôn nhỏ hơn end dù kéo chuột xuôi hay ngược
+
+      // Keep the offsets ordered even when the selection is dragged backwards.
       const start = Math.min(startRaw, endRaw);
       const end = Math.max(startRaw, endRaw);
-      
+
       if (start === end) {
         return;
       }
@@ -277,7 +281,7 @@ export default function SelectableTextPanel({
         <div
           data-annotation-toolbar
           onMouseDown={(event) => event.preventDefault()}
-          className="fixed z-[100] flex flex-col items-center rounded-2xl border-2 border-ink-fg bg-surface-white px-2.5 py-2 brutal-shadow-sm"
+          className={`fixed z-[100] flex flex-col items-center px-2.5 py-2 ${viewerTheme.annotationToolbarClass}`}
           style={{
             top: toolbar.top,
             left: toolbar.left,
@@ -288,7 +292,7 @@ export default function SelectableTextPanel({
             <button
               type="button"
               onClick={handleAddToVocab}
-              className="mb-1.5 rounded-full border-2 border-ink-fg bg-accent-1 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-fg brutal-shadow-sm workbook-press"
+              className={`mb-1.5 px-3 py-1 ${viewerTheme.annotationAddButtonClass}`}
             >
               Add to Vocab
             </button>
@@ -305,8 +309,8 @@ export default function SelectableTextPanel({
                   title={`Highlight ${color.label}`}
                   aria-label={`Highlight ${color.label}`}
                   onClick={() => upsertAnnotation({ color: color.value })}
-                  className={`h-9 w-9 rounded-full border-2 border-ink-fg transition-transform workbook-press ${
-                    isActive ? "scale-105" : ""
+                  className={`h-9 w-9 ${viewerTheme.annotationSwatchButtonClass} ${
+                    isActive ? viewerTheme.annotationSwatchActiveClass : ""
                   }`}
                   style={{ backgroundColor: color.value }}
                 />
@@ -318,8 +322,8 @@ export default function SelectableTextPanel({
               title="Underline"
               aria-label="Underline"
               onClick={() => upsertAnnotation({ underline: !(activeAnnotation?.underline ?? false) || !activeAnnotation })}
-              className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink-fg text-ink-fg transition-colors workbook-press ${
-                activeAnnotation?.underline ? "bg-paper-bg" : "bg-surface-white"
+              className={`flex h-9 w-9 items-center justify-center ${viewerTheme.annotationIconButtonClass} ${
+                activeAnnotation?.underline ? viewerTheme.annotationIconButtonActiveClass : ""
               }`}
             >
               <UnderlineIcon />
@@ -331,7 +335,7 @@ export default function SelectableTextPanel({
               aria-label="Remove annotation"
               onClick={removeActiveAnnotation}
               disabled={!activeAnnotation}
-              className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink-fg bg-surface-white text-ink-fg transition-colors workbook-press disabled:cursor-not-allowed disabled:opacity-40"
+              className={`flex h-9 w-9 items-center justify-center ${viewerTheme.annotationDeleteButtonClass}`}
             >
               <TrashIcon />
             </button>

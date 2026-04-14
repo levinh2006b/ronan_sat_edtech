@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
+import { normalizeSectionName, VERBAL_SECTION } from "@/lib/sections";
 import { checkIsCorrect } from "@/utils/gradingHelper";
 import { useTimer } from "./useTimer";
 
@@ -19,8 +20,8 @@ type TestQuestion = {
 };
 
 export const testStages = [
-  { section: "Reading and Writing", module: 1, duration: 32 * 60 },
-  { section: "Reading and Writing", module: 2, duration: 32 * 60 },
+  { section: VERBAL_SECTION, module: 1, duration: 32 * 60 },
+  { section: VERBAL_SECTION, module: 2, duration: 32 * 60 },
   { section: "Math", module: 1, duration: 35 * 60 },
   { section: "Math", module: 2, duration: 35 * 60 },
 ];
@@ -29,7 +30,7 @@ export function useTestEngine(testId: string) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode") || "full";
-  const targetSection = searchParams.get("section");
+  const targetSection = normalizeSectionName(searchParams.get("section"));
   const targetModule = searchParams.get("module") ? parseInt(searchParams.get("module") as string, 10) : null;
 
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
@@ -71,7 +72,10 @@ export function useTestEngine(testId: string) {
           },
         });
 
-        const fetchedQuestions = res.data.questions || [];
+        const fetchedQuestions = (res.data.questions || []).map((question: TestQuestion) => ({
+          ...question,
+          section: normalizeSectionName(question.section),
+        }));
         setQuestions(fetchedQuestions);
         setCurrentIndex(0);
 
@@ -200,7 +204,7 @@ export function useTestEngine(testId: string) {
           }
 
           const points = question.points || 0;
-          if (question.section === "Reading and Writing") {
+          if (question.section === VERBAL_SECTION) {
             earnedReadingPoints += points;
           } else if (question.section === "Math") {
             earnedMathPoints += points;

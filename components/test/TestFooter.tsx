@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bookmark, ChevronDown, MapPin, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bookmark, ChevronDown, MapPin, X } from "lucide-react";
 
 import { getTestingRoomThemePreset, type TestingRoomTheme } from "@/lib/testingRoomTheme";
 
@@ -33,9 +33,7 @@ export default function TestFooter({
     const [isGridOpen, setIsGridOpen] = useState(false);
     const footerTheme = getTestingRoomThemePreset(theme).footer;
     const headerTitle = moduleName ?? "Question Navigator";
-    const displayName = typeof window === "undefined"
-        ? "Practice Test"
-        : sessionStorage.getItem("testName") || "Practice Test";
+    const displayName = "Ronan SAT";
 
     return (
         <>
@@ -46,10 +44,10 @@ export default function TestFooter({
                         onClick={() => setIsGridOpen(false)}
                     />
 
-                    <div className={`fixed bottom-[84px] left-1/2 z-40 w-[min(92vw,595px)] -translate-x-1/2 px-6 pb-7 pt-5 transition-all animate-in fade-in zoom-in-95 duration-200 ${footerTheme.modalClass}`}>
+                    <div className={`fixed bottom-[82px] left-1/2 z-40 w-[min(94vw,595px)] -translate-x-1/2 px-4 pb-5 pt-4 transition-all animate-in fade-in zoom-in-95 duration-200 sm:bottom-[98px] sm:px-6 sm:pb-7 sm:pt-5 ${footerTheme.modalClass}`}>
                         <div className={`flex items-start justify-between gap-4 pb-4 ${footerTheme.modalHeaderClass}`}>
                             <div className="w-8 shrink-0" />
-                            <h3 className={`flex-1 text-center text-[22px] leading-[1.05] tracking-tight ${footerTheme.modalTitleClass}`}>
+                            <h3 className={`flex-1 text-center text-lg leading-[1.05] tracking-tight sm:text-[22px] ${footerTheme.modalTitleClass}`}>
                                 {headerTitle}
                             </h3>
                             <button
@@ -62,7 +60,7 @@ export default function TestFooter({
                             </button>
                         </div>
 
-                        <div className={`flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-3 text-[12px] font-medium ${footerTheme.modalLegendClass}`}>
+                        <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-2 py-3 text-[11px] font-medium sm:gap-x-6 sm:text-[12px] ${footerTheme.modalLegendClass}`}>
                             <div className="flex items-center gap-1.5">
                                 <MapPin className={`h-4 w-4 ${footerTheme.currentPinClass}`} strokeWidth={2} />
                                 <span>Current</span>
@@ -77,7 +75,8 @@ export default function TestFooter({
                             </div>
                         </div>
 
-                        <div className="mx-auto mt-4 flex max-h-[196px] w-full max-w-[500px] flex-wrap justify-start gap-x-[14px] gap-y-[18px] overflow-y-auto px-1 pb-1 pt-5">                            {questions.map((q, i) => {
+                        <div className="mx-auto mt-4 flex max-h-[196px] w-full max-w-[500px] flex-wrap justify-start gap-x-3 gap-y-4 overflow-y-auto px-1 pb-1 pt-4 sm:gap-x-[14px] sm:gap-y-[18px] sm:pt-5">
+                            {questions.map((q, i) => {
                                 const isAnswered = !!answers[q._id];
                                 const isFlagged = !!flagged[q._id];
                                 const isCurrent = i === currentIndex;
@@ -90,7 +89,7 @@ export default function TestFooter({
                                             onJump(i);
                                             setIsGridOpen(false);
                                         }}
-                                        className={`relative flex h-[30px] w-[30px] shrink-0 items-center justify-center overflow-visible text-[14px] font-semibold transition-all ${
+                                        className={`relative flex h-7 w-7 shrink-0 items-center justify-center overflow-visible text-[13px] font-semibold transition-all sm:h-[30px] sm:w-[30px] sm:text-[14px] ${
                                             isAnswered
                                                 ? footerTheme.gridAnsweredClass
                                                 : footerTheme.gridUnansweredClass
@@ -98,11 +97,11 @@ export default function TestFooter({
                                         aria-label={`Jump to question ${i + 1}`}
                                     >
                                         {isCurrent ? (
-                                            <MapPin className={`pointer-events-none absolute -top-[18px] left-1/2 h-4 w-4 -translate-x-1/2 ${footerTheme.currentPinClass}`} strokeWidth={2} />
+                                            <MapPin className={`pointer-events-none absolute -top-4 left-1/2 h-3.5 w-3.5 -translate-x-1/2 sm:-top-[18px] sm:h-4 sm:w-4 ${footerTheme.currentPinClass}`} strokeWidth={2} />
                                         ) : null}
                                         <span>{i + 1}</span>
                                         {isFlagged ? (
-                                            <div className="pointer-events-none absolute -right-[3px] -top-[6px]">
+                                            <div className="pointer-events-none absolute -right-[3px] -top-[5px] sm:-top-[6px]">
                                                 <Bookmark className="h-3 w-3 fill-current text-accent-3" strokeWidth={1.9} />
                                             </div>
                                         ) : null}
@@ -124,33 +123,36 @@ export default function TestFooter({
                 </>
             )}
 
-            <footer className={`fixed bottom-0 left-0 right-0 z-50 flex h-20 items-center justify-between px-4 sm:px-6 ${footerTheme.barClass}`}>
+            <footer className={`fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-between gap-2 px-3 sm:h-20 sm:px-6 ${footerTheme.barClass}`}>
 
-                <div className="flex-1">
-                    <span suppressHydrationWarning className={`text-sm font-semibold sm:text-base ${footerTheme.displayNameClass}`}>
+                <div className="hidden min-w-0 flex-1 sm:block">
+                    <span suppressHydrationWarning className={`hidden max-w-[7rem] truncate text-xs font-semibold sm:block sm:max-w-none sm:text-base ${footerTheme.displayNameClass}`}>
                         {displayName}
                     </span>
                 </div>
 
-                <div className="flex flex-1 items-center justify-center">
+                <div className="flex flex-1 items-center justify-center sm:flex-1">
                     <button
                         type="button"
                         onClick={() => setIsGridOpen(!isGridOpen)}
-                        className={footerTheme.navigatorButtonClass}
+                        className={`${footerTheme.navigatorButtonClass} w-full max-w-[12rem] justify-center px-3 py-1.5 text-xs sm:w-auto sm:max-w-none sm:px-4 sm:py-2 sm:text-sm`}
                     >
-                        <span>Question {currentIndex + 1} of {totalQuestions}</span>
-                        <ChevronDown className={`ml-2 inline-block h-4 w-4 transition-transform ${isGridOpen ? "rotate-180" : ""}`} />
+                        <span className="sm:hidden">Q {currentIndex + 1}/{totalQuestions}</span>
+                        <span className="hidden sm:inline">Question {currentIndex + 1} of {totalQuestions}</span>
+                        <ChevronDown className={`ml-1.5 inline-block h-3.5 w-3.5 transition-transform sm:ml-2 sm:h-4 sm:w-4 ${isGridOpen ? "rotate-180" : ""}`} />
                     </button>
                 </div>
 
-                <div className="flex flex-1 items-center justify-end gap-3">
+                <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3">
                     {currentIndex > 0 && (
                         <button
                             type="button"
                             onClick={onPrev}
-                            className={footerTheme.secondaryNavButtonClass}
+                            className={`${footerTheme.secondaryNavButtonClass} px-3 py-1.5 text-xs sm:px-6 sm:text-sm`}
+                            aria-label="Previous question"
                         >
-                            Back
+                            <ArrowLeft className="h-4 w-4 sm:hidden" />
+                            <span className="hidden sm:inline">Back</span>
                         </button>
                     )}
 
@@ -158,9 +160,11 @@ export default function TestFooter({
                         <button
                             type="button"
                             onClick={onNext}
-                            className={footerTheme.primaryNavButtonClass}
+                            className={`${footerTheme.primaryNavButtonClass} px-3 py-1.5 text-xs sm:px-6 sm:text-sm`}
+                            aria-label="Next question"
                         >
-                            Next
+                            <ArrowRight className="h-4 w-4 sm:hidden" />
+                            <span className="hidden sm:inline">Next</span>
                         </button>
                     )}
                 </div>

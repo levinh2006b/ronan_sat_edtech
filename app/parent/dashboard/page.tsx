@@ -74,7 +74,7 @@ type ScoreDisplayOption = "rw" | "math" | "total";
 type TrendWindow = 7 | 15 | 30;
 
 const SCORE_OPTIONS: Array<{ key: ScoreDisplayOption; label: string; color: string }> = [
-  { key: "rw", label: "Reading & Writing", color: "#0f766e" },
+  { key: "rw", label: "Verbal", color: "#0f766e" },
   { key: "math", label: "Math", color: "#1d4ed8" },
   { key: "total", label: "Total", color: "#7c2d12" },
 ];
@@ -810,7 +810,7 @@ export default function ParentDashboardPage() {
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-ink-fg">Score History</h2>
               <p className="mt-1 text-sm text-ink-fg/70">
-                Switch between Reading and Writing, Math, and Total, then focus on the last 7, 15, or 30 days.
+                Switch between Verbal, Math, and Total, then focus on the last 7, 15, or 30 days.
               </p>
             </div>
             <ScoreHistoryChart
@@ -878,7 +878,7 @@ export default function ParentDashboardPage() {
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Time</th>
                   <th className="px-4 py-3">Test</th>
-                  <th className="px-4 py-3">Reading & Writing</th>
+                  <th className="px-4 py-3">Verbal</th>
                   <th className="px-4 py-3">Math</th>
                   <th className="px-4 py-3">Total</th>
                 </tr>

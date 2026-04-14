@@ -43,6 +43,13 @@ type TestingRoomThemePresetDefinition = {
     leftPanelClass: string;
     imageCardClass: string;
     passageClass: string;
+    annotationToolbarClass: string;
+    annotationAddButtonClass: string;
+    annotationSwatchButtonClass: string;
+    annotationSwatchActiveClass: string;
+    annotationIconButtonClass: string;
+    annotationIconButtonActiveClass: string;
+    annotationDeleteButtonClass: string;
     dividerTrackClass: string;
     dividerHandleClass: string;
     questionNumberClass: string;
@@ -90,8 +97,9 @@ type TestingRoomThemePresetDefinition = {
 export const TESTING_ROOM_THEME_PRESETS = {
   ronan: {
     label: "RONAN SAT",
-    cardTitle: "Workbook testing room",
-    description: "Keep the tactile workbook exam room with bold borders and highlighter accents.",
+    cardTitle: "Ronan SAT testing room",
+    description:
+      "Keep the tactile workbook exam room with bold borders and highlighter accents. Also it looks pretty cool.",
     accentClass: "bg-primary text-ink-fg",
     shell: {
       rootClass: "bg-paper-bg selection:bg-primary/70",
@@ -100,37 +108,60 @@ export const TESTING_ROOM_THEME_PRESETS = {
     header: {
       shellClass: "border-b-4 border-ink-fg bg-surface-white",
       titleClass: "font-display font-black uppercase text-ink-fg",
-      timerShellClass: "rounded-2xl border-2 border-ink-fg bg-paper-bg brutal-shadow-sm",
+      timerShellClass:
+        "rounded-2xl border-2 border-ink-fg bg-paper-bg brutal-shadow-sm",
       timerTextClass: "text-ink-fg",
       timerWarningTextClass: "animate-pulse text-accent-3",
       timerHiddenTextClass: "text-ink-fg/40",
-      iconButtonClass: "border-2 border-ink-fg bg-surface-white text-ink-fg workbook-press",
-      submitPrimaryClass: "!rounded-2xl !border-2 !border-ink-fg !bg-primary !text-ink-fg",
-      submitDangerClass: "!rounded-2xl !border-2 !border-ink-fg !bg-accent-3 !text-white",
-      leaveButtonClass: "border-2 border-ink-fg bg-surface-white workbook-press",
+      iconButtonClass:
+        "border-2 border-ink-fg bg-surface-white text-ink-fg workbook-press",
+      submitPrimaryClass:
+        "!rounded-2xl !border-2 !border-ink-fg !bg-primary !text-ink-fg",
+      submitDangerClass:
+        "!rounded-2xl !border-2 !border-ink-fg !bg-accent-3 !text-white",
+      leaveButtonClass:
+        "border-2 border-ink-fg bg-surface-white workbook-press",
     },
     footer: {
       modalClass: "workbook-modal-card",
       modalHeaderClass: "border-b-2 border-ink-fg",
       modalTitleClass: "font-display font-black uppercase text-ink-fg",
-      modalCloseButtonClass: "border-2 border-ink-fg bg-surface-white text-ink-fg workbook-press",
+      modalCloseButtonClass:
+        "border-2 border-ink-fg bg-surface-white text-ink-fg workbook-press",
       modalLegendClass: "border-b-2 border-ink-fg text-ink-fg",
       unansweredLegendClass: "border-2 border-dashed border-ink-fg",
       gridAnsweredClass: "border-2 border-ink-fg bg-accent-2 text-white",
-      gridUnansweredClass: "border-2 border-dashed border-ink-fg bg-surface-white text-ink-fg",
+      gridUnansweredClass:
+        "border-2 border-dashed border-ink-fg bg-surface-white text-ink-fg",
       currentPinClass: "text-ink-fg",
-      modalActionButtonClass: "workbook-button workbook-button-secondary px-6 py-2 text-sm",
+      modalActionButtonClass:
+        "workbook-button workbook-button-secondary px-6 py-2 text-sm",
       barClass: "border-t-4 border-ink-fg bg-surface-white",
       displayNameClass: "text-ink-fg",
-      navigatorButtonClass: "workbook-button workbook-button-ink flex items-center px-4 py-2 text-sm",
-      secondaryNavButtonClass: "workbook-button workbook-button-secondary px-6 py-1.5 text-sm",
+      navigatorButtonClass:
+        "workbook-button flex items-center bg-ink-fg/55 px-4 py-2 text-sm text-paper-bg hover:bg-ink-fg/65",
+      secondaryNavButtonClass:
+        "workbook-button workbook-button-secondary px-6 py-1.5 text-sm",
       primaryNavButtonClass: "workbook-button px-6 py-1.5 text-sm",
     },
     viewer: {
       rootClass: "bg-surface-white",
-      leftPanelClass: "border-r-4 border-ink-fg bg-surface-white",
+      leftPanelClass: "bg-surface-white md:border-r-4 md:border-ink-fg",
       imageCardClass: "rounded-2xl border-2 border-ink-fg brutal-shadow-sm",
-      passageClass: "rounded-2xl border-2 border-ink-fg text-ink-fg selection:bg-primary",
+      passageClass:
+        "rounded-2xl border-2 border-ink-fg text-ink-fg selection:bg-primary",
+      annotationToolbarClass:
+        "rounded-2xl border-2 border-ink-fg bg-surface-white brutal-shadow-sm",
+      annotationAddButtonClass:
+        "rounded-full border-2 border-ink-fg bg-accent-1 text-[11px] font-bold uppercase tracking-[0.14em] text-ink-fg brutal-shadow-sm workbook-press",
+      annotationSwatchButtonClass:
+        "rounded-full border-2 border-ink-fg transition-transform workbook-press",
+      annotationSwatchActiveClass: "scale-105",
+      annotationIconButtonClass:
+        "rounded-full border-2 border-ink-fg bg-surface-white text-ink-fg transition-colors workbook-press",
+      annotationIconButtonActiveClass: "bg-paper-bg",
+      annotationDeleteButtonClass:
+        "rounded-full border-2 border-ink-fg bg-surface-white text-ink-fg transition-colors workbook-press disabled:cursor-not-allowed disabled:opacity-40",
       dividerTrackClass: "bg-ink-fg/15 hover:bg-ink-fg/25",
       dividerHandleClass: "bg-ink-fg",
       questionNumberClass: "border-2 border-ink-fg bg-primary text-ink-fg",
@@ -138,16 +169,22 @@ export const TESTING_ROOM_THEME_PRESETS = {
       flagDefaultClass: "text-ink-fg",
       flagActiveClass: "text-accent-3 underline underline-offset-2",
       flagIconActiveClass: "fill-current text-accent-3",
-      eliminationIdleClass: "border-2 border-ink-fg bg-surface-white text-ink-fg",
+      eliminationIdleClass:
+        "border-2 border-ink-fg bg-surface-white text-ink-fg",
       eliminationActiveClass: "border-2 border-ink-fg bg-accent-2 text-white",
       sectionRuleClass: "h-[2px] bg-ink-fg",
       promptClass: "rounded-2xl border-2 border-ink-fg text-ink-fg",
-      sprInputClass: "workbook-input max-w-sm [font-family:Georgia,'Times_New_Roman',Times,serif]",
+      sprInputClass:
+        "workbook-input max-w-sm [font-family:Georgia,'Times_New_Roman',Times,serif]",
       sprMetaClass: "text-ink-fg/70",
-      answerCrossedClass: "cursor-default rounded-2xl border-2 border-ink-fg bg-paper-bg brutal-shadow-sm",
-      answerSelectedClass: "rounded-2xl border-2 border-ink-fg bg-primary brutal-shadow-sm",
-      answerIdleClass: "rounded-2xl border-2 border-ink-fg bg-surface-white brutal-shadow-sm",
-      optionBadgeCrossedClass: "border-2 border-ink-fg bg-surface-white text-ink-fg/50",
+      answerCrossedClass:
+        "cursor-default rounded-2xl border-2 border-ink-fg bg-paper-bg brutal-shadow-sm",
+      answerSelectedClass:
+        "rounded-2xl border-2 border-ink-fg bg-primary brutal-shadow-sm",
+      answerIdleClass:
+        "rounded-2xl border-2 border-ink-fg bg-surface-white brutal-shadow-sm",
+      optionBadgeCrossedClass:
+        "border-2 border-ink-fg bg-surface-white text-ink-fg/50",
       optionBadgeSelectedClass: "border-2 border-ink-fg bg-accent-2 text-white",
       optionBadgeIdleClass: "border-2 border-ink-fg bg-paper-bg text-ink-fg",
       choiceTextClass: "text-ink-fg",
@@ -158,7 +195,8 @@ export const TESTING_ROOM_THEME_PRESETS = {
       headerClass: "border-b-4 border-ink-fg bg-accent-2 text-white",
       badgeClass: "workbook-sticker border-white/90 bg-white/90 text-accent-2",
       titleClass: "font-display font-black uppercase text-white",
-      controlButtonClass: "border-2 border-ink-fg bg-surface-white text-ink-fg workbook-press",
+      controlButtonClass:
+        "border-2 border-ink-fg bg-surface-white text-ink-fg workbook-press",
       bodyClass: "bg-white",
     },
     preview: {
@@ -167,17 +205,20 @@ export const TESTING_ROOM_THEME_PRESETS = {
       topBarClass: "border-b-2 border-ink-fg bg-[#f3ecdd]",
       topBarAccentClass: "border-2 border-ink-fg bg-primary",
       topBarControlClass: "border-2 border-ink-fg bg-surface-white",
-      leftPaneClass: "border-r-2 border-ink-fg bg-[radial-gradient(rgba(15,14,14,0.14)_1px,transparent_1px)] bg-[size:10px_10px]",
+      leftPaneClass:
+        "border-r-2 border-ink-fg bg-[radial-gradient(rgba(15,14,14,0.14)_1px,transparent_1px)] bg-[size:10px_10px]",
       leftPaneCardClass: "border-2 border-ink-fg bg-white",
       rightMetaClass: "bg-ink-fg/80",
       rightAnswerSelectedClass: "rounded-lg border-2 border-ink-fg bg-primary",
-      rightAnswerIdleClass: "rounded-lg border-2 border-ink-fg bg-surface-white",
+      rightAnswerIdleClass:
+        "rounded-lg border-2 border-ink-fg bg-surface-white",
     },
   },
   collegeboard: {
     label: "College Board",
     cardTitle: "Bluebook-style testing room",
-    description: "Use a cleaner Bluebook-style room with thinner dividers, cooler neutrals, and calmer controls.",
+    description:
+      "Use a cleaner Bluebook-style room with thinner dividers, cooler neutrals, and calmer controls.",
     accentClass: "bg-accent-2 text-white",
     shell: {
       rootClass: "bg-white text-[#202124] selection:bg-[#d7e8ff]",
@@ -190,33 +231,59 @@ export const TESTING_ROOM_THEME_PRESETS = {
       timerTextClass: "text-[#202124]",
       timerWarningTextClass: "animate-pulse text-[#b3261e]",
       timerHiddenTextClass: "text-[#5f6368]",
-      iconButtonClass: "border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8]",
-      submitPrimaryClass: "!rounded-full !border !border-[#1a73e8] !bg-[#1a73e8] !text-white",
-      submitDangerClass: "!rounded-full !border !border-[#b3261e] !bg-[#d93025] !text-white",
-      leaveButtonClass: "border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8]",
+      iconButtonClass:
+        "border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8]",
+      submitPrimaryClass:
+        "!rounded-full !border !border-[#1a73e8] !bg-[#1a73e8] !text-white",
+      submitDangerClass:
+        "!rounded-full !border !border-[#b3261e] !bg-[#d93025] !text-white",
+      leaveButtonClass:
+        "border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8]",
     },
     footer: {
-      modalClass: "rounded-[26px] border border-[#c7c7c7] bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]",
+      modalClass:
+        "rounded-[26px] border border-[#c7c7c7] bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]",
       modalHeaderClass: "border-b border-[#d0d0d0]",
       modalTitleClass: "font-semibold text-[#202124]",
-      modalCloseButtonClass: "border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8]",
+      modalCloseButtonClass:
+        "border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8]",
       modalLegendClass: "border-b border-[#d0d0d0] text-[#3c4043]",
       unansweredLegendClass: "border border-dashed border-[#9aa0a6]",
-      gridAnsweredClass: "rounded-md border border-[#1a73e8] bg-[#1a73e8] text-white",
-      gridUnansweredClass: "rounded-md border border-dashed border-[#9aa0a6] bg-surface-white text-[#202124]",
+      gridAnsweredClass:
+        "rounded-md border border-[#1a73e8] bg-[#1a73e8] text-white",
+      gridUnansweredClass:
+        "rounded-md border border-dashed border-[#9aa0a6] bg-surface-white text-[#202124]",
       currentPinClass: "text-[#202124]",
-      modalActionButtonClass: "inline-flex items-center justify-center rounded-full border border-[#bdbdbd] bg-white px-6 py-2 text-sm font-semibold text-[#202124] transition-colors hover:bg-[#f4f6f8]",
+      modalActionButtonClass:
+        "inline-flex items-center justify-center rounded-full border border-[#bdbdbd] bg-white px-6 py-2 text-sm font-semibold text-[#202124] transition-colors hover:bg-[#f4f6f8]",
       barClass: "border-t border-[#c7c7c7] bg-white",
       displayNameClass: "text-[#202124]",
-      navigatorButtonClass: "flex items-center rounded-full bg-[#1f1f1f] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#353535]",
-      secondaryNavButtonClass: "rounded-full border border-[#bdbdbd] bg-white px-6 py-1.5 text-sm font-semibold text-[#202124] transition-colors hover:bg-[#f4f6f8]",
-      primaryNavButtonClass: "rounded-full border border-[#1a73e8] bg-[#1a73e8] px-6 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-[#1765cc]",
+      navigatorButtonClass:
+        "flex items-center rounded-full bg-[#1f1f1f] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#353535]",
+      secondaryNavButtonClass:
+        "rounded-full border border-[#bdbdbd] bg-white px-6 py-1.5 text-sm font-semibold text-[#202124] transition-colors hover:bg-[#f4f6f8]",
+      primaryNavButtonClass:
+        "rounded-full border border-[#1a73e8] bg-[#1a73e8] px-6 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-[#1765cc]",
     },
     viewer: {
       rootClass: "bg-white",
-      leftPanelClass: "border-r border-[#cfd3d7] bg-white",
+      leftPanelClass: "bg-white md:border-r md:border-[#cfd3d7]",
       imageCardClass: "rounded-2xl border border-[#d2d6da] bg-white",
-      passageClass: "rounded-[16px] bg-white text-[#202124] selection:bg-[#d7e8ff]",
+      passageClass:
+        "rounded-[16px] bg-white text-[#202124] selection:bg-[#d7e8ff]",
+      annotationToolbarClass:
+        "rounded-[26px] border border-[#c7c7c7] bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]",
+      annotationAddButtonClass:
+        "rounded-full border border-[#1a73e8] bg-[#1a73e8] text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:bg-[#1765cc]",
+      annotationSwatchButtonClass: "rounded-full border border-[#9aa0a6] transition-transform",
+      annotationSwatchActiveClass:
+        "scale-105 border-[#1a73e8] ring-2 ring-[#d7e8ff]",
+      annotationIconButtonClass:
+        "rounded-full border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8]",
+      annotationIconButtonActiveClass:
+        "border-[#8ab4f8] bg-[#e8f0fe] text-[#1a73e8]",
+      annotationDeleteButtonClass:
+        "rounded-full border border-[#bdbdbd] bg-white text-[#202124] transition-colors hover:bg-[#f4f6f8] disabled:cursor-not-allowed disabled:opacity-40",
       dividerTrackClass: "bg-[#d9dde1] hover:bg-[#c8cdd2]",
       dividerHandleClass: "bg-[#5f6368]",
       questionNumberClass: "border border-[#3c4043] bg-[#2d2d2d] text-white",
@@ -228,51 +295,69 @@ export const TESTING_ROOM_THEME_PRESETS = {
       eliminationActiveClass: "border border-[#1a73e8] bg-[#1a73e8] text-white",
       sectionRuleClass: "h-px bg-[#cfd3d7]",
       promptClass: "rounded-[16px] bg-white text-[#202124]",
-      sprInputClass: "w-full max-w-sm rounded-[14px] border border-[#c7cdd3] bg-white px-4 py-3 text-[#202124] outline-none [font-family:Georgia,'Times_New_Roman',Times,serif] focus:border-[#8ab4f8]",
+      sprInputClass:
+        "w-full max-w-sm rounded-[14px] border border-[#c7cdd3] bg-white px-4 py-3 text-[#202124] outline-none [font-family:Georgia,'Times_New_Roman',Times,serif] focus:border-[#8ab4f8]",
       sprMetaClass: "text-[#5f6368]",
-      answerCrossedClass: "cursor-default rounded-[14px] border border-[#d0d4d9] bg-[#f8f9fa]",
-      answerSelectedClass: "rounded-[14px] border border-[#8ab4f8] bg-[#e8f0fe]",
-      answerIdleClass: "rounded-[14px] border border-[#c7cdd3] bg-white hover:border-[#9aa0a6]",
-      optionBadgeCrossedClass: "border border-[#c7cdd3] bg-white text-[#5f6368]",
-      optionBadgeSelectedClass: "border border-[#1a73e8] bg-[#1a73e8] text-white",
+      answerCrossedClass:
+        "cursor-default rounded-[14px] border border-[#d0d4d9] bg-[#f8f9fa]",
+      answerSelectedClass:
+        "rounded-[14px] border border-[#8ab4f8] bg-[#e8f0fe]",
+      answerIdleClass:
+        "rounded-[14px] border border-[#c7cdd3] bg-white hover:border-[#9aa0a6]",
+      optionBadgeCrossedClass:
+        "border border-[#c7cdd3] bg-white text-[#5f6368]",
+      optionBadgeSelectedClass:
+        "border border-[#1a73e8] bg-[#1a73e8] text-white",
       optionBadgeIdleClass: "border border-[#9aa0a6] bg-white text-[#202124]",
       choiceTextClass: "text-[#202124]",
       choiceCrossedTextClass: "text-[#5f6368]",
     },
     desmos: {
-      modalClass: "border border-[#c7c7c7] bg-white shadow-[0_18px_48px_rgba(0,0,0,0.18)]",
+      modalClass:
+        "border border-[#c7c7c7] bg-white shadow-[0_18px_48px_rgba(0,0,0,0.18)]",
       headerClass: "border-b border-[#d0d4d9] bg-[#f8f9fa] text-[#202124]",
-      badgeClass: "inline-flex items-center rounded-full border border-[#c7c7c7] bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#1a73e8]",
+      badgeClass:
+        "inline-flex items-center rounded-full border border-[#c7c7c7] bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#1a73e8]",
       titleClass: "font-semibold text-[#202124]",
-      controlButtonClass: "border border-[#b8bec5] bg-white text-[#202124] transition-colors hover:bg-[#eef2f5]",
+      controlButtonClass:
+        "border border-[#b8bec5] bg-white text-[#202124] transition-colors hover:bg-[#eef2f5]",
       bodyClass: "bg-white",
     },
     preview: {
       canvasClass: "bg-[#f3f4f6]",
-      frameClass: "border border-[#cfd3d7] bg-white shadow-[0_6px_14px_rgba(0,0,0,0.08)]",
+      frameClass:
+        "border border-[#cfd3d7] bg-white shadow-[0_6px_14px_rgba(0,0,0,0.08)]",
       topBarClass: "border-b border-[#d7dbe0] bg-white",
       topBarAccentClass: "bg-[#2d2d2d]",
       topBarControlClass: "border border-[#c7c7c7] bg-white",
       leftPaneClass: "border-r border-[#d7dbe0] bg-white",
       leftPaneCardClass: "border border-[#d7dbe0] bg-white",
       rightMetaClass: "bg-[#444746]",
-      rightAnswerSelectedClass: "rounded-xl border border-[#8ab4f8] bg-[#e8f0fe]",
+      rightAnswerSelectedClass:
+        "rounded-xl border border-[#8ab4f8] bg-[#e8f0fe]",
       rightAnswerIdleClass: "rounded-xl border border-[#cfd3d7] bg-white",
     },
   },
 } as const satisfies Record<string, TestingRoomThemePresetDefinition>;
 
 export type TestingRoomTheme = keyof typeof TESTING_ROOM_THEME_PRESETS;
-export type TestingRoomThemePreset = (typeof TESTING_ROOM_THEME_PRESETS)[TestingRoomTheme];
+export type TestingRoomThemePreset =
+  (typeof TESTING_ROOM_THEME_PRESETS)[TestingRoomTheme];
 
-export const TESTING_ROOM_THEMES = Object.keys(TESTING_ROOM_THEME_PRESETS) as TestingRoomTheme[];
+export const TESTING_ROOM_THEMES = Object.keys(
+  TESTING_ROOM_THEME_PRESETS,
+) as TestingRoomTheme[];
 export const DEFAULT_TESTING_ROOM_THEME: TestingRoomTheme = "ronan";
 
-export function isTestingRoomTheme(value: string | null | undefined): value is TestingRoomTheme {
+export function isTestingRoomTheme(
+  value: string | null | undefined,
+): value is TestingRoomTheme {
   return typeof value === "string" && value in TESTING_ROOM_THEME_PRESETS;
 }
 
-export function getTestingRoomThemePreset(theme: TestingRoomTheme): TestingRoomThemePreset {
+export function getTestingRoomThemePreset(
+  theme: TestingRoomTheme,
+): TestingRoomThemePreset {
   return TESTING_ROOM_THEME_PRESETS[theme];
 }
 
@@ -288,8 +373,12 @@ export function readStoredTestingRoomTheme(): TestingRoomTheme {
     return DEFAULT_TESTING_ROOM_THEME;
   }
 
-  const storedTheme = window.localStorage.getItem(TESTING_ROOM_THEME_STORAGE_KEY);
-  return isTestingRoomTheme(storedTheme) ? storedTheme : DEFAULT_TESTING_ROOM_THEME;
+  const storedTheme = window.localStorage.getItem(
+    TESTING_ROOM_THEME_STORAGE_KEY,
+  );
+  return isTestingRoomTheme(storedTheme)
+    ? storedTheme
+    : DEFAULT_TESTING_ROOM_THEME;
 }
 
 export function persistTestingRoomTheme(theme: TestingRoomTheme) {

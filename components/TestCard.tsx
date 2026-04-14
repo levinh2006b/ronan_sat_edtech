@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RotateCcw } from "lucide-react";
 
 import DownloadPdfButton from "@/components/DownloadPdfButton";
+import { isVerbalSection, VERBAL_SECTION } from "@/lib/sections";
 import type { TestListItem, UserResultSummary } from "@/types/testLibrary";
 
 interface TestCardProps {
@@ -59,7 +60,7 @@ export default function TestCard({
   subjectFilter,
   userResults = [],
 }: TestCardProps) {
-  const formattedSectionName = subjectFilter === "reading" ? "Reading and Writing" : "Math";
+  const formattedSectionName = subjectFilter === "reading" ? VERBAL_SECTION : "Math";
   const sectionalStickerLabel = subjectFilter === "reading" ? "Verbal Drill" : "Math Drill";
 
   const rw1Count = test.questionCounts?.rw_1 || 0;
@@ -126,7 +127,9 @@ export default function TestCard({
       userResults.filter(
         (result) =>
           getResultTestId(result) === test._id &&
-          result.sectionalSubject === formattedSectionName &&
+          (subjectFilter === "reading"
+            ? isVerbalSection(result.sectionalSubject)
+            : result.sectionalSubject === formattedSectionName) &&
           result.sectionalModule === moduleNumber,
       ),
     );

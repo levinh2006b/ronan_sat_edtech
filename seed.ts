@@ -18,14 +18,14 @@ const sampleTest = {
     timeLimit: 134,
     difficulty: "medium",
     sections: [
-        { name: "Reading and Writing", questionsCount: 2, timeLimit: 32 },
+        { name: "Verbal", questionsCount: 2, timeLimit: 32 },
         { name: "Math", questionsCount: 2, timeLimit: 35 },
     ],
 };
 
 const sampleQuestions = [
     {
-        section: "Reading and Writing",
+        section: "Verbal",
         questionText: "Which choice most logically completes the text?",
         passage: "The following text is from Charlotte Brontë's 1847 novel Jane Eyre. Jane works as a governess at Thornfield Hall.\n\nI went on with my day's business tranquilly; but ever and anon vague suggestions kept wandering across my brain of reasons why I should quit Thornfield; and I kept involuntarily framing advertisements and pondering chances. These thoughts I did not think to check; they might multiply and gather to a mass: but so long as they kept entirely unmingled with my other emotions, ________",
         choices: [
@@ -40,7 +40,7 @@ const sampleQuestions = [
         points: 10,
     },
     {
-        section: "Reading and Writing",
+        section: "Verbal",
         questionText: "As used in the text, what does the word 'framing' most nearly mean?",
         passage: "The following text is from Charlotte Brontë's 1847 novel Jane Eyre. Jane works as a governess at Thornfield Hall.\n\nI went on with my day's business tranquilly; but ever and anon vague suggestions kept wandering across my brain of reasons why I should quit Thornfield; and I kept involuntarily framing advertisements and pondering chances.",
         choices: [

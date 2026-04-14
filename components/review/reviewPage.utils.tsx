@@ -1,5 +1,6 @@
 import { BookOpen, Calculator } from "lucide-react";
 
+import { isVerbalSection, normalizeSectionName } from "@/lib/sections";
 import type { ReviewAnswer, ReviewResult, ReviewStats } from "@/types/review";
 
 export function getReviewStats(answers: ReviewAnswer[]): ReviewStats {
@@ -63,11 +64,11 @@ export function groupFullLengthAnswers(result: ReviewResult) {
   return {
     rwModule1:
       result.answers?.filter(
-        (answer) => answer.questionId?.section === "Reading and Writing" && answer.questionId?.module === 1,
+        (answer) => isVerbalSection(answer.questionId?.section) && answer.questionId?.module === 1,
       ) || [],
     rwModule2:
       result.answers?.filter(
-        (answer) => answer.questionId?.section === "Reading and Writing" && answer.questionId?.module === 2,
+        (answer) => isVerbalSection(answer.questionId?.section) && answer.questionId?.module === 2,
       ) || [],
     mathModule1: result.answers?.filter((answer) => answer.questionId?.section === "Math" && answer.questionId?.module === 1) || [],
     mathModule2: result.answers?.filter((answer) => answer.questionId?.section === "Math" && answer.questionId?.module === 2) || [],
@@ -99,7 +100,7 @@ export function getSkillPerformance(answers: ReviewAnswer[]): SectionSkillStat[]
     const q = answer.questionId;
     if (!q) return;
 
-    const section = q.section || "Uncategorized";
+    const section = normalizeSectionName(q.section) || "Uncategorized";
     const domain = q.domain || q.subject || "Uncategorized";
     const skill = q.skill || "General";
 
@@ -124,8 +125,8 @@ export function getSkillPerformance(answers: ReviewAnswer[]): SectionSkillStat[]
 
   return Object.keys(sectionMap)
     .sort((a, b) => {
-      if (a === "Reading and Writing") return -1;
-      if (b === "Reading and Writing") return 1;
+      if (isVerbalSection(a)) return -1;
+      if (isVerbalSection(b)) return 1;
       return a.localeCompare(b);
     })
     .map((section) => {

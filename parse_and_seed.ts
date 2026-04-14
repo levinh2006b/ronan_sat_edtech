@@ -170,9 +170,9 @@ async function main() {
         const readingText = fs.readFileSync("reading_sample.txt", "utf-8");
         const mathText = fs.readFileSync("math_sample.txt", "utf-8");
 
-        console.log("Parsing Reading questions...");
-        const readingQuestions = parseText(readingText, "Reading and Writing");
-        console.log(`Parsed ${readingQuestions.length} Reading questions`);
+        console.log("Parsing Verbal questions...");
+        const readingQuestions = parseText(readingText, "Verbal");
+        console.log(`Parsed ${readingQuestions.length} Verbal questions`);
 
         console.log("Parsing Math questions...");
         const mathQuestions = parseText(mathText, "Math");
@@ -213,17 +213,17 @@ async function main() {
 
         let testCount = 1;
         for (const chunk of testChunks) {
-            const readingCount = chunk.filter(q => q.section === "Reading and Writing").length;
+            const readingCount = chunk.filter(q => q.section === "Verbal").length;
             const mathCount = chunk.filter(q => q.section === "Math").length;
 
             const newTest = await Test.create({
                 title: `Imported SAT Practice Test ${testCount++}`,
                 sections: [
-                    { name: "Reading and Writing", questionsCount: readingCount, timeLimit: 64 },
+                    { name: "Verbal", questionsCount: readingCount, timeLimit: 64 },
                     { name: "Math", questionsCount: mathCount, timeLimit: 70 },
                 ],
             });
-            console.log(`Created new Test: ${newTest._id} (${readingCount} Reading, ${mathCount} Math)`);
+            console.log(`Created new Test: ${newTest._id} (${readingCount} Verbal, ${mathCount} Math)`);
 
             const questionsToInsert = chunk.map(q => {
                 const copy = { ...q, testId: newTest._id };

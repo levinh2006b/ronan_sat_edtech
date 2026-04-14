@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface Section {
-    name: string; // "Reading and Writing" | "Math"
+    name: string; // "Verbal" | "Math"
     questionsCount: number;
     timeLimit: number; // in seconds or minutes (let's use minutes for simplicity)
 }

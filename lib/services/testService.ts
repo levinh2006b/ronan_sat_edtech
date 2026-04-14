@@ -4,6 +4,7 @@ import { z } from "zod";
 import dbConnect from "@/lib/mongodb";
 import Question from "@/lib/models/Question";
 import Test from "@/lib/models/Test";
+import { getSectionQueryNames, isVerbalSection, MATH_SECTION, VERBAL_SECTION } from "@/lib/sections";
 import { TestValidationSchema, type TestInput } from "@/lib/schema/test";
 
 type SortableTestField = "createdAt" | "title";
@@ -56,12 +57,13 @@ function buildSubjectFilter(subject?: string | null) {
     return {};
   }
 
-  const sectionName = subject === "math" ? "Math" : "Reading and Writing";
+  const sectionName = subject === "math" ? MATH_SECTION : VERBAL_SECTION;
+  const sectionNames = getSectionQueryNames(sectionName);
 
   return {
     sections: {
       $elemMatch: {
-        name: sectionName,
+        name: { $in: sectionNames },
         questionsCount: { $gt: 0 },
       },
     },
@@ -232,7 +234,7 @@ function attachQuestionCounts<T extends { _id: Types.ObjectId }>(
 
     questionCountsData.forEach((questionCount) => {
       if (questionCount._id.testId.toString() === test._id.toString()) {
-        const sectionPrefix = questionCount._id.section === "Reading and Writing" ? "rw" : "math";
+        const sectionPrefix = isVerbalSection(questionCount._id.section) ? "rw" : "math";
         const key = `${sectionPrefix}_${questionCount._id.module}` as keyof typeof counts;
         counts[key] = questionCount.count;
       }

@@ -17,7 +17,7 @@ const features = [
     title: "Targeted Sectional Practice",
     description:
       "Don't have time for a full test? Take bite-sized, specific sections to drill down on your weak points and maximize your study efficiency.",
-    highlight: "Math, Reading & Writing sections",
+    highlight: "Math and Verbal sections",
     color: "slate",
   },
 ];

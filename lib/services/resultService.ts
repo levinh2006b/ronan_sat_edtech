@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import dbConnect from "@/lib/mongodb";
 import Question from "@/lib/models/Question";
 import Result from "@/lib/models/Result";
+import { isVerbalSection } from "@/lib/sections";
 import Test from "@/lib/models/Test";
 import User from "@/lib/models/User";
 import { ResultValidationSchema } from "@/lib/schema/result";
@@ -156,7 +157,7 @@ export const resultService = {
 
     if (isSectional) {
       totalScore = correctCount;
-      readingScore = validatedData.sectionalSubject === "Reading and Writing" ? correctCount : 0;
+      readingScore = isVerbalSection(validatedData.sectionalSubject) ? correctCount : 0;
       mathScore = validatedData.sectionalSubject === "Math" ? correctCount : 0;
     } else {
       let readingWrongPoints = 0;
@@ -168,7 +169,7 @@ export const resultService = {
         const question = questionMap.get(answer.questionId.toString());
         const points = question?.points ?? 0;
 
-        if (question?.section === "Reading and Writing") {
+        if (isVerbalSection(question?.section)) {
           hasReadingSection = true;
           if (!answer.isCorrect) {
             readingWrongPoints += points;

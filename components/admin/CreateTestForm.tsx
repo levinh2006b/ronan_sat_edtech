@@ -6,6 +6,7 @@ import { FileText, Plus } from "lucide-react";
 
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
+import { VERBAL_SECTION } from "@/lib/sections";
 
 type CreateTestFormState = {
   title: string;
@@ -30,7 +31,7 @@ export default function CreateTestForm({ onSuccess }: { onSuccess: () => void })
       const res = await api.post(API_PATHS.TESTS, {
         title: testForm.title,
         sections: [
-          { name: "Reading and Writing", questionsCount: 27, timeLimit: 32 },
+          { name: VERBAL_SECTION, questionsCount: 27, timeLimit: 32 },
           { name: "Math", questionsCount: 22, timeLimit: 35 },
         ],
       });

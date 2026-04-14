@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { CSSProperties, useMemo, useState } from "react";
 import { CldImage } from "next-cloudinary";
 import Latex from "react-latex-next";
 import { Bookmark } from "lucide-react";
@@ -65,6 +65,13 @@ export default function QuestionViewer({
   const hasLeftPanel = question.passage || question.imageUrl;
   const leftPct = `${leftWidth}%`;
   const rightPct = `${100 - leftWidth}%`;
+  const splitPanelStyle =
+    hasLeftPanel
+      ? ({
+          "--left-panel-width": leftPct,
+          "--right-panel-width": rightPct,
+        } as CSSProperties)
+      : undefined;
   const currentAnnotations = useMemo(
     () =>
       annotationsByQuestion[question._id] ?? {
@@ -121,11 +128,14 @@ export default function QuestionViewer({
   };
 
   return (
-    <div className={`mb-20 mt-20 flex h-[calc(100vh-10rem)] w-full overflow-hidden ${viewerTheme.rootClass}`}>
+    <div
+      className={`mb-16 mt-14 flex h-[calc(100vh-7rem)] w-full flex-col overflow-hidden sm:mb-20 sm:mt-20 sm:h-[calc(100vh-10rem)] md:flex-row ${viewerTheme.rootClass}`}
+      style={splitPanelStyle}
+    >
       {hasLeftPanel ? (
-        <div className={`h-full overflow-y-auto p-10 ${viewerTheme.leftPanelClass}`} style={{ width: leftPct, flexShrink: 0 }}>
+        <div className={`hidden md:block md:h-full md:w-[var(--left-panel-width)] md:shrink-0 md:overflow-y-auto md:p-10 ${viewerTheme.leftPanelClass}`}>
           {question.imageUrl ? (
-            <div className={`mb-6 flex w-full justify-center p-4 ${viewerTheme.imageCardClass}`}>
+            <div className={`mb-4 flex w-full justify-center p-3 sm:mb-6 sm:p-4 ${viewerTheme.imageCardClass}`}>
               <CldImage
                 src={question.imageUrl}
                 width={350}
@@ -138,9 +148,10 @@ export default function QuestionViewer({
 
           {question.passage ? (
             <SelectableTextPanel
+              theme={theme}
               annotations={currentAnnotations.passage}
               onChange={(nextAnnotations) => updateAnnotations("passage", nextAnnotations)}
-              className={`whitespace-pre-wrap p-6 text-[15px] leading-relaxed selection:text-black [font-family:Georgia,'Times_New_Roman',Times,serif] ${viewerTheme.passageClass}`}
+              className={`whitespace-pre-wrap p-4 text-[14px] leading-relaxed selection:text-black sm:p-6 sm:text-[15px] [font-family:Georgia,'Times_New_Roman',Times,serif] ${viewerTheme.passageClass}`}
               sourceQuestionId={question._id}
             >
               {passageContent}
@@ -152,7 +163,7 @@ export default function QuestionViewer({
       {hasLeftPanel ? (
         <div
           id="qv-divider"
-          className={`group relative z-10 flex flex-shrink-0 cursor-col-resize items-center justify-center transition-colors ${viewerTheme.dividerTrackClass}`}
+          className={`group relative z-10 hidden flex-shrink-0 cursor-col-resize items-center justify-center transition-colors md:flex ${viewerTheme.dividerTrackClass}`}
           style={{ width: "4px" }}
         >
           <div
@@ -168,24 +179,50 @@ export default function QuestionViewer({
       ) : null}
 
       <div
-        className={`${hasLeftPanel ? "" : "mx-auto max-w-3xl"} flex h-full flex-col overflow-y-auto`}
-        style={{ width: hasLeftPanel ? rightPct : "100%", flexShrink: 0 }}
+        className={`${hasLeftPanel ? "" : "mx-auto max-w-3xl"} flex min-h-0 w-full flex-1 flex-col overflow-y-auto md:w-[var(--right-panel-width)] md:flex-none`}
       >
-        <div className="shrink-0 px-6 pb-2 pt-5">
-          <div className="flex h-[32px] items-stretch">
-            <div className={`flex w-[32px] shrink-0 select-none items-center justify-center text-sm font-black ${viewerTheme.questionNumberClass}`}>
+        {hasLeftPanel ? (
+          <div className={`px-4 pt-4 sm:px-6 md:hidden ${viewerTheme.leftPanelClass}`}>
+            {question.imageUrl ? (
+              <div className={`mb-4 flex w-full justify-center p-3 ${viewerTheme.imageCardClass}`}>
+                <CldImage
+                  src={question.imageUrl}
+                  width={350}
+                  height={350}
+                  alt="Question Reference"
+                  className="h-auto max-w-full object-contain"
+                />
+              </div>
+            ) : null}
+
+            {question.passage ? (
+              <SelectableTextPanel
+                annotations={currentAnnotations.passage}
+                onChange={(nextAnnotations) => updateAnnotations("passage", nextAnnotations)}
+                className={`whitespace-pre-wrap p-4 text-[14px] leading-relaxed selection:text-black [font-family:Georgia,'Times_New_Roman',Times,serif] ${viewerTheme.passageClass}`}
+                sourceQuestionId={question._id}
+              >
+                {passageContent}
+              </SelectableTextPanel>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="shrink-0 px-4 pb-2 pt-4 sm:px-6 sm:pt-5">
+          <div className="flex h-[30px] items-stretch sm:h-[32px]">
+            <div className={`flex w-[30px] shrink-0 select-none items-center justify-center text-sm font-black sm:w-[32px] ${viewerTheme.questionNumberClass}`}>
               {index + 1}
             </div>
 
-            <div className={`flex flex-1 items-center justify-between px-3 ${viewerTheme.questionToolbarClass}`}>
+            <div className={`flex flex-1 items-center justify-between gap-2 px-2.5 sm:px-3 ${viewerTheme.questionToolbarClass}`}>
               <button
                 onClick={() => onToggleFlag(question._id)}
-                className={`inline-flex select-none items-center gap-1.5 text-[13px] font-bold transition-all ${
+                className={`inline-flex min-w-0 select-none items-center gap-1 text-[12px] font-bold transition-all sm:gap-1.5 sm:text-[13px] ${
                   isFlagged ? viewerTheme.flagActiveClass : viewerTheme.flagDefaultClass
                 }`}
               >
-                <Bookmark className={`h-[18px] w-[18px] ${isFlagged ? viewerTheme.flagIconActiveClass : ""}`} strokeWidth={1.9} />
-                Mark for Review
+                <Bookmark className={`h-4 w-4 shrink-0 sm:h-[18px] sm:w-[18px] ${isFlagged ? viewerTheme.flagIconActiveClass : ""}`} strokeWidth={1.9} />
+                <span className="truncate">Mark for Review</span>
               </button>
 
               <button
@@ -196,9 +233,9 @@ export default function QuestionViewer({
                   }))
                 }
                 title={showElimination ? "Tat Process of Elimination" : "Bat Process of Elimination"}
-                className={`relative flex h-[26px] w-[26px] items-center justify-center rounded-sm font-bold transition-colors select-none ${showElimination ? viewerTheme.eliminationActiveClass : viewerTheme.eliminationIdleClass}`}
+                className={`relative flex h-6 w-6 items-center justify-center rounded-sm font-bold transition-colors select-none sm:h-[26px] sm:w-[26px] ${showElimination ? viewerTheme.eliminationActiveClass : viewerTheme.eliminationIdleClass}`}
               >
-                <span className="relative z-10 text-[10px] tracking-[-0.08em]">ABC</span>
+                <span className="relative z-10 text-[9px] tracking-[-0.08em] sm:text-[10px]">ABC</span>
                 <svg
                   className="pointer-events-none absolute inset-0 z-20 h-full w-full"
                   viewBox="0 0 26 26"
@@ -215,18 +252,19 @@ export default function QuestionViewer({
         </div>
 
         <SelectableTextPanel
+          theme={theme}
           annotations={currentAnnotations.questionText}
           onChange={(nextAnnotations) => updateAnnotations("questionText", nextAnnotations)}
-          className={`mx-6 px-6 pb-4 pt-4 text-[15px] leading-relaxed [font-family:Georgia,'Times_New_Roman',Times,serif] ${viewerTheme.promptClass}`}
+          className={`mx-4 px-4 pb-4 pt-4 text-[14px] leading-relaxed sm:mx-6 sm:px-6 sm:text-[15px] [font-family:Georgia,'Times_New_Roman',Times,serif] ${viewerTheme.promptClass}`}
           sourceQuestionId={question._id}
         >
           {questionTextContent}
         </SelectableTextPanel>
 
-        <div className="flex-1 px-6 pb-8">
+        <div className="flex-1 px-4 pb-6 sm:px-6 sm:pb-8">
           {question.questionType === "spr" ? (
             <div className="mt-4">
-              <label className="mb-3 block text-sm font-bold uppercase tracking-[0.16em] text-ink-fg">
+              <label className="mb-3 block text-xs font-bold uppercase tracking-[0.14em] text-ink-fg sm:text-sm sm:tracking-[0.16em]">
                 Student-Produced Response
               </label>
               <input
@@ -237,7 +275,7 @@ export default function QuestionViewer({
                 placeholder="Enter your answer (e.g. 1/3, 0.5)"
                 className={viewerTheme.sprInputClass}
               />
-              <div className={`mt-2 flex max-w-sm items-center justify-between gap-3 text-sm ${viewerTheme.sprMetaClass}`}>
+              <div className={`mt-2 flex max-w-sm items-center justify-between gap-3 text-xs sm:text-sm ${viewerTheme.sprMetaClass}`}>
                 <p>You can enter a fraction, decimal, or integer.</p>
                 <span className={`${(userAnswer || "").length >= MAX_SPR_ANSWER_LENGTH ? "text-amber-600" : ""}`}>
                   {(userAnswer || "").length}/{MAX_SPR_ANSWER_LENGTH}
@@ -245,7 +283,7 @@ export default function QuestionViewer({
               </div>
             </div>
           ) : (
-            <div className="mt-3 space-y-3">
+            <div className="mt-3 space-y-2.5 sm:space-y-3">
               {question.choices?.map((choice: string, indexChoice: number) => {
                 const storedChoiceCode = getChoiceCode(indexChoice);
                 const isSelected = userAnswer === storedChoiceCode;
@@ -253,9 +291,9 @@ export default function QuestionViewer({
                 const label = optionLabels[indexChoice] || "";
 
                 return (
-                  <div key={indexChoice} className="flex items-center gap-3">
+                  <div key={indexChoice} className="flex items-center gap-2 sm:gap-3">
                     <div
-                      className={`relative flex flex-1 cursor-pointer items-center gap-3 pl-4 pr-4 py-[10px] transition-all ${
+                      className={`relative flex flex-1 cursor-pointer items-center gap-2.5 px-3 py-[10px] transition-all sm:gap-3 sm:px-4 ${
                         isCrossed
                           ? viewerTheme.answerCrossedClass
                         : isSelected
@@ -269,10 +307,10 @@ export default function QuestionViewer({
                       ) : null}
 
                         <div
-                          className={`flex h-[26px] w-[26px] shrink-0 select-none items-center justify-center rounded-full text-[13px] font-black transition-all ${
-                            isCrossed
-                             ? viewerTheme.optionBadgeCrossedClass
-                             : isSelected
+                          className={`flex h-6 w-6 shrink-0 select-none items-center justify-center rounded-full text-[12px] font-black transition-all sm:h-[26px] sm:w-[26px] sm:text-[13px] ${
+                             isCrossed
+                              ? viewerTheme.optionBadgeCrossedClass
+                              : isSelected
                                ? viewerTheme.optionBadgeSelectedClass
                                : viewerTheme.optionBadgeIdleClass
                           }`}
@@ -281,9 +319,10 @@ export default function QuestionViewer({
                       </div>
 
                       <SelectableTextPanel
+                        theme={theme}
                         annotations={currentAnnotations.choices[storedChoiceCode] ?? []}
                         onChange={(nextAnnotations) => updateChoiceAnnotations(storedChoiceCode, nextAnnotations)}
-                        className={`min-w-0 flex-1 text-[15px] leading-snug [font-family:Georgia,'Times_New_Roman',Times,serif] ${
+                        className={`min-w-0 flex-1 text-[14px] leading-snug sm:text-[15px] [font-family:Georgia,'Times_New_Roman',Times,serif] ${
                           isCrossed ? viewerTheme.choiceCrossedTextClass : viewerTheme.choiceTextClass
                         }`}
                         sourceQuestionId={question._id}
@@ -296,10 +335,10 @@ export default function QuestionViewer({
                       <button
                         onClick={(event) => toggleCrossOut(event, choice)}
                         title={isCrossed ? `Hoan tac loai tru dap an ${label}` : `Loai tru dap an ${label}`}
-                        className="flex w-[30px] shrink-0 items-center justify-center transition-all"
+                        className="flex w-7 shrink-0 items-center justify-center transition-all sm:w-[30px]"
                       >
                         {isCrossed ? (
-                          <span className="whitespace-nowrap text-[13px] font-semibold text-ink-fg underline hover:no-underline">
+                          <span className="whitespace-nowrap text-[12px] font-semibold text-ink-fg underline hover:no-underline sm:text-[13px]">
                             Undo
                           </span>
                         ) : (

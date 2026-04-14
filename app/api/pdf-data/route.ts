@@ -5,29 +5,14 @@ import { authOptions } from "@/lib/authOptions";
 import dbConnect from "@/lib/mongodb";
 import Question from "@/lib/models/Question";
 import Test from "@/lib/models/Test";
-
-const SECTION_ALIAS: Record<string, string> = {
-  reading: "Reading and Writing",
-  "reading-and-writing": "Reading and Writing",
-  "reading & writing": "Reading and Writing",
-  math: "Math",
-};
+import { getSectionQueryNames, normalizeSectionName } from "@/lib/sections";
 
 type PdfDataTest = {
   title: string;
 };
 
 function normalizeSection(rawSection: string | null): string | undefined {
-  if (!rawSection) {
-    return undefined;
-  }
-
-  const trimmed = rawSection.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-
-  return SECTION_ALIAS[trimmed.toLowerCase()] ?? trimmed;
+  return normalizeSectionName(rawSection) || undefined;
 }
 
 export async function GET(req: NextRequest) {
@@ -47,9 +32,11 @@ export async function GET(req: NextRequest) {
 
     await dbConnect();
 
+    const sectionNames = getSectionQueryNames(sectionName);
+
     const [rawTest, rawQuestions] = await Promise.all([
       Test.findById(testId).select("title").lean<PdfDataTest | null>(),
-      Question.find(sectionName ? { testId, section: sectionName } : { testId }).lean(),
+      Question.find(sectionNames.length > 0 ? { testId, section: { $in: sectionNames } } : { testId }).lean(),
     ]);
 
     if (!rawTest?.title) {

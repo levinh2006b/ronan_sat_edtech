@@ -1,6 +1,8 @@
 import katex from "katex";
 import { marked } from "marked";
 
+import { isVerbalSection, MATH_SECTION, VERBAL_SECTION } from "@/lib/sections";
+
 type RawQuestion = {
   section?: string;
   module?: number;
@@ -33,15 +35,15 @@ type AnswerEntry = {
 };
 
 const SECTION_ORDER: Record<string, number> = {
-  "Reading and Writing": 0,
-  Math: 1,
+  [VERBAL_SECTION]: 0,
+  [MATH_SECTION]: 1,
 };
 
 const ANSWER_GROUP_CONFIG = [
-  { key: "Reading and Writing-1", title: "Reading Module 1 Answers", section: "Reading and Writing", module: 1 },
-  { key: "Reading and Writing-2", title: "Reading Module 2 Answers", section: "Reading and Writing", module: 2 },
-  { key: "Math-1", title: "Math Module 1 Answers", section: "Math", module: 1 },
-  { key: "Math-2", title: "Math Module 2 Answers", section: "Math", module: 2 },
+  { key: `${VERBAL_SECTION}-1`, title: "Verbal Module 1 Answers", section: VERBAL_SECTION, module: 1 },
+  { key: `${VERBAL_SECTION}-2`, title: "Verbal Module 2 Answers", section: VERBAL_SECTION, module: 2 },
+  { key: `${MATH_SECTION}-1`, title: "Math Module 1 Answers", section: MATH_SECTION, module: 1 },
+  { key: `${MATH_SECTION}-2`, title: "Math Module 2 Answers", section: MATH_SECTION, module: 2 },
 ];
 
 function parseText(text: string | null | undefined): string {
@@ -119,10 +121,14 @@ function getQuestionSortValue(question: RawQuestion): number {
   return 0;
 }
 
+function getNormalizedSectionLabel(section: string | undefined): string {
+  return isVerbalSection(section) ? VERBAL_SECTION : section ?? "";
+}
+
 function sortQuestions(questions: RawQuestion[]): RawQuestion[] {
   return [...questions].sort((left, right) => {
-    const leftSection = SECTION_ORDER[left.section ?? ""] ?? 99;
-    const rightSection = SECTION_ORDER[right.section ?? ""] ?? 99;
+    const leftSection = SECTION_ORDER[getNormalizedSectionLabel(left.section)] ?? 99;
+    const rightSection = SECTION_ORDER[getNormalizedSectionLabel(right.section)] ?? 99;
 
     if (leftSection !== rightSection) {
       return leftSection - rightSection;
@@ -224,7 +230,7 @@ function buildQuestionBlock(question: RawQuestion, index: number): string {
     <article class="question-block">
       <div class="question-meta">
         <span class="question-number">Question ${index + 1}</span>
-        <span class="question-tag">${question.section ?? "Unknown section"}</span>
+        <span class="question-tag">${getNormalizedSectionLabel(question.section) || "Unknown section"}</span>
         <span class="question-tag">Module ${question.module ?? "?"}</span>
       </div>
       ${passageHtml}
@@ -239,9 +245,9 @@ function buildAnswerGroups(questions: RawQuestion[]): AnswerGroup[] {
   return ANSWER_GROUP_CONFIG.map((config) => ({
     key: config.key,
     title: config.title,
-    questions: questions.filter(
-      (question) => question.section === config.section && question.module === config.module
-    ),
+      questions: questions.filter(
+        (question) => getNormalizedSectionLabel(question.section) === config.section && question.module === config.module
+      ),
   })).filter((group) => group.questions.length > 0);
 }
 

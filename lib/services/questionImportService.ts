@@ -1,5 +1,6 @@
 import { API_PATHS } from "@/lib/apiPaths";
 import api from "@/lib/axios";
+import { normalizeSectionName, VERBAL_SECTION } from "@/lib/sections";
 import type {
   AdminQuestionUploadRow,
   PreparedQuestionPayload,
@@ -27,7 +28,7 @@ function buildPreparedQuestionPayload(row: AdminQuestionUploadRow, selectedTestI
   const type = normalizeString(row.questionType || "multiple_choice");
   const payload: PreparedQuestionPayload = {
     testId: selectedTestId,
-    section: normalizeString(row.section || "Reading and Writing"),
+    section: normalizeSectionName(normalizeString(row.section || VERBAL_SECTION)),
     domain: normalizeString(row.domain),
     skill: normalizeString(row.skill),
     module: Number(row.module) || 1,

@@ -46,7 +46,7 @@ const ResultSchema: Schema<IResult> = new Schema(
         
         // --- CÁC TRƯỜNG MỚI DÀNH CHO SECTIONAL ---
         isSectional: { type: Boolean, default: false },       // Cờ đánh dấu có phải làm từng phần không
-        sectionalSubject: { type: String, required: false },  // Lưu tên môn (Reading and Writing / Math)
+        sectionalSubject: { type: String, required: false },  // Stores the subject label (Verbal / Math)
         sectionalModule: { type: Number, required: false },   // Lưu số Module (1 hoặc 2)
 
         answers: [AnswerSchema],

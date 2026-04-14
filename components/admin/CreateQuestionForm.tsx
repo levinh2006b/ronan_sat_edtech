@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
+import { normalizeSectionName, VERBAL_SECTION } from "@/lib/sections";
 import { ListPlus, CheckCircle, Save, Upload, FileUp, ChevronDown } from "lucide-react";
 import { CldUploadWidget, type CloudinaryUploadWidgetResults } from "next-cloudinary";
 
@@ -58,7 +59,7 @@ export default function CreateQuestionForm({ tests }: { tests: TestOption[] }) {
     const [importProgress] = useState("");
 
     const [questionForm, setQuestionForm] = useState({
-        section: "Reading and Writing",
+        section: VERBAL_SECTION,
         module: 1,
         questionType: "multiple_choice",
         questionText: "",
@@ -101,7 +102,7 @@ export default function CreateQuestionForm({ tests }: { tests: TestOption[] }) {
                 
                 const payload: QuestionPayload = {
                     testId: selectedTestId,
-                    section: String(row.section || "Reading and Writing").trim(),
+                    section: normalizeSectionName(String(row.section || VERBAL_SECTION)),
                     domain: String(row.domain || "").trim(),
                     skill: String(row.skill || "").trim(),
                     module: Number(row.module) || 1,
@@ -389,7 +390,7 @@ export default function CreateQuestionForm({ tests }: { tests: TestOption[] }) {
                                 onChange={(e) => setQuestionForm({ ...questionForm, section: e.target.value })}
                                 className={workbookSelectClassName}
                             >
-                                <option value="Reading and Writing">Reading and Writing</option>
+                                <option value={VERBAL_SECTION}>{VERBAL_SECTION}</option>
                                 <option value="Math">Math</option>
                             </select>
                         </div>
@@ -450,7 +451,7 @@ export default function CreateQuestionForm({ tests }: { tests: TestOption[] }) {
                                 rows={4}
                                 value={questionForm.passage}
                                 onChange={(e) => setQuestionForm({ ...questionForm, passage: e.target.value })}
-                                placeholder="Text passage for reading questions..."
+                                placeholder="Text passage for verbal questions..."
                                 className={`${workbookTextareaClassName} font-serif`}
                             />
                         </div>
