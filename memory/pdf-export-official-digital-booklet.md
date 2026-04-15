@@ -57,8 +57,10 @@
 - The final centering fix was layout-level as well as parser-level: `.display-math-block` must span the full content width and center its KaTeX child; only wrapping the math without width/justification was not sufficient in the printable iframe.
 - Consecutive full-line equations should render as a visual group. The template now wraps adjacent `.display-math-block` runs in `.display-math-group` so the prompt gets normal outer spacing before the first equation and after the last one, with only a small gap between equations inside the group.
 - Inline math with tall structures should opt into extra leading. The template now detects fractions and exponents from the raw source (`\frac` and `^`) and adds taller line-height classes to the affected prompt/passage block.
-- Answer choices use a stricter rule: if any choice in the set contains a tall-math pattern, the entire answer list gets the taller spacing treatment so the options stay visually aligned with each other.
+- Answer-choice tall math should be handled per choice, not per list. Applying tall-math spacing to the full answer list makes plain options drift and creates label misalignment.
 - CSS spacing alone was not enough for cramped fractions. The PDF renderer now also prepends `\displaystyle` to tall inline math before KaTeX renders it, which avoids the smaller `mtight` inline-fraction form and materially improves legibility in prompts and answer choices.
+- The durable label-alignment fix for math answer choices is layout-level: use baseline alignment on each answer row so `A)`, `B)`, etc. track the first visible text/math baseline instead of the top of the tallest KaTeX box. Manual per-label vertical nudges were tested and abandoned because fractional exponents still produced worse drift in print.
+- Pure-math choices can also be shifted by inherited paragraph spacing. In the PDF template, paragraphs inside `.question-card-body` should reset top margin (`margin: 0 0 ...`) so math-only options do not start lower than their label.
 - If the banner width looks wrong again, inspect both:
   - `buildTopBand()` markup in `utils/questionTemplate.ts`
   - the active `.top-band` and `.top-band-image` CSS in the generated template

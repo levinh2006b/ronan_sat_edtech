@@ -635,7 +635,6 @@ function buildQuestionCard(item: QuestionRenderItem): string {
   const labels = ["A", "B", "C", "D", "E", "F"];
   const passageHasTallMath = hasTallMath(item.question.passage);
   const promptHasTallMath = hasTallMath(item.question.questionText);
-  const choicesHaveTallMath = choices.some((choice) => hasTallMath(choice));
 
   const passageHtml = item.showPassage
     ? `
@@ -660,16 +659,18 @@ function buildQuestionCard(item: QuestionRenderItem): string {
     item.question.questionType === "spr"
       ? `<div class="spr-answer-line"></div>`
       : `
-          <ol class="answer-choice-list${choicesHaveTallMath ? " answer-choice-list--tall-math" : ""}">
+          <ol class="answer-choice-list">
             ${choices
-              .map(
-                (choice, index) => `
-                  <li>
-                    <span class="answer-choice-label">${labels[index]})</span>
-                    <div class="answer-choice-text${choicesHaveTallMath ? " answer-choice-text--tall-math" : ""}">${parseText(choice, { loosenTallInlineMath: true })}</div>
+              .map((choice, index) => {
+                const choiceHasTallMath = hasTallMath(choice);
+
+                return `
+                  <li class="${choiceHasTallMath ? "answer-choice-item--tall-math" : ""}">
+                    <span class="answer-choice-label${choiceHasTallMath ? " answer-choice-label--tall-math" : ""}">${labels[index]})</span>
+                    <div class="answer-choice-text${choiceHasTallMath ? " answer-choice-text--tall-math" : ""}">${parseText(choice, { loosenTallInlineMath: true })}</div>
                   </li>
-                `,
-              )
+                `;
+              })
               .join("")}
           </ol>
         `;
@@ -1620,7 +1621,7 @@ function buildStyles(): string {
     }
 
     .question-card-body p {
-      margin-bottom: 0.14in;
+      margin: 0 0 0.14in;
     }
 
     .question-card-body p:last-child {
@@ -1713,19 +1714,31 @@ function buildStyles(): string {
     }
 
     .answer-choice-list li {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
+      display: flex;
+      align-items: baseline;
       gap: 0.08in;
-      align-items: start;
       margin-bottom: 0.07in;
     }
 
-    .answer-choice-list--tall-math li {
+    .answer-choice-item--tall-math {
       margin-bottom: 0.19in;
     }
 
     .answer-choice-label {
+      display: inline-block;
+      flex: 0 0 auto;
       min-width: 0.22in;
+      line-height: 1;
+    }
+
+    .answer-choice-label--tall-math {
+      position: static;
+      top: auto;
+    }
+
+    .answer-choice-text {
+      min-width: 0;
+      flex: 1 1 auto;
     }
 
     .answer-choice-text--tall-math {

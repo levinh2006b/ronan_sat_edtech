@@ -136,13 +136,13 @@ export default function TestFooter({
                     </span>
                 </div>
 
-                <div className="flex flex-1 items-center justify-center sm:flex-1">
+                <div className="flex flex-1 items-center justify-start sm:justify-center">
                     <button
                         type="button"
                         onClick={() => setIsGridOpen(!isGridOpen)}
-                        className={`${footerTheme.navigatorButtonClass} w-full max-w-[12rem] justify-center px-3 py-1.5 text-xs sm:w-auto sm:max-w-none sm:px-4 sm:py-2 sm:text-sm`}
+                        className={`${footerTheme.navigatorButtonClass} inline-flex max-w-full justify-center px-3 py-1.5 text-xs sm:w-auto sm:max-w-none sm:px-4 sm:py-2 sm:text-sm`}
                     >
-                        <span className="sm:hidden">Q {currentIndex + 1}/{totalQuestions}</span>
+                        <span className="sm:hidden">{currentIndex + 1}/{totalQuestions}</span>
                         <span className="hidden sm:inline">Question {currentIndex + 1} of {totalQuestions}</span>
                         <ChevronDown className={`ml-1.5 inline-block h-3.5 w-3.5 transition-transform sm:ml-2 sm:h-4 sm:w-4 ${isGridOpen ? "rotate-180" : ""}`} />
                     </button>
