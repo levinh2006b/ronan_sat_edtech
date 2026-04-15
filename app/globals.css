@@ -288,6 +288,47 @@ body.loading-screen-active .app-shell-navigation {
     box-shadow: 12px 12px 0 0 var(--color-ink-fg);
   }
 
+  .testing-question-copy {
+    line-height: 1.55;
+  }
+
+  .testing-question-copy p {
+    margin-bottom: 1rem;
+  }
+
+  .testing-question-copy p:last-child {
+    margin-bottom: 0;
+  }
+
+  .testing-question-copy--tall-math {
+    line-height: 2.1;
+  }
+
+  .testing-choice-copy {
+    line-height: 1.5;
+  }
+
+  .testing-choice-copy--tall-math {
+    line-height: 2;
+  }
+
+  .testing-question-copy .katex,
+  .testing-choice-copy .katex {
+    line-height: 1.15;
+    text-indent: 0;
+  }
+
+  .testing-question-copy--tall-math .katex,
+  .testing-choice-copy--tall-math .katex {
+    line-height: 1.9;
+  }
+
+  .testing-question-copy--tall-math .katex .base,
+  .testing-choice-copy--tall-math .katex .base {
+    padding-top: 0.24em;
+    padding-bottom: 0.34em;
+  }
+
 }
 
 @keyframes quote-loader-ripple {

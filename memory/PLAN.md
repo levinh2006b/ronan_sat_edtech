@@ -248,6 +248,7 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - `components/test/TestHeader.tsx` now wraps safely on mobile by moving the timer onto its own row, shrinking control sizing, and preventing the title, timer, and action cluster from overlapping.
 - `components/test/TestFooter.tsx` now uses a shorter mobile bar, a more compact navigator label, smaller action buttons, and a lower mobile question-grid sheet so bottom controls fit short screens better.
 - Targeted eslint passed for `components/QuestionViewer.tsx`, `components/test/TestHeader.tsx`, and `components/test/TestFooter.tsx` after the responsive adjustments.
+- The live testing UI in `components/QuestionViewer.tsx` now mirrors the PDF math legibility fix for inline tall math: fractions/exponents are detected from the raw source, inline `\frac` is upgraded to `\dfrac`, `\displaystyle` is added for tall inline math, and testing-only spacing classes in `app/globals.css` increase prompt and choice leading without changing unrelated product surfaces.
 
 ### 2026-04-14 Student Dashboard Trend Panel
 

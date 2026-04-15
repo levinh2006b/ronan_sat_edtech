@@ -10,6 +10,34 @@ import { getTestingRoomThemePreset, type TestingRoomTheme } from "@/lib/testingR
 import { getChoiceCode } from "@/utils/gradingHelper";
 
 const MAX_SPR_ANSWER_LENGTH = 200;
+const TALL_MATH_PATTERN = /\\(?:d?frac)|\^(?:\{[^}]+\}|\S)/;
+
+function hasTallMath(text: string | undefined): boolean {
+  if (!text) {
+    return false;
+  }
+
+  return TALL_MATH_PATTERN.test(text);
+}
+
+function loosenInlineLatex(text: string | undefined): string {
+  if (!text) {
+    return "";
+  }
+
+  return text.replace(/(\$\$?)(.*?)\1/gs, (match, delimiter, mathText) => {
+    if (delimiter === "$$") {
+      return match;
+    }
+
+    const normalizedMath = mathText.trim();
+    if (!hasTallMath(normalizedMath)) {
+      return match;
+    }
+
+    return `$\\displaystyle ${normalizedMath.replace(/\\frac/g, "\\dfrac")}$`;
+  });
+}
 
 type ViewerQuestion = {
   _id: string;
@@ -84,14 +112,23 @@ export default function QuestionViewer({
   );
   const crossedOut = crossedOutByQuestion[question._id] ?? [];
   const showElimination = showEliminationByQuestion[question._id] ?? false;
+  const promptHasTallMath = hasTallMath(question.questionText);
+  const passageHasTallMath = hasTallMath(question.passage);
+  const choicesHaveTallMath = useMemo(
+    () => (question.choices ?? []).some((choice) => hasTallMath(choice)),
+    [question.choices],
+  );
   const passageContent = useMemo(() => {
     if (!question.passage) {
       return null;
     }
 
-    return <Latex>{question.passage}</Latex>;
+    return <Latex>{loosenInlineLatex(question.passage)}</Latex>;
   }, [question.passage]);
-  const questionTextContent = useMemo(() => <Latex>{question.questionText ?? ""}</Latex>, [question.questionText]);
+  const questionTextContent = useMemo(
+    () => <Latex>{loosenInlineLatex(question.questionText)}</Latex>,
+    [question.questionText],
+  );
 
   const updateAnnotations = (part: "passage" | "questionText", nextAnnotations: TextAnnotation[]) => {
     setAnnotationsByQuestion((previous) => ({
@@ -148,15 +185,15 @@ export default function QuestionViewer({
           ) : null}
 
           {question.passage ? (
-            <SelectableTextPanel
-              theme={theme}
-              annotations={currentAnnotations.passage}
-              onChange={(nextAnnotations) => updateAnnotations("passage", nextAnnotations)}
-              className={`whitespace-pre-wrap p-4 text-[14px] leading-relaxed selection:text-black sm:p-6 sm:text-[15px] ${readingFontClass} ${viewerTheme.passageClass}`}
-              sourceQuestionId={question._id}
-            >
-              {passageContent}
-            </SelectableTextPanel>
+              <SelectableTextPanel
+                theme={theme}
+                annotations={currentAnnotations.passage}
+                onChange={(nextAnnotations) => updateAnnotations("passage", nextAnnotations)}
+                className={`testing-question-copy whitespace-pre-wrap p-4 text-[14px] leading-relaxed selection:text-black sm:p-6 sm:text-[15px] ${passageHasTallMath ? "testing-question-copy--tall-math" : ""} ${readingFontClass} ${viewerTheme.passageClass}`}
+                sourceQuestionId={question._id}
+              >
+                {passageContent}
+              </SelectableTextPanel>
           ) : null}
         </div>
       ) : null}
@@ -200,7 +237,7 @@ export default function QuestionViewer({
               <SelectableTextPanel
                 annotations={currentAnnotations.passage}
                 onChange={(nextAnnotations) => updateAnnotations("passage", nextAnnotations)}
-                className={`whitespace-pre-wrap p-4 text-[14px] leading-relaxed selection:text-black ${readingFontClass} ${viewerTheme.passageClass}`}
+                className={`testing-question-copy whitespace-pre-wrap p-4 text-[14px] leading-relaxed selection:text-black ${passageHasTallMath ? "testing-question-copy--tall-math" : ""} ${readingFontClass} ${viewerTheme.passageClass}`}
                 sourceQuestionId={question._id}
               >
                 {passageContent}
@@ -256,7 +293,7 @@ export default function QuestionViewer({
           theme={theme}
           annotations={currentAnnotations.questionText}
           onChange={(nextAnnotations) => updateAnnotations("questionText", nextAnnotations)}
-          className={`mx-4 px-4 pb-4 pt-4 text-[14px] leading-relaxed sm:mx-6 sm:px-6 sm:text-[15px] ${readingFontClass} ${viewerTheme.promptClass}`}
+          className={`testing-question-copy mx-4 px-4 pb-4 pt-4 text-[14px] leading-relaxed sm:mx-6 sm:px-6 sm:text-[15px] ${promptHasTallMath ? "testing-question-copy--tall-math" : ""} ${readingFontClass} ${viewerTheme.promptClass}`}
           sourceQuestionId={question._id}
         >
           {questionTextContent}
@@ -294,10 +331,10 @@ export default function QuestionViewer({
                 return (
                   <div key={indexChoice} className="flex items-center gap-2 sm:gap-3">
                     <div
-                      className={`relative flex flex-1 cursor-pointer items-center gap-2.5 px-3 py-[10px] transition-all sm:gap-3 sm:px-4 ${
-                        isCrossed
-                          ? viewerTheme.answerCrossedClass
-                        : isSelected
+                      className={`relative flex flex-1 cursor-pointer items-center gap-2.5 px-3 py-[10px] transition-all sm:gap-3 sm:px-4 ${choicesHaveTallMath ? "min-h-[5.4rem] sm:min-h-[6rem]" : ""} ${
+                         isCrossed
+                           ? viewerTheme.answerCrossedClass
+                         : isSelected
                             ? viewerTheme.answerSelectedClass
                           : viewerTheme.answerIdleClass
                         }`}
@@ -323,12 +360,12 @@ export default function QuestionViewer({
                         theme={theme}
                         annotations={currentAnnotations.choices[storedChoiceCode] ?? []}
                         onChange={(nextAnnotations) => updateChoiceAnnotations(storedChoiceCode, nextAnnotations)}
-                        className={`min-w-0 flex-1 text-[14px] leading-snug sm:text-[15px] ${readingFontClass} ${
+                        className={`testing-choice-copy min-w-0 flex-1 text-[14px] leading-snug sm:text-[15px] ${choicesHaveTallMath ? "testing-choice-copy--tall-math" : ""} ${readingFontClass} ${
                           isCrossed ? viewerTheme.choiceCrossedTextClass : viewerTheme.choiceTextClass
                         }`}
                         sourceQuestionId={question._id}
                       >
-                        <Latex>{choice || ""}</Latex>
+                        <Latex>{loosenInlineLatex(choice || "")}</Latex>
                       </SelectableTextPanel>
                     </div>
 

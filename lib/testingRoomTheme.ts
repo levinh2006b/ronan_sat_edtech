@@ -243,7 +243,7 @@ export const TESTING_ROOM_THEME_PRESETS = {
       answerSelectedClass:
         "rounded-2xl border-2 border-ink-fg bg-primary brutal-shadow-sm",
       answerIdleClass:
-        "rounded-2xl border-2 border-ink-fg bg-surface-white brutal-shadow-sm",
+        "rounded-2xl border-2 border-ink-fg bg-surface-white brutal-shadow-sm hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-paper-bg active:translate-x-0.5 active:translate-y-0.5 active:shadow-none",
       optionBadgeCrossedClass:
         "border-2 border-ink-fg bg-surface-white text-ink-fg/50",
       optionBadgeSelectedClass: "border-2 border-ink-fg bg-accent-2 text-white",
