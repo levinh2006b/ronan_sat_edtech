@@ -24,6 +24,8 @@ type GeneratePDFTemplateParams = {
   sectionName?: string;
   documentTitle?: string;
   assetBaseUrl?: string;
+  testingRoomUrl?: string;
+  testingRoomQrSvg?: string;
 };
 
 type StageDefinition = {
@@ -960,6 +962,8 @@ function buildCoverPage(
   testTitle: string,
   sectionName?: string,
   testId?: string,
+  testingRoomUrl?: string,
+  testingRoomQrSvg?: string,
 ): string {
   const coverCode = (testId || "").trim() || buildCoverCode(testTitle);
   const barcodeSvg = buildCode39BarcodeSvg(coverCode);
@@ -967,6 +971,25 @@ function buildCoverPage(
   const subtitleHtml = sectionName
     ? `<div class="cover-subtitle">${escapeHtml(sectionName)} booklet</div>`
     : "";
+  const qrCalloutHtml =
+    testingRoomUrl && testingRoomQrSvg
+      ? `
+        <div class="cover-callout cover-callout--qr">
+          <div>
+            <div class="cover-callout-heading">Access the digital version</div>
+            <div class="cover-callout-copy cover-callout-copy--compact">Scan this code to access the digital version instead of using the paper booklet.</div>
+          </div>
+          <div class="cover-qr-block">
+            <div class="cover-qr-frame">
+              <div class="cover-qr-art">${testingRoomQrSvg}</div>
+              <div class="cover-qr-logo-wrap">
+                <img src="/brand/logo.svg" alt="Ronan SAT logo" class="cover-qr-logo" />
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+      : "";
 
   return `
     <section class="sat-page cover-page">
@@ -981,6 +1004,7 @@ function buildCoverPage(
         <div class="cover-brand-rule"></div>
         <div class="cover-practice-title">${escapeHtml(testTitle)}</div>
         ${subtitleHtml}
+        ${qrCalloutHtml}
       </div>
 
       <div class="cover-lockup-row">
@@ -1259,16 +1283,71 @@ function buildStyles(): string {
       line-height: 1.18;
     }
 
+    .cover-callout-copy--compact {
+      font-size: 0.19in;
+      line-height: 1.24;
+    }
+
     .cover-callout-copy-secondary {
       margin-top: 0.18in;
       font-size: 0.18in;
       line-height: 1.2;
     }
 
-    .cover-callout-footnote {
-      margin-top: 0.14in;
-      font-size: 0.14in;
-      line-height: 1.2;
+    .cover-callout--qr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 1.82in;
+      align-items: center;
+      gap: 0.22in;
+      width: 6.35in;
+      margin-top: 0.42in;
+      padding: 0.18in 0.22in;
+    }
+
+    .cover-qr-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.08in;
+    }
+
+    .cover-qr-frame {
+      position: relative;
+      width: 1.5in;
+      height: 1.5in;
+      border: 1.5px solid #111111;
+      background: #ffffff;
+      padding: 0.08in;
+    }
+
+    .cover-qr-art,
+    .cover-qr-art svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .cover-qr-logo-wrap {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      display: flex;
+      width: 0.38in;
+      height: 0.38in;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+      border: 1px solid #111111;
+      border-radius: 999px;
+      background: #ffffff;
+      padding: 0.05in;
+    }
+
+    .cover-qr-logo {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     .cover-lockup-row {
@@ -1913,20 +1992,22 @@ function buildStyles(): string {
   `;
 }
 
-export function generatePDFTemplate({
+export async function generatePDFTemplate({
   testId,
   testTitle,
   questions,
   sectionName,
   documentTitle,
   assetBaseUrl,
-}: GeneratePDFTemplateParams): string {
+  testingRoomUrl,
+  testingRoomQrSvg,
+}: GeneratePDFTemplateParams): Promise<string> {
   const sortedQuestions = sortQuestions(questions);
   const stages = buildActiveStages(sortedQuestions);
   const pages: string[] = [];
   const normalizedAssetBaseUrl = (assetBaseUrl || "").replace(/\/$/, "");
 
-  pages.push(buildCoverPage(testTitle, sectionName, testId));
+  pages.push(buildCoverPage(testTitle, sectionName, testId, testingRoomUrl, testingRoomQrSvg));
   pages.push(buildPreludePage());
 
   let pageNumber = 2;

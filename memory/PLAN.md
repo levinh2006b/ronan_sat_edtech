@@ -255,3 +255,11 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - `app/dashboard/page.tsx` now gives the student dashboard a dedicated improvement graph panel ahead of the leaderboard instead of using that primary slot only for rankings.
 - The new `components/dashboard/ImprovementTrendPanel.tsx` derives a daily best-score trend from the existing dashboard results payload, supports `15 Days` and `Month` windows without a new API, and shows net change, latest score, and session count for the selected window.
 - A local shadcn-style chart base now lives in `components/ui/chart.tsx`, themed to workbook tokens and used with `recharts` so future charts can stay visually consistent without bootstrapping the whole repo into full shadcn component generation.
+
+### 2026-04-15 PDF QR Entry Flow
+
+- `components/DownloadPdfButton.tsx` now generates a QR code during the existing client-side print flow and passes the linked testing-room entry URL plus QR SVG into `utils/questionTemplate.ts`.
+- `utils/questionTemplate.ts` now renders a QR callout on the PDF cover with the Ronan logo centered in the code, preserving the current client-side export architecture rather than restoring the deprecated server-side PDF route.
+- QR links now target a dedicated entry route at `app/test/[id]/entry/page.tsx` instead of dropping straight into the timed room.
+- The new `/test/[id]/entry` screen supports both full-length and sectional links, shows exam specs before launch, and for sectional links without a module lets the student choose the module from that screen.
+- Shared test-room link construction now lives in `lib/testEntryLinks.ts`; future QR, share-link, or invite work should build on that helper rather than manually assembling `/test/...` URLs in multiple places.

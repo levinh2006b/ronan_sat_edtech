@@ -10,6 +10,7 @@
 
 - Keep PDF generation client-side through the hidden print iframe flow. Do not restore the deprecated server-side PDF export route.
 - The canonical template file is `utils/questionTemplate.ts`.
+- Cover-page QR generation now also stays client-side: `components/DownloadPdfButton.tsx` builds the QR SVG and passes it into the template rather than fetching a third-party QR image service at print time.
 - Top module banners should use the provided official-style SVG assets from the repo, not local-machine file paths and not long inline base64 strings.
 - Deployment-safe assets now live under `public/pdf-assets/`.
 - Body typography should use Minion Pro from bundled font files under `public/pdf-assets/fonts/` via `@font-face` in the generated template.
@@ -34,6 +35,7 @@
 ## Current template structure
 
 - Official-style cover page
+- Cover-page QR callout that links into `/test/[id]/entry` and overlays the Ronan logo in the middle of the QR code
 - Prelude page with `Test begins on the next page.`
 - Reading and Writing module intro pages
 - Math module intro/reference pages
@@ -67,6 +69,7 @@
 - Do not depend on `/Users/...` local paths for fonts or banner assets.
 - Do not reintroduce a temporary asset API route for local filesystem reads.
 - Keep the export deployable with everything needed living inside the repo.
+- Keep QR generation self-contained in the app bundle. Do not make PDF generation depend on a remote QR image API.
 
 ## Next likely work
 

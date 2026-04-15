@@ -8,7 +8,6 @@ import LeaderboardTable from "@/components/dashboard/LeaderboardTable";
 import LeaderboardTableSkeleton from "@/components/dashboard/LeaderboardTableSkeleton";
 import ImprovementTrendPanel from "@/components/dashboard/ImprovementTrendPanel";
 import RecentResultsList from "@/components/dashboard/RecentResultsList";
-import StudentDashboardQuickActions from "@/components/dashboard/StudentDashboardQuickActions";
 import UserStatsPanel from "@/components/dashboard/UserStatsPanel";
 import UserStatsPanelSkeleton from "@/components/dashboard/UserStatsPanelSkeleton";
 import { fetchDashboardUserResults, fetchDashboardUserStats, fetchLeaderboard } from "@/lib/services/dashboardService";
@@ -92,13 +91,12 @@ export default function DashboardPage() {
               Keep the whole workbook moving.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-fg md:text-base">
-              Check your latest score signals, jump into the next practice block, and keep review momentum visible without leaving the dashboard.
+              Check your latest score signals and keep review momentum visible without leaving the dashboard.
             </p>
           </div>
         </section>
 
         <div className="space-y-8">
-          <StudentDashboardQuickActions />
           {loading ? <UserStatsPanelSkeleton /> : <UserStatsPanel userStats={userStats} userResults={userResults} />}
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
             {loading ? <div className="workbook-panel h-[32rem] animate-pulse bg-surface-white" /> : <ImprovementTrendPanel results={userResults} />}
@@ -124,11 +122,6 @@ function DashboardLoadingState() {
         </section>
 
         <div className="space-y-8">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="workbook-panel h-44 animate-pulse bg-surface-white" />
-            ))}
-          </div>
           <UserStatsPanelSkeleton />
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
             <div className="workbook-panel h-[32rem] animate-pulse bg-surface-white" />

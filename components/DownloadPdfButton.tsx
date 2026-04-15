@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import QRCode from "qrcode";
 
+import { buildTestEntryHref } from "@/lib/testEntryLinks";
 import { generatePDFTemplate } from "@/utils/questionTemplate";
 
 interface DownloadPdfButtonProps {
@@ -93,13 +95,33 @@ export default function DownloadPdfButton({
 
       const data = (await response.json()) as PdfDataResponse;
       const documentTitle = buildDocumentTitle(testName || data.testTitle, sectionName || data.sectionName);
-      const htmlString = generatePDFTemplate({
+      const mode = sectionName ? "sectional" : "full";
+      const testingRoomUrl = new URL(
+        buildTestEntryHref(data.testId, {
+          mode,
+          sectionName: data.sectionName,
+        }),
+        window.location.origin,
+      ).toString();
+      const testingRoomQrSvg = (await QRCode.toString(testingRoomUrl, {
+        type: "svg",
+        errorCorrectionLevel: "H",
+        margin: 1,
+        width: 224,
+        color: {
+          dark: "#111111",
+          light: "#ffffff",
+        },
+      })).replace(/^<\?xml[^>]*>\s*/, "");
+      const htmlString = await generatePDFTemplate({
         testId: data.testId,
         testTitle: data.testTitle,
         questions: data.questions,
         sectionName: data.sectionName,
         documentTitle,
         assetBaseUrl: window.location.origin,
+        testingRoomUrl,
+        testingRoomQrSvg,
       });
 
       iframe = createHiddenPrintFrame();
