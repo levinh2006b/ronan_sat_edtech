@@ -1757,7 +1757,7 @@ function buildStyles(): string {
     .answer-choice-list li {
       display: flex;
       align-items: baseline;
-      gap: 0.08in;
+      gap: 0.045in;
       margin-bottom: 0.07in;
     }
 
@@ -1826,7 +1826,7 @@ function buildStyles(): string {
     }
 
     .question-card ul,
-    .question-card ol {
+    .question-card ol:not(.answer-choice-list) {
       padding-left: 0.18in;
     }
 
