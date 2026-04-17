@@ -1,7 +1,6 @@
 "use client";
 
-import { CSSProperties, type ReactNode, useMemo, useState } from "react";
-import Latex from "react-latex-next";
+import { CSSProperties, useMemo, useState } from "react";
 import { Bookmark } from "lucide-react";
 
 import QuestionExtraBlock from "@/components/question/QuestionExtraBlock";
@@ -9,60 +8,11 @@ import SelectableTextPanel, { type TextAnnotation } from "@/components/test/Sele
 import { hasQuestionExtra, type QuestionExtra } from "@/lib/questionExtra";
 import { getTestingRoomThemePreset, type TestingRoomTheme } from "@/lib/testingRoomTheme";
 import { getChoiceCode } from "@/utils/gradingHelper";
+import { renderHtmlLatexContent, hasTallMath } from "@/utils/renderContent";
 
 const MAX_SPR_ANSWER_LENGTH = 200;
-const TALL_MATH_PATTERN = /\\(?:d?frac)|\^(?:\{[^}]+\}|\S)/;
-const MATH_DELIMITER_PATTERN = /(?<!\\)(\$\$?)(.*?)(?<!\\)\1/gs;
 
-function hasTallMath(text: string | undefined): boolean {
-  if (!text) {
-    return false;
-  }
 
-  return TALL_MATH_PATTERN.test(text);
-}
-
-function normalizePlainText(text: string): string {
-  return text.replace(/\\\$/g, "$"
-  );
-}
-
-function renderLatexContent(text: string | undefined): ReactNode {
-  if (!text) {
-    return "";
-  }
-
-  const parts: ReactNode[] = [];
-  let lastIndex = 0;
-
-  for (const match of text.matchAll(MATH_DELIMITER_PATTERN)) {
-    const matchedText = match[0];
-    const delimiter = match[1];
-    const mathText = match[2] ?? "";
-    const matchIndex = match.index ?? 0;
-    const plainText = text.slice(lastIndex, matchIndex);
-
-    if (plainText) {
-      parts.push(normalizePlainText(plainText));
-    }
-
-    const normalizedMath = mathText.trim();
-    const renderedMath =
-      delimiter === "$" && hasTallMath(normalizedMath)
-        ? `$\\displaystyle ${normalizedMath.replace(/\\frac/g, "\\dfrac")}$`
-        : matchedText;
-
-    parts.push(<Latex key={`${matchIndex}-${delimiter}`}>{renderedMath}</Latex>);
-    lastIndex = matchIndex + matchedText.length;
-  }
-
-  const trailingText = text.slice(lastIndex);
-  if (trailingText) {
-    parts.push(normalizePlainText(trailingText));
-  }
-
-  return parts.length > 0 ? parts : normalizePlainText(text);
-}
 
 type ViewerQuestion = {
   _id: string;
@@ -150,10 +100,10 @@ export default function QuestionViewer({
       return null;
     }
 
-    return renderLatexContent(question.passage);
+    return renderHtmlLatexContent(question.passage);
   }, [question.passage]);
   const questionTextContent = useMemo(
-    () => renderLatexContent(question.questionText),
+    () => renderHtmlLatexContent(question.questionText),
     [question.questionText],
   );
 
@@ -390,7 +340,7 @@ export default function QuestionViewer({
                         }`}
                         sourceQuestionId={question._id}
                       >
-                        {renderLatexContent(choice || "")}
+                        {renderHtmlLatexContent(choice || "")}
                       </SelectableTextPanel>
                     </div>
 

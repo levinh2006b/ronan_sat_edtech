@@ -1,9 +1,9 @@
 "use client";
 
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
-import Latex from "react-latex-next";
 
 import { getChoiceTextFromStoredAnswer } from "@/utils/gradingHelper";
+import { renderHtmlLatexContent } from "@/utils/renderContent";
 
 import "katex/dist/katex.min.css";
 
@@ -50,7 +50,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] opacity-80">Your answer</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <span className={`rounded-xl border-2 border-ink-fg px-3 py-1.5 text-sm font-black ${badgeClassName}`}>
-                  <Latex>{ans.userAnswer || "Omitted"}</Latex>
+                  {renderHtmlLatexContent(ans.userAnswer || "Omitted")}
                 </span>
               </div>
             </div>
@@ -63,7 +63,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
           <div className="mt-2 flex flex-wrap gap-2">
             {q.sprAnswers?.filter(Boolean).map((answer: string, index: number) => (
               <span key={index} className="rounded-xl border-2 border-ink-fg bg-surface-white px-3 py-1.5 font-black text-ink-fg">
-                <Latex>{answer ?? ""}</Latex>
+                {renderHtmlLatexContent(answer ?? "")}
               </span>
             ))}
           </div>
@@ -91,7 +91,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
           <div className="flex gap-2">
             <span className="w-28 shrink-0 font-bold uppercase tracking-[0.12em] text-ink-fg/70">Correct</span>
             <span className="font-black text-accent-2">
-              <Latex>{displayedCorrectAnswer}</Latex>
+              {renderHtmlLatexContent(displayedCorrectAnswer)}
             </span>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
               {optionLabels[index] || ""}
             </div>
             <span className="flex-1 text-[15.5px] leading-[1.65] font-[Georgia,serif]">
-              <Latex>{choice ?? ""}</Latex>
+              {renderHtmlLatexContent(choice ?? "")}
             </span>
             {Icon ? <Icon className="h-5 w-5 shrink-0" /> : null}
           </div>

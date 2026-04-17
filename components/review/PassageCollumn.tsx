@@ -1,9 +1,8 @@
 "use client";
 
-import Latex from "react-latex-next";
-
 import QuestionExtraBlock from "@/components/question/QuestionExtraBlock";
 import type { ReviewQuestion } from "@/types/review";
+import { renderHtmlLatexContent } from "@/utils/renderContent";
 
 interface PassageColumnProps {
   q: ReviewQuestion;
@@ -25,7 +24,7 @@ export default function PassageColumn({ q }: PassageColumnProps) {
 
         <div className="workbook-sticker bg-accent-1 text-ink-fg">Passage</div>
         <div className="mt-5 rounded-2xl border-2 border-ink-fg bg-paper-bg p-6 text-[16px] leading-[1.85] text-ink-fg selection:bg-primary">
-          <Latex>{q.passage.replace(/\n/g, "<br/>")}</Latex>
+          {renderHtmlLatexContent(q.passage)}
         </div>
       </div>
     </div>
