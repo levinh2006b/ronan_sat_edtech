@@ -11,7 +11,13 @@ import RecentResultsList from "@/components/dashboard/RecentResultsList";
 import UserStatsPanel from "@/components/dashboard/UserStatsPanel";
 import UserStatsPanelSkeleton from "@/components/dashboard/UserStatsPanelSkeleton";
 import { fetchDashboardUserResults, fetchDashboardUserStats, fetchLeaderboard } from "@/lib/services/dashboardService";
+import { getClientCache, setClientCache } from "@/lib/clientCache";
 import type { LeaderboardEntry, UserResultSummary, UserStatsSummary } from "@/types/testLibrary";
+
+// Stable cache keys for the three dashboard data slices.
+const CACHE_STATS = "dashboard:stats";
+const CACHE_RESULTS = "dashboard:results:30";
+const CACHE_LEADERBOARD = "dashboard:leaderboard";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -37,6 +43,23 @@ export default function DashboardPage() {
     const loadDashboard = async () => {
       setLoading(true);
 
+      // --- Read-through cache: serve instantly if all slices are cached ---
+      const cachedStats = getClientCache<UserStatsSummary>(CACHE_STATS);
+      const cachedResults = getClientCache<UserResultSummary[]>(CACHE_RESULTS);
+      const cachedLeaderboard = getClientCache<LeaderboardEntry[]>(CACHE_LEADERBOARD);
+
+      if (cachedStats !== undefined && cachedResults !== undefined && cachedLeaderboard !== undefined) {
+        // All data is available in the cache — skip the network round-trip.
+        if (!cancelled) {
+          setUserStats(cachedStats);
+          setUserResults(cachedResults);
+          setLeaderboard(cachedLeaderboard);
+          setLoading(false);
+        }
+        return;
+      }
+
+      // At least one slice is missing — fetch everything fresh and populate the cache.
       try {
         const [stats, results, board] = await Promise.all([
           fetchDashboardUserStats(),
@@ -47,6 +70,11 @@ export default function DashboardPage() {
         if (cancelled) {
           return;
         }
+
+        // Persist the fresh data so the next mount can skip the network call.
+        setClientCache(CACHE_STATS, stats);
+        setClientCache(CACHE_RESULTS, results);
+        setClientCache(CACHE_LEADERBOARD, board);
 
         setUserStats(stats);
         setUserResults(results);

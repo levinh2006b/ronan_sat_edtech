@@ -60,21 +60,52 @@ export function useFullLengthDashboardController() {
     }
   }, [router, status]);
 
+  // Cache key for the current user's result history.
+  const CACHE_USER_RESULTS = "dashboard:user-results";
+
   useEffect(() => {
     if (!session) {
       return;
     }
 
+    // Guard against state updates after the component has unmounted.
+    let cancelled = false;
+
     const loadUserResults = async () => {
+      // --- Read-through cache: serve instantly if results are already cached ---
+      const cachedResults = getClientCache<UserResultSummary[]>(CACHE_USER_RESULTS);
+
+      if (cachedResults !== undefined) {
+        // Cache hit — update state immediately without a network request.
+        if (!cancelled) {
+          setUserResults(cachedResults);
+        }
+        return;
+      }
+
+      // Cache miss — fetch fresh data and persist it for subsequent mounts.
       try {
         const nextResults = await fetchDashboardUserResults();
+
+        if (cancelled) {
+          return;
+        }
+
+        // Write to cache before updating state so future re-mounts are instant.
+        setClientCache(CACHE_USER_RESULTS, nextResults);
         setUserResults(nextResults);
       } catch (error) {
-        console.error("Failed to fetch user results", error);
+        if (!cancelled) {
+          console.error("Failed to fetch user results", error);
+        }
       }
     };
 
     void loadUserResults();
+
+    return () => {
+      cancelled = true;
+    };
   }, [session]);
 
   useEffect(() => {
