@@ -20,16 +20,16 @@ export default async function AuthRedirectPage() {
     redirect("/auth");
   }
 
-  if (!hasCompletedStudentProfile(user)) {
-    redirect("/welcome");
-  }
-
   if (user.role === "PARENT") {
     redirect("/parent/dashboard");
   }
 
   if (user.role === "ADMIN") {
     redirect("/admin");
+  }
+
+  if (!hasCompletedStudentProfile(user)) {
+    redirect("/welcome");
   }
 
   redirect("/dashboard");
