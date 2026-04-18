@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { signIn, useSession } from "next-auth/react";
+import { getSession, signIn, useSession } from "next-auth/react";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import AuthWorkbookShell from "@/components/auth/AuthWorkbookShell";
 import Loading from "@/components/Loading";
+import { getPostAuthRedirectPath } from "@/lib/getPostAuthRedirectPath";
 
 type ParentAuthView = "link" | "verify";
 
@@ -21,7 +22,7 @@ const messageClassName =
 
 export default function ParentAuthPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   const [view, setView] = useState<ParentAuthView>("link");
   const [studentEmail, setStudentEmail] = useState("");
@@ -34,9 +35,9 @@ export default function ParentAuthPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/auth/redirect");
+      router.replace(getPostAuthRedirectPath(session?.user));
     }
-  }, [router, status]);
+  }, [router, session?.user, session?.user?.hasCompletedProfile, session?.user?.role, status]);
 
   if (status === "loading" || status === "authenticated") {
     return <Loading showQuote={false} />;
@@ -126,7 +127,13 @@ export default function ParentAuthPage() {
         return;
       }
 
-      window.location.assign("/auth/redirect");
+      const nextSession = await getSession();
+      if (!nextSession?.user) {
+        setError("Verification succeeded, but the session is still syncing. Please try signing in again.");
+        return;
+      }
+
+      router.replace(getPostAuthRedirectPath(nextSession.user));
     } catch {
       setError("Unable to verify the code. Please try again.");
     } finally {

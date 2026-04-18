@@ -8,12 +8,13 @@ import { useEffect, useState } from "react";
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import AuthWorkbookShell from "@/components/auth/AuthWorkbookShell";
 import Loading from "@/components/Loading";
+import { getPostAuthRedirectPath } from "@/lib/getPostAuthRedirectPath";
 
 type MessageTone = "success" | "error" | "info";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -23,9 +24,9 @@ export default function ForgotPasswordPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/auth/redirect");
+      router.replace(getPostAuthRedirectPath(session?.user));
     }
-  }, [router, status]);
+  }, [router, session?.user, session?.user?.hasCompletedProfile, session?.user?.role, status]);
 
   if (status === "loading" || status === "authenticated") {
     return <Loading showQuote={false} />;

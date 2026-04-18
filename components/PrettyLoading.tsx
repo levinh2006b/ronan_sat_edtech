@@ -1,6 +1,40 @@
+"use client";
+
+import { useLayoutEffect, useState, type CSSProperties } from "react";
+
+type LoadingWindow = Window & {
+  __ronanAppLoadingStartedAt?: number;
+};
+
+function getSharedAnimationOffset() {
+  if (typeof window === "undefined") {
+    return "0ms";
+  }
+
+  const loadingWindow = window as LoadingWindow;
+
+  if (loadingWindow.__ronanAppLoadingStartedAt === undefined) {
+    loadingWindow.__ronanAppLoadingStartedAt = window.performance.now();
+    return "0ms";
+  }
+
+  return `${-Math.round(window.performance.now() - loadingWindow.__ronanAppLoadingStartedAt)}ms`;
+}
+
 export default function PrettyLoading() {
+  const [animationStyle, setAnimationStyle] = useState<CSSProperties>(
+    () => ({ "--app-loading-animation-offset": "0ms" }) as CSSProperties
+  );
+
+  useLayoutEffect(() => {
+    setAnimationStyle({ "--app-loading-animation-offset": getSharedAnimationOffset() } as CSSProperties);
+  }, []);
+
   return (
-    <div className="app-loading-scene bg-dot-pattern fixed inset-0 z-[80] overflow-hidden bg-paper-bg px-4 py-5 text-ink-fg sm:px-6 sm:py-10">
+    <div
+      className="app-loading-scene bg-dot-pattern fixed inset-0 z-[80] overflow-hidden bg-paper-bg px-4 py-5 text-ink-fg sm:px-6 sm:py-10"
+      style={animationStyle}
+    >
       <div className="pointer-events-none absolute inset-0">
         <div className="app-loading-orbit app-loading-orbit-a" />
         <div className="app-loading-orbit app-loading-orbit-b" />

@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, DM_Sans, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 
 import AppShell from "@/components/AppShell";
+import InitialTabBootOverlay from "@/components/InitialTabBootOverlay";
 import AppStartupPreloader from "@/components/AppStartupPreloader";
 import AuthProvider from "@/components/AuthProvider";
 import { WorkbookToaster } from "@/components/ui/WorkbookToaster";
@@ -61,6 +62,7 @@ export default function RootLayout({
             <AppStartupPreloader />
             <WorkbookToaster />
             <AppShell>{children}</AppShell>
+            <InitialTabBootOverlay />
           </VocabBoardProvider>
         </AuthProvider>
       </body>
