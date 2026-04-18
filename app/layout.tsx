@@ -3,8 +3,8 @@ import { getServerSession } from "next-auth";
 import { Bricolage_Grotesque, DM_Sans, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 
+import AppRouteLoading from "@/components/AppRouteLoading";
 import AppShell from "@/components/AppShell";
-import InitialTabBootOverlay from "@/components/InitialTabBootOverlay";
 import AppStartupPreloader from "@/components/AppStartupPreloader";
 import AuthProvider from "@/components/AuthProvider";
 import PostHogProvider from "@/components/PostHogProvider";
@@ -62,13 +62,13 @@ export default async function RootLayout({
   // Ignore storage initialization failures.
 }`}
         </Script>
+        <AppRouteLoading />
         <AuthProvider session={session}>
           <PostHogProvider>
             <VocabBoardProvider>
               <AppStartupPreloader />
               <WorkbookToaster />
               <AppShell>{children}</AppShell>
-              <InitialTabBootOverlay />
             </VocabBoardProvider>
           </PostHogProvider>
         </AuthProvider>
