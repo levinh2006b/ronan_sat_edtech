@@ -219,6 +219,12 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 
 - `components/QuestionViewer.tsx` now collapses the split passage-and-question layout into a vertical stack on smaller screens, keeps the draggable divider desktop-only, and reduces mobile padding and answer density so the exam room stays usable on narrow devices.
 
+### 2026-04-19 Route Transition Feedback Pass
+
+- Shared route transitions now use `components/RouteProgressBar.tsx`, mounted in `app/layout.tsx`, to show an immediate YouTube-style top loading bar for internal page changes instead of waiting for destination screens to visibly stall.
+- The main navbar destinations now keep their page frame visible while loading: `dashboard`, `full-length`, `sectional`, `review`, `admin`, and `settings` render in-layout skeleton states rather than replacing the whole screen with the generic `Loading` overlay.
+- Repository verification is still partially blocked by pre-existing tooling issues: eslint currently crashes inside `eslint-plugin-react` (`react/display-name`), and `tsc --noEmit` currently reports stale `.next` validator references to missing route layout files.
+
 ### 2026-04-17 Vocab Revision Upgrade Start
 
 - The SAT vocab board is being extended from plain text cards into revision cards with a dedicated term plus editable definition.

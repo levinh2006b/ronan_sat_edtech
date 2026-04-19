@@ -6,10 +6,11 @@ import { useSession } from "next-auth/react";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import LeaderboardTable from "@/components/dashboard/LeaderboardTable";
+import LeaderboardTableSkeleton from "@/components/dashboard/LeaderboardTableSkeleton";
 import ImprovementTrendPanel from "@/components/dashboard/ImprovementTrendPanel";
 import RecentResultsList from "@/components/dashboard/RecentResultsList";
 import UserStatsPanel from "@/components/dashboard/UserStatsPanel";
-import Loading from "@/components/Loading";
+import UserStatsPanelSkeleton from "@/components/dashboard/UserStatsPanelSkeleton";
 import { fetchDashboardUserResults, fetchDashboardUserStats, fetchLeaderboard } from "@/lib/services/dashboardService";
 import { getClientCache, setClientCache } from "@/lib/clientCache";
 import { preloadInitialAppData } from "@/lib/startupPreload";
@@ -158,7 +159,7 @@ export default function DashboardPageClient() {
   }, [hasHydratedClientCache, router, session?.user?.hasCompletedProfile, session?.user?.role, status]);
 
   if (status === "loading" || loading) {
-    return <Loading showQuote={false} />;
+    return <DashboardPageSkeleton />;
   }
 
   if (status === "unauthenticated") {
@@ -196,6 +197,43 @@ export default function DashboardPageClient() {
             <RecentResultsList results={userResults} />
           </div>
           <LeaderboardTable leaderboard={leaderboard} />
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function DashboardPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-paper-bg pb-12">
+      <InitialTabBootReady />
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <section className="workbook-panel-muted mb-6 overflow-hidden">
+          <div className="border-b-4 border-ink-fg bg-paper-bg px-6 py-5">
+            <div className="h-8 w-40 rounded-full border-2 border-ink-fg bg-surface-white animate-pulse" />
+            <div className="mt-4 h-12 w-full max-w-2xl rounded-md bg-surface-white/75 animate-pulse" />
+            <div className="mt-3 h-6 w-full max-w-xl rounded-md bg-surface-white animate-pulse" />
+          </div>
+        </section>
+
+        <div className="space-y-8">
+          <UserStatsPanelSkeleton />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <section key={index} className="workbook-panel overflow-hidden">
+                <div className="border-b-4 border-ink-fg bg-paper-bg px-6 py-5">
+                  <div className="h-8 w-48 rounded-md bg-surface-white/75 animate-pulse" />
+                  <div className="mt-3 h-5 w-32 rounded bg-surface-white animate-pulse" />
+                </div>
+                <div className="space-y-4 p-6">
+                  {Array.from({ length: index === 0 ? 5 : 4 }).map((__, rowIndex) => (
+                    <div key={rowIndex} className="h-14 rounded-2xl border-2 border-ink-fg bg-paper-bg animate-pulse" />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+          <LeaderboardTableSkeleton />
         </div>
       </main>
     </div>

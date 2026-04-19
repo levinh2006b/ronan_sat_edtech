@@ -1,7 +1,6 @@
 "use client";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
-import Loading from "@/components/Loading";
 import TestLibrary from "@/components/dashboard/TestLibrary";
 import { useFullLengthDashboardController } from "@/components/dashboard/useFullLengthDashboardController";
 
@@ -24,13 +23,11 @@ export default function FullLengthDashboard() {
     setSelectedPeriod,
   } = useFullLengthDashboardController();
 
-  if (status === "loading" && !hasCachedDashboardView) {
-    return <Loading showQuote={false} />;
-  }
-
   if (!session && status !== "loading") {
     return null;
   }
+
+  const shouldShowLibrarySkeleton = (status === "loading" && !hasCachedDashboardView) || testsLoading;
 
   return (
     <div className="min-h-screen bg-paper-bg pb-12">
@@ -56,7 +53,7 @@ export default function FullLengthDashboard() {
           setSortOption={setSortOption}
           page={page}
           setPage={setPage}
-          loading={testsLoading}
+          loading={shouldShowLibrarySkeleton}
           syncing={testsRefreshing}
           filteredTests={filteredTests}
           totalPages={totalPages}

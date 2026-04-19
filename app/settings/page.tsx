@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { CheckCircle, Lock, MonitorPlay, TriangleAlert, User } from "lucide-react";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
-import Loading from "@/components/Loading";
 import { useTestingRoomTheme } from "@/hooks/useTestingRoomTheme";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
@@ -32,7 +31,7 @@ export default function SettingsPage() {
     }, []);
 
     if (status === "loading" || !mounted) {
-        return <Loading />;
+        return <SettingsPageSkeleton />;
     }
 
     if (status === "unauthenticated" || !session) {
@@ -289,6 +288,35 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+}
+
+function SettingsPageSkeleton() {
+    return (
+        <div className="min-h-screen bg-paper-bg p-8 pb-24 duration-200">
+            <InitialTabBootReady />
+            <div className="mx-auto max-w-4xl space-y-8">
+                <section className="workbook-panel-muted overflow-hidden">
+                    <div className="border-b-4 border-ink-fg bg-paper-bg px-6 py-5">
+                        <div className="h-8 w-28 rounded-full border-2 border-ink-fg bg-surface-white animate-pulse" />
+                        <div className="mt-4 h-12 w-full max-w-2xl rounded-md bg-surface-white/75 animate-pulse" />
+                    </div>
+                </section>
+
+                {Array.from({ length: 3 }).map((_, sectionIndex) => (
+                    <section key={sectionIndex} className="workbook-panel overflow-hidden">
+                        <div className="border-b-4 border-ink-fg bg-paper-bg px-5 py-4">
+                            <div className="h-7 w-40 rounded-md bg-surface-white/75 animate-pulse" />
+                        </div>
+                        <div className="space-y-4 p-6">
+                            {Array.from({ length: sectionIndex === 0 ? 3 : 4 }).map((__, rowIndex) => (
+                                <div key={rowIndex} className="h-11 rounded-2xl border-2 border-ink-fg bg-surface-white animate-pulse" />
+                            ))}
+                        </div>
+                    </section>
+                ))}
             </div>
         </div>
     );

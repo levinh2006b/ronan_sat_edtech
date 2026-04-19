@@ -4,6 +4,7 @@ import { Bricolage_Grotesque, DM_Sans, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 
 import AppRouteLoading from "@/components/AppRouteLoading";
+import RouteProgressBar from "@/components/RouteProgressBar";
 import AppShell from "@/components/AppShell";
 import AppStartupPreloader from "@/components/AppStartupPreloader";
 import AuthProvider from "@/components/AuthProvider";
@@ -63,6 +64,7 @@ export default async function RootLayout({
 }`}
         </Script>
         <AppRouteLoading />
+        <RouteProgressBar />
         <AuthProvider session={session}>
           <PostHogProvider>
             <VocabBoardProvider>

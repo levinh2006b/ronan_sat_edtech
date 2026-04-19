@@ -1,7 +1,6 @@
 "use client";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
-import Loading from "@/components/Loading";
 import { SectionalTestLibrary } from "@/components/sectional/SectionalTestLibrary";
 import { useSectionalTestsController } from "@/components/sectional/useSectionalTestsController";
 
@@ -25,13 +24,11 @@ export default function SectionalTestsPage() {
     setModuleFilter,
   } = useSectionalTestsController();
 
-  if (status === "loading" && !hasCachedSectionalView) {
-    return <Loading showQuote={false} />;
-  }
-
   if (status === "unauthenticated") {
     return <div className="p-8 text-center text-ink-fg">Please sign in to open this section.</div>;
   }
+
+  const shouldShowLibrarySkeleton = (status === "loading" && !hasCachedSectionalView) || loading;
 
   return (
     <div className="min-h-screen bg-paper-bg pb-12">
@@ -60,7 +57,7 @@ export default function SectionalTestsPage() {
           setSortOption={setSortOption}
           page={page}
           setPage={setPage}
-          loading={loading}
+          loading={shouldShowLibrarySkeleton}
           syncing={testsRefreshing}
           filteredTests={filteredTests}
           totalPages={totalPages}
