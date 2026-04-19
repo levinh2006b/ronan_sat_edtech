@@ -66,4 +66,68 @@ export const resultController = {
       return NextResponse.json({ error: message }, { status: 500 });
     }
   },
+
+  async getUserErrorLog(req: Request) {
+    try {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const url = new URL(req.url);
+      const testType = url.searchParams.get("testType") === "sectional" ? "sectional" : "full";
+      const statusParam = url.searchParams.get("status");
+      const status = statusParam === "wrong" || statusParam === "omitted" ? statusParam : "all";
+      const query = url.searchParams.get("query") ?? "";
+      const offset = Number.parseInt(url.searchParams.get("offset") ?? "0", 10);
+      const limit = Number.parseInt(url.searchParams.get("limit") ?? "20", 10);
+
+      const data = await resultService.getUserErrorLogPage(session.user.id, {
+        testType,
+        status,
+        query,
+        offset: Number.isNaN(offset) ? 0 : offset,
+        limit: Number.isNaN(limit) ? 20 : limit,
+      });
+
+      return NextResponse.json(data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to fetch error log";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  },
+
+  async updateAnswerReason(req: Request) {
+    try {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const body = (await req.json()) as {
+        resultId?: unknown;
+        questionId?: unknown;
+        reason?: unknown;
+      };
+
+      const resultId = typeof body.resultId === "string" ? body.resultId.trim() : "";
+      const questionId = typeof body.questionId === "string" ? body.questionId.trim() : "";
+      const reason = typeof body.reason === "string" ? body.reason.trim() : undefined;
+
+      if (!resultId || !questionId) {
+        return NextResponse.json({ error: "resultId and questionId are required" }, { status: 400 });
+      }
+
+      if (reason && reason.length > 60) {
+        return NextResponse.json({ error: "Reason must be 60 characters or fewer" }, { status: 400 });
+      }
+
+      const data = await resultService.updateAnswerReason(session.user.id, resultId, questionId, reason);
+      return NextResponse.json(data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update answer reason";
+      const status = message === "Result answer not found" ? 404 : message.includes("Invalid") ? 400 : 500;
+      return NextResponse.json({ error: message }, { status });
+    }
+  },
 };

@@ -6,13 +6,17 @@ import { useSearchParams } from "next/navigation";
 
 import { getClientCache, setClientCache } from "@/lib/clientCache";
 import { preloadInitialAppData } from "@/lib/startupPreload";
-import { fetchQuestionExplanation, fetchReviewResults } from "@/lib/services/reviewService";
+import { fetchQuestionExplanation, fetchReviewResults, updateReviewAnswerReason } from "@/lib/services/reviewService";
 import type { ReviewAnswer, ReviewResult } from "@/types/review";
 import { filterReviewResultsByType } from "@/components/review/reviewPage.utils";
 
 const REVIEW_RESULTS_CACHE_KEY = "review:results";
 
-export function useReviewPageController() {
+type UseReviewPageControllerOptions = {
+  activeView?: "results" | "error-log";
+};
+
+export function useReviewPageController({ activeView = "results" }: UseReviewPageControllerOptions = {}) {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const urlMode = searchParams.get("mode");
@@ -35,6 +39,14 @@ export function useReviewPageController() {
   const [loadingExplanations, setLoadingExplanations] = useState<Record<string, boolean>>({});
 
   useLayoutEffect(() => {
+    if (activeView === "error-log") {
+      initialResultsCacheRef.current = [];
+      setResults([]);
+      setLoading(false);
+      setHasHydratedClientCache(true);
+      return;
+    }
+
     const cachedResults = getClientCache<ReviewResult[]>(REVIEW_RESULTS_CACHE_KEY) ?? [];
     initialResultsCacheRef.current = cachedResults;
 
@@ -44,7 +56,7 @@ export function useReviewPageController() {
     }
 
     setHasHydratedClientCache(true);
-  }, []);
+  }, [activeView]);
 
   useEffect(() => {
     if (!hasHydratedClientCache) {
@@ -63,6 +75,12 @@ export function useReviewPageController() {
     let cancelled = false;
 
     const loadResults = async () => {
+      if (activeView === "error-log") {
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
       if (session?.user?.id) {
         await preloadInitialAppData({
           role: session.user.role,
@@ -114,7 +132,7 @@ export function useReviewPageController() {
     return () => {
       cancelled = true;
     };
-  }, [hasHydratedClientCache, session?.user?.id, session?.user?.role, status]);
+  }, [activeView, hasHydratedClientCache, session?.user?.id, session?.user?.role, status]);
 
   const filteredResults = useMemo(() => filterReviewResultsByType(results, testType), [results, testType]);
 
@@ -183,6 +201,48 @@ export function useReviewPageController() {
     }
   };
 
+  const handleUpdateAnswerReason = async (resultId: string, questionId: string, reason?: string) => {
+    const normalizedReason = reason?.trim();
+
+    if (activeView === "error-log") {
+      await updateReviewAnswerReason(resultId, questionId, normalizedReason);
+      return;
+    }
+
+    const previousResults = results;
+    const nextResults = results.map((result) => {
+      if (result._id !== resultId) {
+        return result;
+      }
+
+      return {
+        ...result,
+        answers: result.answers.map((answer) => {
+          const currentQuestionId = answer.questionId?._id;
+          if (currentQuestionId !== questionId) {
+            return answer;
+          }
+
+          return {
+            ...answer,
+            errorReason: normalizedReason,
+          };
+        }),
+      };
+    });
+
+    setResults(nextResults);
+    setClientCache(REVIEW_RESULTS_CACHE_KEY, nextResults);
+
+    try {
+      await updateReviewAnswerReason(resultId, questionId, normalizedReason);
+    } catch (error) {
+      setResults(previousResults);
+      setClientCache(REVIEW_RESULTS_CACHE_KEY, previousResults);
+      throw error;
+    }
+  };
+
   return {
     status,
     results,
@@ -202,5 +262,6 @@ export function useReviewPageController() {
     },
     setSelectedAnswer,
     handleExpandExplanation,
+    handleUpdateAnswerReason,
   };
 }

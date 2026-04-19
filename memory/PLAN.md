@@ -231,6 +231,25 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - Hydration-sensitive routes now gate boot completion correctly: `app/vocab/page.tsx` waits for board hydration, and `app/fix/page.tsx` waits for fix-board hydration instead of clearing boot as soon as the shell mounts.
 - Non-happy-path settled states now also clear boot so the app does not get stuck on the pretty loader when a page resolves into an empty or unauthorized screen: `app/settings/page.tsx`, `app/parent/dashboard/page.tsx`, and `components/TestEngine.tsx` now mark boot ready in those resolved fallback states too.
 
+### 2026-04-19 Review Error Log
+
+- `app/review/page.tsx` now includes a sibling `Error log` screen next to `Results`, so review can switch between per-test report cards and a single Notion-inspired mistake table.
+- The new `components/review/ReviewErrorLog.tsx` flattens review history into only wrong and skipped questions, supports search and wrong/skipped filtering, and lets students assign a single `Reason` category inline.
+- `Result.answers` now supports a persisted `errorReason`, exposed through `/api/results` and updated through `/api/results/reason`, so reason labels survive reloads instead of living only in client state.
+- Review reasons now live in the user record as a synced catalog with label, color, and order metadata, served by `/api/user/review-reasons` and used by the error-log dropdown and customization UI.
+
+### 2026-04-19 Review Error Log Performance Pass
+
+- The error log now reads from a dedicated paginated endpoint at `/api/results/error-log` instead of flattening the full review history in the client.
+- The error-log screen now loads only 20 latest matching questions at a time and appends the next 20 through an explicit `Show more` action.
+- Review route warmup no longer preloads the full review-history payload, and `useReviewPageController` skips full-results hydration entirely while the error-log view is active so route progress stays responsive.
+
+### 2026-04-19 Review Reason Persistence Tightening
+
+- Answer-reason writes now use `updateOne` and only touch the single matched `answers.$.errorReason` field, unsetting it fully when a reason is removed instead of reading back the whole result document.
+- User reason-catalog saves now use `updateOne` too, and the default catalog is no longer stored on every user document; if a user is still on defaults, the field is omitted and reconstructed on read.
+- `Result` now has a compound index on `{ userId, isSectional, createdAt }` to better support paginated error-log reads.
+
 ### 2026-04-17 Vocab Revision Upgrade Start
 
 - The SAT vocab board is being extended from plain text cards into revision cards with a dedicated term plus editable definition.

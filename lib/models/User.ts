@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
+import type { ReviewReasonItem } from "@/lib/reviewReasonCatalog";
 import type { VocabBoardState } from "@/lib/vocabBoard";
 
 function normalizeOptionalUsername(value: unknown) {
@@ -29,6 +30,7 @@ export interface IUser extends Document {
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
     vocabBoard?: VocabBoardState;
+    reviewReasonCatalog?: ReviewReasonItem[];
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -60,6 +62,10 @@ const UserSchema: Schema<IUser> = new Schema(
                 columns: [],
                 cards: {},
             }),
+        },
+        reviewReasonCatalog: {
+            type: Schema.Types.Mixed,
+            required: false,
         },
     },
     { timestamps: true }

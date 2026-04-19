@@ -11,10 +11,13 @@ export const API_PATHS = {
     USER_USERNAME: "/api/user/username",
     DEV_ONBOARDING_RESET: "/api/dev/onboarding",
     USER_VOCAB_BOARD: "/api/user/vocab-board",
+    USER_REVIEW_REASONS: "/api/user/review-reasons",
     PARENT_DASHBOARD: "/api/parent/dashboard",
     VOCAB_DICTIONARY: "/api/vocab/dictionary",
     FIX_BOARD: "/api/fix-board",
     FIX_REPORTS: "/api/fix-reports",
+    RESULT_REASON: "/api/results/reason",
+    RESULT_ERROR_LOG: "/api/results/error-log",
     TESTS: "/api/tests",
     AUTH_REGISTER: "/api/auth/register",
     // Dynamic routes

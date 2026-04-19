@@ -44,7 +44,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
 
     return (
       <div className="flex flex-col gap-3">
-        <div className={`rounded-2xl border-2 border-ink-fg p-4 brutal-shadow-sm ${wrapClassName}`}>
+        <div className={`rounded-2xl border-2 border-ink-fg p-4 ${wrapClassName}`}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] opacity-80">Your answer</p>
@@ -58,7 +58,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
           </div>
         </div>
 
-        <div className="rounded-2xl border-2 border-ink-fg bg-paper-bg p-4 brutal-shadow-sm">
+        <div className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-ink-fg/70">Accepted</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {q.sprAnswers?.filter(Boolean).map((answer: string, index: number) => (
@@ -74,7 +74,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
 
   if (choices.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-ink-fg bg-accent-3 p-5 text-white brutal-shadow-sm">
+        <div className="rounded-2xl border-2 border-ink-fg bg-accent-3 p-5 text-white">
         <div className="mb-2 flex items-center gap-2 text-sm font-bold">
           <AlertCircle className="h-4 w-4" />
           Missing choices data from API
@@ -83,7 +83,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
           Update <code className="rounded bg-white/20 px-1.5 py-0.5 font-mono">app/api/results/route.ts</code> to return
           <code className="ml-1 rounded bg-white/20 px-1.5 py-0.5 font-mono">choices</code> for each question.
         </p>
-        <div className="flex flex-col gap-2 rounded-xl border-2 border-ink-fg bg-surface-white p-4 text-sm text-ink-fg">
+          <div className="flex flex-col gap-2 rounded-xl border-2 border-ink-fg bg-surface-white p-4 text-sm text-ink-fg">
           <div className="flex gap-2">
             <span className="w-28 shrink-0 font-bold uppercase tracking-[0.12em] text-ink-fg/70">Your answer</span>
             <span className={`font-black ${ans.isCorrect ? "text-accent-2" : "text-accent-3"}`}>{displayedUserAnswer || "Omitted"}</span>
@@ -121,7 +121,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
         }
 
         return (
-          <div key={index} className={`flex items-center gap-3.5 rounded-2xl border-2 border-ink-fg px-4 py-3.5 brutal-shadow-sm ${wrapClassName}`}>
+          <div key={index} className={`flex items-center gap-3.5 rounded-2xl border-2 border-ink-fg px-4 py-3.5 ${wrapClassName}`}>
             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-ink-fg text-sm font-black ${circleClassName}`}>
               {optionLabels[index] || ""}
             </div>

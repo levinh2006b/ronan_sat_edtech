@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, BookOpen, Calculator, ChevronDown, ChevronUp, Sparkles, X } from "lucide-react";
+import { AlertCircle, BookOpen, Calculator, ChevronDown, ChevronUp, X } from "lucide-react";
 import "katex/dist/katex.min.css";
 
 
 import DesmosCalculator from "@/components/DesmosCalculator";
 import QuestionExtraBlock from "@/components/question/QuestionExtraBlock";
-import ReviewChatbot from "@/components/ReviewChatbot";
 import { ReportErrorButton } from "@/components/report/ReportErrorButton";
 import PassageColumn from "@/components/review/PassageCollumn";
 import AnswerDetails from "@/components/review/AnswerDetails";
@@ -42,7 +41,6 @@ export default function ReviewPopup({
   const q = ans?.questionId;
 
   const [showCalculator, setShowCalculator] = useState(false);
-  const [showAI, setShowAI] = useState(false);
   const [isExplanationVisible, setIsExplanationVisible] = useState(false);
   const [annotations, setAnnotations] = useState<TextAnnotation[]>([]);
 
@@ -76,16 +74,15 @@ export default function ReviewPopup({
     <div className="fixed inset-0 z-[100] flex flex-col bg-paper-bg">
       <DesmosCalculator isOpen={showCalculator} onClose={() => setShowCalculator(false)} />
 
-      <header className="flex h-20 shrink-0 items-center justify-between border-b-4 border-ink-fg bg-surface-white px-4 sm:px-6">
-        <div className="min-w-0">
-          <div className="workbook-sticker bg-primary text-ink-fg">Review Question</div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+      <header className="flex min-h-20 shrink-0 items-center justify-between gap-4 border-b-4 border-ink-fg bg-surface-white px-4 py-3 sm:px-6">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
             {q.domain ? <span className="workbook-sticker bg-paper-bg text-ink-fg">{q.domain}</span> : null}
             {q.skill ? <span className="workbook-sticker bg-accent-1 text-ink-fg">{q.skill}</span> : null}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {isMath ? (
             <button
               onClick={() => setShowCalculator((current) => !current)}
@@ -115,19 +112,14 @@ export default function ReviewPopup({
           </button>
 
           <button
-            onClick={() => setShowAI((current) => !current)}
-            className={`rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press ${showAI ? "bg-accent-1 text-ink-fg" : "bg-surface-white text-ink-fg"}`}
+            onClick={onClose}
+            className="rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press bg-surface-white text-ink-fg"
             type="button"
           >
             <span className="flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4" />
-              AI Tutor
+              <X className="h-4 w-4" />
+              Close
             </span>
-          </button>
-
-          <button onClick={onClose} className="workbook-button workbook-button-secondary" type="button">
-            <X className="h-4 w-4" />
-            Close
           </button>
         </div>
       </header>
@@ -146,28 +138,22 @@ export default function ReviewPopup({
               {!q.passage ? (
                 <QuestionExtraBlock
                   extra={q.extra}
-                  className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4 brutal-shadow-sm"
+                  className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4"
                   titleClassName="mb-2 text-center text-[16px] font-normal leading-[1.35] text-ink-fg font-[Georgia,serif]"
                 />
               ) : null}
 
-              <div className="workbook-panel overflow-hidden">
-                <div className="border-b-4 border-ink-fg bg-paper-bg px-6 py-5">
-                  <div className="workbook-sticker bg-primary text-ink-fg">Question</div>
-                  <p className="mt-4 text-[17.5px] leading-[1.7] text-ink-fg font-[Georgia,serif]">
-                    {renderHtmlLatexContent(q.questionText || "")}
-                  </p>
-                </div>
+              <div className="overflow-hidden rounded-2xl border-2 border-ink-fg bg-surface-white px-6 py-5">
+                <p className="text-[17.5px] leading-[1.7] text-ink-fg font-[Georgia,serif]">
+                  {renderHtmlLatexContent(q.questionText || "")}
+                </p>
               </div>
 
               <AnswerDetails q={q} ans={ans} />
 
               {isExplanationVisible ? (
-                <div className="workbook-panel overflow-hidden">
-                  <div className="border-b-4 border-ink-fg bg-paper-bg px-5 py-4">
-                    <div className="workbook-sticker bg-accent-1 text-ink-fg">Explanation</div>
-                  </div>
-                  <div className="p-6">
+                <div className="overflow-hidden rounded-2xl border-2 border-ink-fg bg-surface-white p-6">
+                  <div className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Explanation</div>
                     {expandedExplanation ? (
                       <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink-fg">
                         {renderHtmlLatexContent(expandedExplanation || "")}
@@ -178,30 +164,11 @@ export default function ReviewPopup({
                         Loading explanation...
                       </div>
                     )}
-                  </div>
                 </div>
               ) : null}
             </div>
           </div>
         </div>
-
-        {showAI ? (
-          <div className="z-20 flex w-[420px] shrink-0 flex-col border-l-4 border-ink-fg bg-surface-white">
-            <div className="flex items-center justify-between border-b-4 border-ink-fg bg-paper-bg px-4 py-4">
-              <div>
-                <div className="workbook-sticker bg-accent-1 text-ink-fg">AI Study Tutor</div>
-                <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Powered by Gemini</p>
-              </div>
-              <button onClick={() => setShowAI(false)} className="workbook-button workbook-button-secondary" type="button">
-                <X className="h-4 w-4" />
-                Close
-              </button>
-            </div>
-            <div className="relative flex-1 overflow-hidden bg-paper-bg">
-              <ReviewChatbot questionId={q._id} questionText={q.questionText || ""} headless />
-            </div>
-          </div>
-        ) : null}
       </SelectableTextPanel>
     </div>
   );

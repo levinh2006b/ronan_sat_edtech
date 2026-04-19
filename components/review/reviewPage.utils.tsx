@@ -3,12 +3,24 @@ import { BookOpen, Calculator } from "lucide-react";
 import { isVerbalSection, normalizeSectionName } from "@/lib/sections";
 import type { ReviewAnswer, ReviewResult, ReviewStats } from "@/types/review";
 
+export function isReviewAnswerOmitted(answer: ReviewAnswer) {
+  return !answer.userAnswer || answer.userAnswer === "" || answer.userAnswer === "Omitted";
+}
+
+export function getReviewAnswerOutcome(answer: ReviewAnswer) {
+  if (isReviewAnswerOmitted(answer)) {
+    return "omitted" as const;
+  }
+
+  return answer.isCorrect ? ("correct" as const) : ("wrong" as const);
+}
+
 export function getReviewStats(answers: ReviewAnswer[]): ReviewStats {
   if (!answers?.length) {
     return { correct: 0, wrong: 0, omitted: 0 };
   }
 
-  const omitted = answers.filter((answer) => !answer.userAnswer || answer.userAnswer === "" || answer.userAnswer === "Omitted").length;
+  const omitted = answers.filter((answer) => isReviewAnswerOmitted(answer)).length;
   const correct = answers.filter((answer) => answer.isCorrect).length;
   return { correct, wrong: answers.length - correct - omitted, omitted };
 }
@@ -113,7 +125,7 @@ export function getSkillPerformance(answers: ReviewAnswer[]): SectionSkillStat[]
     const stat = sectionMap[section][domain][skill];
     stat.total += 1;
 
-    const isOmitted = !answer.userAnswer || answer.userAnswer === "" || answer.userAnswer === "Omitted";
+    const isOmitted = isReviewAnswerOmitted(answer);
     if (isOmitted) {
       stat.omitted += 1;
     } else if (answer.isCorrect) {

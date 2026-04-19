@@ -7,6 +7,7 @@ export type ReviewQuestion = {
   subject?: string;
   domain?: string;
   skill?: string;
+  difficulty?: string;
   questionType?: "multiple_choice" | "spr";
   questionText?: string;
   correctAnswer?: string;
@@ -20,6 +21,7 @@ export type ReviewAnswer = {
   questionId?: ReviewQuestion | null;
   userAnswer?: string;
   isCorrect: boolean;
+  errorReason?: string;
 };
 
 export type ReviewTestReference = {
@@ -40,6 +42,30 @@ export type ReviewResult = {
   sectionalSubject?: string;
   sectionalModule?: number;
   answers: ReviewAnswer[];
+};
+
+export type ReviewErrorLogStatus = "wrong" | "omitted";
+
+export type ReviewErrorLogEntry = {
+  key: string;
+  resultId: string;
+  questionId: string;
+  questionNumber: number;
+  testId?: string;
+  timestamp?: string;
+  testTitle: string;
+  domain: string;
+  skill: string;
+  difficulty: string;
+  reason?: string;
+  status: ReviewErrorLogStatus;
+  answer: ReviewAnswer;
+};
+
+export type ReviewErrorLogPage = {
+  rows: ReviewErrorLogEntry[];
+  hasMore: boolean;
+  nextOffset: number;
 };
 
 export type ReviewStats = {
