@@ -64,12 +64,13 @@ This file is the canonical agent-facing instruction document for repository-wide
 ## External memory rules
 
 - Use `memory/` as the durable working-memory area for plans, decisions, and implementation notes.
-- `memory/PLAN.md` is the cross-agent execution ledger for the current body of work.
-- Before major feature work, migrations, or broad refactors, read `memory/PLAN.md` and any relevant notes under `memory/`.
-- If `memory/PLAN.md` does not yet describe the requested major work, update it before broad implementation continues.
-- Record durable architectural or product decisions in small, specific markdown files under `memory/` so future agents can resume without relying on chat context alone.
+- Do not keep appending major work logs into `memory/PLAN.md`.
+- The current memory version is `0.2`. Log major feature work under `memory/0.2/` using the format `memory/0.2/[indexed 1-n]-specific-feature.md`.
+- Before major feature work, migrations, or broad refactors, read the relevant notes under `memory/0.2/` instead of relying on a long shared `PLAN.md` ledger.
+- If the requested major work is not yet documented, create the next indexed file under `memory/0.2/` with a short specific feature name before broad implementation continues.
+- Record durable architectural or product decisions in small, specific markdown files under the active versioned memory directory so future agents can resume without relying on chat context alone.
 - Keep memory files append-oriented where practical. Preserve prior decisions, mark status changes explicitly, and record what changed plus the next recommended step.
-- If a subagent or side investigation produces a lasting conclusion, write that conclusion back into repo memory before considering the work complete.
+- If a subagent or side investigation produces a lasting conclusion, write that conclusion back into the appropriate versioned memory note before considering the work complete.
 
 ## Compatibility note
 

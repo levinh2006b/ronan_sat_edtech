@@ -15,14 +15,14 @@ async function getTestManagerBoardDocument() {
   );
 }
 
-function isAdminSession(role?: string) {
-  return role === "ADMIN";
+function canAccessTestManager(permissions: string[] | undefined) {
+  return permissions?.includes("edit_public_exams") ?? false;
 }
 
 export async function GET() {
   try {
     const session = await getServerSession();
-    if (!session || !isAdminSession(session.user.role)) {
+    if (!session || !canAccessTestManager(session.user.permissions)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -39,7 +39,7 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const session = await getServerSession();
-    if (!session || !isAdminSession(session.user.role)) {
+    if (!session || !canAccessTestManager(session.user.permissions)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

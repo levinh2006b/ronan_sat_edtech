@@ -40,7 +40,6 @@ type TestManagerColumnProps = {
   onHeaderDragEnd: () => void;
   onHeaderDragOver: (event: DragEvent, columnId: string) => void;
   onHeaderDrop: (event: DragEvent, columnId: string) => void;
-  onResolveCard: (cardId: string) => void;
 };
 
 export function TestManagerColumn({
@@ -66,7 +65,6 @@ export function TestManagerColumn({
   onHeaderDragEnd,
   onHeaderDragOver,
   onHeaderDrop,
-  onResolveCard,
 }: TestManagerColumnProps) {
   const theme = COLUMN_THEME[column.colorKey];
   const isEditingColumn = editingColumnId === column.id;
@@ -164,7 +162,7 @@ export function TestManagerColumn({
           <BoardEmptyState text="Drop grouped reports here." />
         ) : (
           cards.map((card) => (
-            <TestManagerCardTile key={card.id} card={card} draggable onDragStart={onCardDragStart} onResolve={() => onResolveCard(card.id)} />
+            <TestManagerCardTile key={card.id} card={card} draggable detailHref={`/test-manager/questions/${card.id}`} onDragStart={onCardDragStart} />
           ))
         )}
       </BoardColumnShell>

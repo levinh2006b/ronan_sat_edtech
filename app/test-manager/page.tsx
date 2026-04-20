@@ -27,7 +27,6 @@ function TestManagerScreen() {
     editingColumnId,
     editingColumnTitle,
     openMenuColumnId,
-    expandedCardIds,
     menuRef,
     boardScrollRef,
     setDraggingCardId,
@@ -49,8 +48,6 @@ function TestManagerScreen() {
     handleColumnDrop,
     handleBoardDragOver,
     handleBoardDrop,
-    removeCard,
-    toggleExpandedCard,
   } = useTestManagerPageController();
 
   return (
@@ -76,11 +73,8 @@ function TestManagerScreen() {
             <TestManagerInboxColumn
               hydrated={hydrated}
               cards={inboxCards}
-              expandedCardIds={expandedCardIds}
               onCardDragStart={setDraggingCardId}
               onDropCard={() => handleDropCardToBucket("inbox")}
-              onToggleExpanded={toggleExpandedCard}
-              onResolve={removeCard}
             />
 
             {board.columns.map((column) => {
@@ -123,7 +117,6 @@ function TestManagerScreen() {
                     event.stopPropagation();
                     handleColumnDrop(columnId);
                   }}
-                  onResolveCard={removeCard}
                 />
               );
             })}
@@ -146,17 +139,18 @@ function TestManagerScreen() {
 
 export default function TestManagerPage() {
   const { data: session, status } = useSession();
+  const canEditPublicExams = session?.user.permissions.includes("edit_public_exams");
 
   if (status === "loading") {
     return <Loading />;
   }
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !canEditPublicExams) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper-bg">
         <InitialTabBootReady />
         <div className="workbook-panel bg-accent-3 p-8 font-bold text-white">
-          Unauthorized. Admin access required.
+          Unauthorized. Edit Public Exams permission required.
         </div>
       </div>
     );

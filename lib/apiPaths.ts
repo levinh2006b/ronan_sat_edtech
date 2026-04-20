@@ -30,4 +30,5 @@ export const API_PATHS = {
   getQuestionExplanation: (questionId: string) => `/api/questions/${questionId}/explanation`,
   getReviewResult: (resultId: string) => `/api/results/${resultId}`,
   getReviewQuestion: (resultId: string, questionId: string) => `/api/results/${resultId}/questions/${questionId}`,
+  getTestManagerQuestion: (cardId: string) => `/api/test-manager/questions/${cardId}`,
 };

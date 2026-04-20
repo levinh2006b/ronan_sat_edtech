@@ -7,21 +7,15 @@ import { BoardColumnShell, BoardEmptyState, ColumnHeader } from "@/components/vo
 type TestManagerInboxColumnProps = {
   hydrated: boolean;
   cards: TestManagerCard[];
-  expandedCardIds: Record<string, boolean>;
   onCardDragStart: (cardId: string) => void;
   onDropCard: () => void;
-  onToggleExpanded: (cardId: string) => void;
-  onResolve: (cardId: string) => void;
 };
 
 export function TestManagerInboxColumn({
   hydrated,
   cards,
-  expandedCardIds,
   onCardDragStart,
   onDropCard,
-  onToggleExpanded,
-  onResolve,
 }: TestManagerInboxColumnProps) {
   return (
     <BoardColumnShell
@@ -41,12 +35,9 @@ export function TestManagerInboxColumn({
           <TestManagerCardTile
             key={card.id}
             card={card}
-            expanded={!!expandedCardIds[card.id]}
             draggable
-            showDetails
+            detailHref={`/test-manager/questions/${card.id}`}
             onDragStart={onCardDragStart}
-            onToggleExpanded={() => onToggleExpanded(card.id)}
-            onResolve={() => onResolve(card.id)}
           />
         ))
       )}

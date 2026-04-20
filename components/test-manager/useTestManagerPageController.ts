@@ -19,7 +19,6 @@ export function useTestManagerPageController() {
     hydrated,
     createColumn,
     moveCard,
-    removeCard,
     updateColumnTitle,
     updateColumnColor,
     removeColumn,
@@ -34,8 +33,6 @@ export function useTestManagerPageController() {
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editingColumnTitle, setEditingColumnTitle] = useState("");
   const [openMenuColumnId, setOpenMenuColumnId] = useState<string | null>(null);
-  const [expandedCardIds, setExpandedCardIds] = useState<Record<string, boolean>>({});
-
   const menuRef = useRef<HTMLDivElement | null>(null);
   const dragPreviewRef = useRef<HTMLElement | null>(null);
   const boardScrollRef = useRef<HTMLDivElement | null>(null);
@@ -250,10 +247,6 @@ export function useTestManagerPageController() {
     handleColumnDrop(dropIndicator.columnId);
   };
 
-  const toggleExpandedCard = (cardId: string) => {
-    setExpandedCardIds((previous) => ({ ...previous, [cardId]: !previous[cardId] }));
-  };
-
   return {
     board,
     hydrated,
@@ -265,7 +258,6 @@ export function useTestManagerPageController() {
     editingColumnId,
     editingColumnTitle,
     openMenuColumnId,
-    expandedCardIds,
     menuRef,
     boardScrollRef,
     setDraggingCardId,
@@ -287,7 +279,5 @@ export function useTestManagerPageController() {
     handleColumnDrop,
     handleBoardDragOver,
     handleBoardDrop,
-    removeCard,
-    toggleExpandedCard,
   };
 }

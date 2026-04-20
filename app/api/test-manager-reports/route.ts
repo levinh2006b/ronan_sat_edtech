@@ -14,6 +14,7 @@ import dbConnect from "@/lib/mongodb";
 import TestManagerBoard from "@/lib/models/TestManagerBoard";
 
 const TEST_MANAGER_BOARD_KEY = "global";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const TestManagerReportSchema = z.object({
   testId: z.string().min(1),
@@ -40,17 +41,11 @@ function createUniqueId(prefix: string) {
 
 async function resolveLegacyTestAndQuestionIds(testId: string, questionId: string) {
   const supabase = createSupabaseAdminClient();
+  const testQuery = supabase.from("tests").select("id,title,legacy_mongo_id");
+  const questionQuery = supabase.from("questions").select("id,legacy_mongo_id");
   const [{ data: test }, { data: question }] = await Promise.all([
-    supabase
-      .from("tests")
-      .select("id,title,legacy_mongo_id")
-      .or(`id.eq.${testId},legacy_mongo_id.eq.${testId}`)
-      .maybeSingle(),
-    supabase
-      .from("questions")
-      .select("id,legacy_mongo_id")
-      .or(`id.eq.${questionId},legacy_mongo_id.eq.${questionId}`)
-      .maybeSingle(),
+    (isUuid(testId) ? testQuery.eq("id", testId) : testQuery.eq("legacy_mongo_id", testId)).maybeSingle(),
+    (isUuid(questionId) ? questionQuery.eq("id", questionId) : questionQuery.eq("legacy_mongo_id", questionId)).maybeSingle(),
   ]);
 
   return {
@@ -58,6 +53,10 @@ async function resolveLegacyTestAndQuestionIds(testId: string, questionId: strin
     questionId: question?.legacy_mongo_id ?? questionId,
     testTitle: test?.title ?? "Unknown Test",
   };
+}
+
+function isUuid(value: string) {
+  return UUID_PATTERN.test(value);
 }
 
 function buildCardTitle(card: Pick<TestManagerCard, "section" | "module" | "questionNumber" | "testTitle">) {

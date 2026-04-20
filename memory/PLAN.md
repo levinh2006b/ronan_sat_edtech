@@ -127,6 +127,13 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - `student`, `teacher`, and `admin` remain seeded system roles; system roles cannot be deleted, and the `admin` role should be treated as immutable from the admin UI and API.
 - Supporting custom roles requires widening the Supabase `roles.code` column beyond the original enum-only values while preserving existing session logic that still derives app-level access from the built-in `student` / `teacher` / `admin` codes.
 
+### 2026-04-20 Test Manager Public Exam Editing
+
+- The test-manager board now gates access by the `edit_public_exams` permission instead of hard-coding admin-only access.
+- Report cards no longer expand inline or expose a `Mark fixed` action; `Show detail` now opens a dedicated full-screen editor for the reported question.
+- The reported-question editor shows the report log and allows in-place editing of the question's section, module, type, text, answer data, explanation, metadata, image URL, and `extra` JSON.
+- Reported-question editing is intentionally limited to public tests and users with `edit_public_exams`; the database migration path now also updates existing tests to `public` and extends `can_edit_test` so question visibility and editability continue to derive from the parent test.
+
 ### 2026-04-13 v0.1 Reset
 
 - `v0.1` should be treated as an app-wide redesign milestone, not a narrow landing-page port.
