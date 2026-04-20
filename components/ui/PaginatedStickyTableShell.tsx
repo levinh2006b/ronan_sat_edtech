@@ -26,12 +26,12 @@ export function PaginatedStickyTableShell({
 
       <div
         className={joinClassNames(
-          "relative min-w-0 rounded-2xl border-2 border-ink-fg bg-surface-white p-1",
+          "relative min-w-0 rounded-2xl border-2 border-ink-fg bg-surface-white",
           viewportClassName,
         )}
       >
         <div className="workbook-scrollbar min-w-0 overflow-x-auto overflow-y-visible rounded-[1.1rem]">
-          <div className="min-w-full pr-4 pb-4">{children}</div>
+          <div className="min-w-full">{children}</div>
         </div>
 
         {loading && hasRows ? <div className="pointer-events-none absolute inset-0 z-20 bg-surface-white/35" /> : null}

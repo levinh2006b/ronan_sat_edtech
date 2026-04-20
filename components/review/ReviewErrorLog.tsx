@@ -528,7 +528,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
               <ErrorLogColGroup />
               <thead>
                 <tr className="bg-paper-bg hover:bg-paper-bg">
-                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("timestamp")}>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-3 text-left align-middle" aria-sort={getHeaderAriaSort("timestamp")}>
                     <button
                       type="button"
                       onClick={() => handleSortChange("timestamp")}
@@ -538,7 +538,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                       {renderSortIcon("timestamp")}
                     </button>
                   </th>
-                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("questionNumber")}>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-3 text-left align-middle" aria-sort={getHeaderAriaSort("questionNumber")}>
                     <button
                       type="button"
                       onClick={() => handleSortChange("questionNumber")}
@@ -548,7 +548,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                       {renderSortIcon("questionNumber")}
                     </button>
                   </th>
-                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("testTitle")}>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-3 text-left align-middle" aria-sort={getHeaderAriaSort("testTitle")}>
                     <button
                       type="button"
                       onClick={() => handleSortChange("testTitle")}
@@ -558,7 +558,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                       {renderSortIcon("testTitle")}
                     </button>
                   </th>
-                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("domain")}>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-3 text-left align-middle" aria-sort={getHeaderAriaSort("domain")}>
                     <button
                       type="button"
                       onClick={() => handleSortChange("domain")}
@@ -568,7 +568,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                       {renderSortIcon("domain")}
                     </button>
                   </th>
-                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("skill")}>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-3 text-left align-middle" aria-sort={getHeaderAriaSort("skill")}>
                     <button
                       type="button"
                       onClick={() => handleSortChange("skill")}
@@ -578,7 +578,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                       {renderSortIcon("skill")}
                     </button>
                   </th>
-                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("difficulty")}>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-3 text-left align-middle" aria-sort={getHeaderAriaSort("difficulty")}>
                     <button
                       type="button"
                       onClick={() => handleSortChange("difficulty")}
@@ -588,7 +588,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                       {renderSortIcon("difficulty")}
                     </button>
                   </th>
-                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("reason")}>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-3 text-left align-middle" aria-sort={getHeaderAriaSort("reason")}>
                     <button
                       type="button"
                       onClick={() => handleSortChange("reason")}
@@ -627,20 +627,20 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                       }}
                       className="cursor-pointer border-b-2 border-ink-fg/15 transition-colors odd:bg-surface-white even:bg-paper-bg/60 hover:bg-primary/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-fg focus-visible:ring-offset-2"
                     >
-                      <td className="px-4 py-3 align-middle">
+                      <td className="px-3 py-2.5 align-middle">
                         <span className="text-sm font-semibold text-ink-fg">{formatErrorLogTimestamp(row.timestamp).dateTimeLabel}</span>
                       </td>
-                      <td className="px-4 py-3 align-middle">
+                      <td className="px-3 py-2.5 align-middle">
                         <span className="text-sm font-semibold text-ink-fg">{row.questionNumber}</span>
                       </td>
-                      <td className="px-4 py-3 align-middle">
+                      <td className="px-3 py-2.5 align-middle">
                         <span className="block min-w-0 truncate font-semibold text-ink-fg" title={row.testTitle}>
                           {row.testTitle}
                         </span>
                       </td>
-                      <td className="px-4 py-3 align-middle font-medium">{row.domain}</td>
-                      <td className="px-4 py-3 align-middle font-medium text-ink-fg/80">{row.skill}</td>
-                      <td className="px-4 py-3 align-middle">
+                      <td className="px-3 py-2.5 align-middle font-medium">{row.domain}</td>
+                      <td className="px-3 py-2.5 align-middle font-medium text-ink-fg/80">{row.skill}</td>
+                      <td className="px-3 py-2.5 align-middle">
                         <span
                           className={[
                             "inline-flex rounded-full border-2 border-ink-fg px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]",
@@ -650,7 +650,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                           {row.difficulty}
                         </span>
                       </td>
-                      <td className="px-4 py-3 align-middle">
+                      <td className="px-3 py-2.5 align-middle">
                         <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
                           <Select
                             value={row.reason || UNSET_REASON_VALUE}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownUp, ChevronLeft, Search } from "lucide-react";
+import { ChevronLeft, Search } from "lucide-react";
 
 import { CompactPagination } from "@/components/ui/CompactPagination";
 import { PaginatedStickyTableShell } from "@/components/ui/PaginatedStickyTableShell";
@@ -235,10 +235,6 @@ export function ManageTestsPageContent() {
 
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-fg/70">
             <span className="workbook-sticker bg-surface-white text-ink-fg">{total} matches</span>
-            <span className="inline-flex items-center gap-2 rounded-full border-2 border-ink-fg bg-paper-bg px-3 py-1 font-semibold">
-              <ArrowDownUp className="h-3.5 w-3.5" />
-              Question number matches are included for numeric searches.
-            </span>
           </div>
         </section>
 

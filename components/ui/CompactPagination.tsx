@@ -9,19 +9,21 @@ type CompactPaginationProps = {
 type PaginationItem = number | "ellipsis";
 
 function getPaginationItems(page: number, totalPages: number): PaginationItem[] {
-  if (totalPages <= 4) {
+  if (totalPages <= 5) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
   }
 
   if (page <= 3) {
-    return [1, 2, 3, "ellipsis", totalPages];
+    return [1, 2, 3, 4, "ellipsis", totalPages];
   }
 
-  if (page >= totalPages - 1) {
-    return [totalPages - 3, totalPages - 2, totalPages - 1, totalPages].filter((item, index, items) => item > 0 && items.indexOf(item) === index);
+  if (page >= totalPages - 2) {
+    return [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages].filter(
+      (item, index, items) => item > 0 && items.indexOf(item) === index,
+    );
   }
 
-  return [page - 2, page - 1, page, "ellipsis", totalPages];
+  return [page - 2, page - 1, page, page + 1, "ellipsis", totalPages];
 }
 
 export function CompactPagination({ page, totalPages, onChange }: CompactPaginationProps) {
