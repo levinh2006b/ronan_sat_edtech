@@ -1,3 +1,5 @@
+// Info each user must have in Supabase
+
 import { z } from "zod";
 
 export const UserValidationSchema = z.object({

@@ -1,22 +1,25 @@
+// Connect FE with database about data regarding tests
+// Function: Get test list, Specific detail about a test, and Create a new test
+
 import { z } from "zod";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { MATH_SECTION, VERBAL_SECTION, isVerbalSection } from "@/lib/sections";
 import { TestValidationSchema, type TestInput } from "@/lib/schema/test";
 
-type SortableTestField = "createdAt" | "title";
-type TestFilters = {
+type SortableTestField = "createdAt" | "title";  // 2 way to sort
+type TestFilters = {                             // Filter: Only show test accoding to subject (Math/Verbal) or period (March 2025)
   period?: string | null;
   subject?: string | null;
 };
 
-type RawTestRow = {
+type RawTestRow = {      // Info for a specific test
   id: string;
   title: string;
   difficulty: string | null;
   time_limit_minutes: number;
   created_at: string;
-  test_sections: Array<{
+  test_sections: Array<{            // Array containing each section (verbal/math) of the test
     id: string;
     name: string;
     module_number: number | null;
@@ -26,7 +29,7 @@ type RawTestRow = {
   }> | null;
 };
 
-const MONTH_INDEX: Record<string, number> = {
+const MONTH_INDEX: Record<string, number> = {    // Index each month for sorting
   january: 1,
   february: 2,
   march: 3,
@@ -41,13 +44,13 @@ const MONTH_INDEX: Record<string, number> = {
   december: 12,
 };
 
-function getTestPeriodLabel(title: string) {
+function getTestPeriodLabel(title: string) {     // Only get 2 word in the name of the test
   const parts = title.split(" ");
   if (parts.length >= 2) {
     return `${parts[0]} ${parts[1]}`;
   }
 
-  return "Other";
+  return "Other";    
 }
 
 function getPeriodSortValue(period: string) {
@@ -55,7 +58,12 @@ function getPeriodSortValue(period: string) {
     return -1;
   }
 
-  const [monthLabel, yearLabel] = period.split(" ");
+  // SỬA Ở ĐÂY: Đổi vị trí yearLabel lên trước, monthLabel ra sau
+  const [yearLabel, monthLabel] = period.split(" "); 
+  
+  // Phần dưới giữ nguyên, hệ thống sẽ tự hiểu đúng: 
+  // monthLabel = "AUGUST" -> month = 8
+  // yearLabel = "2025" -> year = 2025
   const month = MONTH_INDEX[monthLabel?.toLowerCase?.() ?? ""] ?? 0;
   const year = Number.parseInt(yearLabel ?? "", 10);
 
@@ -63,32 +71,37 @@ function getPeriodSortValue(period: string) {
     return -1;
   }
 
-  return year * 100 + month;
+  return year * 100 + month; // 2025 * 100 + 8 = 202508 (Sắp xếp cực mượt!)
 }
 
+
+// sort
 function sortPeriods(periods: string[]) {
-  return [...periods].sort((left, right) => {
-    const diff = getPeriodSortValue(right) - getPeriodSortValue(left);
+  return [...periods].sort((left, right) => {       // Create a copy of the original list  -> .sort() algo of JS automatically sort every element in an array => left and right aren't only comparing 2 value
+    const diff = getPeriodSortValue(right) - getPeriodSortValue(left);    // Substitute the value 
     if (diff !== 0) {
-      return diff;
+      return diff;         // sort according to the result
     }
 
-    return left.localeCompare(right);
+    return left.localeCompare(right);   // if the value of the name is equal, compare according to the alphabet
   });
 }
 
+
+// Filter test according to the name to display or not
 function matchesPeriod(title: string, period?: string | null) {
   if (!period || period === "All") {
     return true;
   }
 
   if (period === "Other") {
-    return !/^[A-Za-z]+ \d{4}\b/.test(title);
+    // SỬA Ở ĐÂY: Đổi Regex thành \d{4} (4 chữ số) lên trước, [A-Za-z]+ (Chữ) ra sau
+    // Nó sẽ kiểm tra xem chuỗi có dạng "Số + Chữ" hay không (Ví dụ: "2025 August")
+    return !/^\d{4} [A-Za-z]+\b/.test(title);
   }
 
   return title.toLowerCase().startsWith(period.toLowerCase());
 }
-
 function matchesSubject(sections: RawTestRow["test_sections"], subject?: string | null) {
   if (!subject) {
     return true;
@@ -172,12 +185,23 @@ export const testService = {
     const availablePeriods = ["All", ...sortPeriods(Array.from(new Set(rows.map((test) => getTestPeriodLabel(test.title)))))];
 
     filtered.sort((left, right) => {
+      // 1. Nếu người dùng muốn sắp xếp theo Tên bài thi (A-Z hoặc Z-A)
       if (normalizedSortBy === "title") {
-        return normalizedSortOrder === "asc" ? left.title.localeCompare(right.title) : right.title.localeCompare(left.title);
+        return normalizedSortOrder === "asc"  
+          ? left.title.localeCompare(right.title)     // So trái với phải để tăng
+          : right.title.localeCompare(left.title);    // So phải với trái để giảm
       }
 
-      const diff = getPeriodSortValue(getTestPeriodLabel(right.title)) - getPeriodSortValue(getTestPeriodLabel(left.title));
-      return normalizedSortOrder === "asc" ? -diff : diff;
+      // 2. Nếu người dùng muốn sắp xếp theo Ngày tạo (createdAt) - CÁCH NÀY CHUẨN NHẤT
+      // Đổi chuỗi ngày tháng ISO sang số (Timestamp) để trừ cho nhau
+      const timeLeft = new Date(left.created_at).getTime();
+      const timeRight = new Date(right.created_at).getTime();
+
+      // Nếu "asc" (Tăng dần): Cũ nhất lên đầu (Left - Right)
+      // Nếu "desc" (Giảm dần): Mới nhất lên đầu (Right - Left)
+      return normalizedSortOrder === "asc" 
+        ? timeLeft - timeRight     
+        : timeRight - timeLeft;    
     });
 
     const usePagination = Number.isFinite(limit) && limit > 0;

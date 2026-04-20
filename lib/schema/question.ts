@@ -1,11 +1,9 @@
-// The model schema protects data at the database layer.
-// The schema in this file validates data at the API boundary.
 
 import { z } from "zod";
 
 const QuestionExtraSchema = z.object({
   type: z.enum(["table", "figure_math", "figure_chart", "figure_other"]),
-  content: z.unknown(),
+  content: z.unknown(),    // allow to be any type
 });
 
 export const QuestionValidationSchema = z.object({
