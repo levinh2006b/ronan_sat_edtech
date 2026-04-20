@@ -31,7 +31,7 @@ jobs:
       DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_REF: awzhqoxnyxyciaoejjno
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,7 +48,8 @@ jobs:
         with:
           version: 2.92.1
 
-      - run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+      - name: Link production Supabase project
+        run: bunx dotenvx run -f .env.production --ignore=MISSING_ENV_FILE -- supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
       - name: Push migrations to production
         run: bun run supabase:db:push:production
