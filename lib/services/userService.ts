@@ -1,3 +1,5 @@
+// Lấy dữ liệu user về 
+
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { mapDatabaseRolesToAppRole } from "@/lib/auth/session";
 import type { DashboardOverview } from "@/types/dashboard";
@@ -5,9 +7,10 @@ import type { DashboardOverview } from "@/types/dashboard";
 export const userService = {
   async getUserProfile(userId: string) {
     const supabase = createSupabaseAdminClient();
-    const [{ data: profile, error: profileError }, { data: authUser, error: authError }] = await Promise.all([
+    const [{ data: profile, error: profileError }, { data: authUser, error: authError }] = await Promise.all([   
+     // Promise.all -> Thay vì lấy username r mới tới email thì nó lấy cả 2 cùng lúc
       supabase
-        .from("profiles")
+        .from("profiles")   // vào profiles để lấy data user
         .select(
           `
             display_name,
@@ -15,7 +18,7 @@ export const userService = {
             birth_date,
             created_at,
             updated_at,
-            user_roles (
+            user_roles (   
               roles (
                 code
               )
@@ -24,6 +27,13 @@ export const userService = {
         )
         .eq("id", userId)
         .maybeSingle(),
+        /**
+         * user_roles (    chứa thông tin các mã role của user này
+              roles (      tra mã code này ứng với role nào (STUDENT, ADMIN,...)
+                code
+              )
+            )   
+         */
       supabase.auth.admin.getUserById(userId),
     ]);
 

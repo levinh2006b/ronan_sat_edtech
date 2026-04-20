@@ -108,33 +108,35 @@ function matchesSubject(sections: RawTestRow["test_sections"], subject?: string 
   }
 
   const target = subject === "math" ? MATH_SECTION : VERBAL_SECTION;
-  return (sections ?? []).some((section) => {
-    if (section.question_count <= 0) {
-      return false;
+  return (sections ?? []).some((section) => {       // some -> Cần có ít nhất 1 section để có thể được hiện ra
+    if (section.question_count <= 0) {        // nếu section này k có câu hỏi nào thì k hiện
+      return false;     
     }
 
-    return target === MATH_SECTION ? section.name === MATH_SECTION : isVerbalSection(section.name);
+    return target === MATH_SECTION ? section.name === MATH_SECTION : isVerbalSection(section.name);   // check user có đang tìm toán k -> Đúng thì check section của bài test này có phải toán k -> Sai (tức user đang tìm verbal) thì check bài test hiện tại có phải verbal k, cần hàm riêng vì tên có thể là Verbal hoặc Reading and Writing
   });
 }
 
-function toLegacyTestShape(test: RawTestRow) {
-  const sections = [...(test.test_sections ?? [])]
-    .sort((left, right) => left.display_order - right.display_order)
-    .map((section) => ({
+
+function toLegacyTestShape(test: RawTestRow) { 
+  const sections = [...(test.test_sections ?? [])]              // Sao chép các dữ liệu của bài test đó
+    .sort((left, right) => left.display_order - right.display_order)       // sort từ nhỏ tới lớn
+    .map((section) => ({                         // database thích tên dữ liệu kiểu question_count nhưng FE thích kiểu questionsCount => đi qua từng section, copy thông tin từ vd question_count vào questionsCount
       name: section.name,
       questionsCount: section.question_count,
       timeLimit: section.time_limit_minutes,
     }));
-
-  const questionCounts = { rw_1: 0, rw_2: 0, math_1: 0, math_2: 0 };
-  for (const section of test.test_sections ?? []) {
-    const moduleNumber = section.module_number ?? 0;
-    if (moduleNumber !== 1 && moduleNumber !== 2) {
+ 
+  const questionCounts = { rw_1: 0, rw_2: 0, math_1: 0, math_2: 0 };   // Chuẩn bị sẵn 1 object đến số câu từng section
+  for (const section of test.test_sections ?? []) { 
+    const moduleNumber = section.module_number ?? 0;    // bài test này là module mấy 
+    if (moduleNumber !== 1 && moduleNumber !== 2) {     // Phần thi k phải module 1 hoặc module 2 => Lỗi => K đếm
       continue;
     }
 
-    const key = `${isVerbalSection(section.name) ? "rw" : "math"}_${moduleNumber}` as keyof typeof questionCounts;
-    questionCounts[key] = section.question_count;
+    // key k phải là giá trị unique của từng ký tự giống map
+    const key = `${isVerbalSection(section.name) ? "rw" : "math"}_${moduleNumber}` as keyof typeof questionCounts;  // Đảm bảo với TS là key vừa nối ra thuộc dạng của questionCounts 
+    questionCounts[key] = section.question_count;    //gấn vào số câu từng section
   }
 
   return {
@@ -185,36 +187,45 @@ export const testService = {
     const availablePeriods = ["All", ...sortPeriods(Array.from(new Set(rows.map((test) => getTestPeriodLabel(test.title)))))];
 
     filtered.sort((left, right) => {
-      // 1. Nếu người dùng muốn sắp xếp theo Tên bài thi (A-Z hoặc Z-A)
+      // Bước 1: Tính toán giá trị số đại diện cho Thời gian (Period) của từng bài
+      // Ví dụ: "2025 March" -> 202503, "2025 August" -> 202508
+      const periodLeft = getPeriodSortValue(getTestPeriodLabel(left.title));
+      const periodRight = getPeriodSortValue(getTestPeriodLabel(right.title));
+
+      // TRƯỜNG HỢP 1: Nếu người dùng chọn sort theo "Title" (A-Z hoặc Z-A)
       if (normalizedSortBy === "title") {
         return normalizedSortOrder === "asc"  
-          ? left.title.localeCompare(right.title)     // So trái với phải để tăng
-          : right.title.localeCompare(left.title);    // So phải với trái để giảm
+          ? left.title.localeCompare(right.title)
+          : right.title.localeCompare(left.title);
       }
 
-      // 2. Nếu người dùng muốn sắp xếp theo Ngày tạo (createdAt) - CÁCH NÀY CHUẨN NHẤT
-      // Đổi chuỗi ngày tháng ISO sang số (Timestamp) để trừ cho nhau
-      const timeLeft = new Date(left.created_at).getTime();
-      const timeRight = new Date(right.created_at).getTime();
+      // TRƯỜNG HỢP 2: Nếu người dùng chọn "Oldest first" hoặc "Newest first" (mặc định)
+      // Chúng ta ưu tiên so sánh theo Thời gian (Period) trước
+      if (periodLeft !== periodRight) {
+        return normalizedSortOrder === "asc" 
+          ? periodLeft - periodRight   // Oldest first: 202401 -> 202512
+          : periodRight - periodLeft;  // Newest first: 202512 -> 202401
+      }
 
-      // Nếu "asc" (Tăng dần): Cũ nhất lên đầu (Left - Right)
-      // Nếu "desc" (Giảm dần): Mới nhất lên đầu (Right - Left)
-      return normalizedSortOrder === "asc" 
-        ? timeLeft - timeRight     
-        : timeRight - timeLeft;    
+      // TRƯỜNG HỢP 3: Nếu 2 bài cùng một Period (ví dụ cùng tháng 8/2025)
+      // Luôn luôn sắp xếp theo Tên A-Z như bạn yêu cầu (A -> B -> C -> D)
+      return left.title.localeCompare(right.title);
     });
+    
 
-    const usePagination = Number.isFinite(limit) && limit > 0;
+    const usePagination = Number.isFinite(limit) && limit > 0;    // đây là biến bool, kiểm tra limit (số test 1 trang) có phải số và không vô hạn và phải >0 => True
     const paged = usePagination ? filtered.slice((page - 1) * limit, (page - 1) * limit + limit) : filtered;
+    // filter là các bài test được lọc, nếu usePagination là false => Hiện all
+    // nếu usePagination true => slice để cắt 1 đoạn thuộc trang hiện tại
 
     return {
-      tests: paged.map(toLegacyTestShape),
-      availablePeriods,
+      tests: paged.map(toLegacyTestShape),       // Hiện các bài thi được filter, ép test có tên theo hàm toLegacyTestShape đặt
+      availablePeriods,                          // Array chứa tên gồm 2 từ đầu của tất cả bài test
       pagination: {
-        total: filtered.length,
+        total: filtered.length,                  // tổng test theo yêu cầu filter
         page,
-        limit: usePagination ? limit : filtered.length,
-        totalPages: usePagination ? Math.max(1, Math.ceil(filtered.length / limit)) : 1,
+        limit: usePagination ? limit : filtered.length,     
+        totalPages: usePagination ? Math.max(1, Math.ceil(filtered.length / limit)) : 1,   // tổng số trang
       },
     };
   },
@@ -241,54 +252,58 @@ export const testService = {
         `
       )
       .eq("id", testId)
-      .maybeSingle();
+      .maybeSingle();       // Trả về 1 kết quả only, k thấy thì trả về null thay vì crash
 
     if (error || !data) {
       throw new Error("Test not found");
     }
 
-    return toLegacyTestShape(data as RawTestRow);
+    return toLegacyTestShape(data as RawTestRow);   // as RawTestRow để đảm bảo TS không báo lỗi 
   },
 
   async createTest(data: unknown) {
     try {
-      const validatedData: TestInput = TestValidationSchema.parse(data);
-      if (!validatedData.timeLimit) {
+      // TestValidationSchema để check data mà admin điền cho bài test  có đúng format yêu cầu không
+      // validatedData: TestInput -> khi gõ validatedData. là hiện ra các thành phần của 1 data TestInput cần có => Viết code nhanh hơn 
+      const validatedData: TestInput = TestValidationSchema.parse(data);    
+      if (!validatedData.timeLimit) {             // admin chưa điền tgian test thì tự động điền hộ
         validatedData.timeLimit = validatedData.sections.reduce((acc, sec) => acc + sec.timeLimit, 0);
-      }
+      } 
 
-      const supabase = createSupabaseAdminClient();
+      const supabase = createSupabaseAdminClient();   // kết nối với supabase
       const { data: createdTest, error: testError } = await supabase
         .from("tests")
-        .insert({
+        .insert({                        // insert thông tin bài test vào supabase
           title: validatedData.title,
           time_limit_minutes: validatedData.timeLimit,
           difficulty: validatedData.difficulty ?? "medium",
           visibility: "public",
           status: "published",
         })
-        .select("id")
+        .select("id")    // lấy về id của bài test vừa tạo xong, đảm bảo chỉ có 1 kết quả -> Trả về là object thay vì array
         .single();
 
       if (testError || !createdTest) {
         throw new Error(testError?.message ?? "Failed to create test");
       }
 
+      // Gán giá trị cho từng section của test được tạo
       const sectionRows = validatedData.sections.map((section, index) => ({
-        test_id: createdTest.id,
+        test_id: createdTest.id,        // gán id của bài test vừa tạo vào test_id của từng section
         name: section.name,
         module_number: null,
-        display_order: index + 1,
+        display_order: index + 1,    // Thứ tự hiện trong 1 bài test + 1
         question_count: section.questionsCount,
         time_limit_minutes: section.timeLimit,
       }));
 
-      const { error: sectionError } = await supabase.from("test_sections").insert(sectionRows);
+      const { error: sectionError } = await supabase.from("test_sections").insert(sectionRows);   // lưu data của sectionsRows vào test_sections
       if (sectionError) {
         throw new Error(sectionError.message);
       }
 
-      return this.getTestById(createdTest.id);
+      // Lấy data của bài test mà ta vừa insert (tạo) ở supabase để lấy ra (đã format các biến cho hợp FE) để hiện thông báo cho admin
+      return this.getTestById(createdTest.id);   
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         const validationError = new Error("Validation Error") as Error & {
