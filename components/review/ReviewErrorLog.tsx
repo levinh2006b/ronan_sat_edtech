@@ -3,8 +3,9 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, GripVertical, Plus, Search, X } from "lucide-react";
 
+import { CompactPagination } from "@/components/ui/CompactPagination";
+import { PaginatedStickyTableShell } from "@/components/ui/PaginatedStickyTableShell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getClientCache, setClientCache } from "@/lib/clientCache";
 import {
   REVIEW_REASON_COLOR_PRESETS,
@@ -31,8 +32,8 @@ type ErrorLogCacheState = {
   query: string;
   statusFilter: "all" | ReviewErrorLogStatus;
   rows: ReviewErrorLogEntry[];
-  nextOffset: number;
-  hasMore: boolean;
+  page: number;
+  total: number;
   sortColumn: SortColumn;
   sortDirection: SortDirection;
 };
@@ -129,17 +130,31 @@ function compareErrorLogRows(left: ReviewErrorLogEntry, right: ReviewErrorLogEnt
   }
 }
 
+function ErrorLogColGroup() {
+  return (
+    <colgroup>
+      <col className="w-[15%]" />
+      <col className="w-[9%]" />
+      <col className="w-[15%]" />
+      <col className="w-[17%]" />
+      <col className="w-[17%]" />
+      <col className="w-[10%]" />
+      <col className="w-[17%]" />
+    </colgroup>
+  );
+}
+
 export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: ReviewErrorLogProps) {
   const cacheKey = `${ERROR_LOG_CACHE_KEY_PREFIX}:${testType}`;
   const cachedState = getClientCache<ErrorLogCacheState>(cacheKey);
   const [query, setQuery] = useState(cachedState?.query ?? "");
   const deferredQuery = useDeferredValue(query);
   const [statusFilter, setStatusFilter] = useState<"all" | ReviewErrorLogStatus>(cachedState?.statusFilter ?? "all");
+  const [page, setPage] = useState(cachedState?.page ?? 1);
+  const [pendingPage, setPendingPage] = useState<number | null>(null);
   const [rows, setRows] = useState<ReviewErrorLogEntry[]>(cachedState?.rows ?? []);
-  const [nextOffset, setNextOffset] = useState(cachedState?.nextOffset ?? 0);
-  const [hasMore, setHasMore] = useState(cachedState?.hasMore ?? false);
+  const [total, setTotal] = useState(cachedState?.total ?? 0);
   const [loadingRows, setLoadingRows] = useState(!cachedState);
-  const [loadingMoreRows, setLoadingMoreRows] = useState(false);
   const [pendingReasonKey, setPendingReasonKey] = useState<string | null>(null);
   const [reasonCatalog, setReasonCatalog] = useState<ReviewReasonItem[]>([]);
   const [isReasonManagerOpen, setIsReasonManagerOpen] = useState(false);
@@ -153,11 +168,25 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
   const [, startUiTransition] = useTransition();
   const selectedReason = draftSelectedReasonId ? draftReasonCatalog.find((item) => item.id === draftSelectedReasonId) ?? null : null;
   const hasHydratedCachedPageRef = useRef(Boolean(cachedState));
+  const previousRowsRef = useRef<ReviewErrorLogEntry[]>(cachedState?.rows ?? []);
+  const totalPages = Math.max(1, Math.ceil(total / ERROR_LOG_PAGE_SIZE));
+  const targetPage = pendingPage ?? page;
+  const visibleRows = useMemo(() => {
+    if (rows.length > 0) {
+      return rows;
+    }
+
+    if (loadingRows && previousRowsRef.current.length > 0) {
+      return previousRowsRef.current;
+    }
+
+    return rows;
+  }, [loadingRows, rows]);
 
   const sortedRows = useMemo(() => {
     const direction = sortDirection === "asc" ? 1 : -1;
 
-    return rows
+    return visibleRows
       .map((row, index) => ({ row, index }))
       .sort((left, right) => {
         const comparison = compareErrorLogRows(left.row, right.row, sortColumn);
@@ -168,19 +197,31 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
         return left.index - right.index;
       })
       .map(({ row }) => row);
-  }, [rows, sortColumn, sortDirection]);
+  }, [sortColumn, sortDirection, visibleRows]);
 
   useEffect(() => {
     setClientCache<ErrorLogCacheState>(cacheKey, {
       query,
       statusFilter,
+      page,
       rows,
-      nextOffset,
-      hasMore,
+      total,
       sortColumn,
       sortDirection,
     });
-  }, [cacheKey, hasMore, nextOffset, query, rows, sortColumn, sortDirection, statusFilter]);
+  }, [cacheKey, page, query, rows, sortColumn, sortDirection, statusFilter, total]);
+
+  useEffect(() => {
+    setPage(1);
+    setPendingPage(null);
+  }, [deferredQuery, statusFilter, testType]);
+
+  useEffect(() => {
+    if (targetPage > totalPages) {
+      setPage(totalPages);
+      setPendingPage(null);
+    }
+  }, [targetPage, totalPages]);
 
   useEffect(() => {
     let cancelled = false;
@@ -219,11 +260,11 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
       setLoadingRows(true);
 
       try {
-        const page = await fetchReviewErrorLogPage({
+        const errorLogPage = await fetchReviewErrorLogPage({
           testType,
           status: statusFilter,
           query: deferredQuery,
-          offset: 0,
+          offset: (targetPage - 1) * ERROR_LOG_PAGE_SIZE,
           limit: ERROR_LOG_PAGE_SIZE,
         });
 
@@ -231,15 +272,16 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
           return;
         }
 
-        setRows(page.rows);
-        setHasMore(page.hasMore);
-        setNextOffset(page.nextOffset);
+        setRows(errorLogPage.rows);
+        previousRowsRef.current = errorLogPage.rows;
+        setTotal(errorLogPage.total);
+        setPage(targetPage);
+        setPendingPage(null);
       } catch (error) {
         if (!cancelled) {
           console.error(error);
           setRows([]);
-          setHasMore(false);
-          setNextOffset(0);
+          setTotal(0);
         }
       } finally {
         if (!cancelled) {
@@ -253,7 +295,15 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
     return () => {
       cancelled = true;
     };
-  }, [deferredQuery, statusFilter, testType]);
+  }, [deferredQuery, statusFilter, testType, targetPage]);
+
+  const handlePageChange = (nextPage: number) => {
+    if (nextPage === page || nextPage === pendingPage) {
+      return;
+    }
+
+    setPendingPage(nextPage);
+  };
 
   const persistReasonCatalog = async (nextCatalog: ReviewReasonItem[], previousCatalog = reasonCatalog) => {
     setReasonCatalog(nextCatalog);
@@ -327,33 +377,6 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
       window.alert("Could not save that reason. Please try again.");
     } finally {
       setPendingReasonKey(null);
-    }
-  };
-
-  const handleLoadMore = async () => {
-    if (loadingMoreRows || loadingRows || !hasMore) {
-      return;
-    }
-
-    setLoadingMoreRows(true);
-
-    try {
-      const page = await fetchReviewErrorLogPage({
-        testType,
-        status: statusFilter,
-        query: deferredQuery,
-        offset: nextOffset,
-        limit: ERROR_LOG_PAGE_SIZE,
-      });
-
-      setRows((currentRows) => [...currentRows, ...page.rows]);
-      setHasMore(page.hasMore);
-      setNextOffset(page.nextOffset);
-    } catch (error) {
-      console.error(error);
-      window.alert("Could not load more mistakes. Please try again.");
-    } finally {
-      setLoadingMoreRows(false);
     }
   };
 
@@ -459,10 +482,10 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <section className="workbook-panel overflow-hidden">
-        <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
-            <label className="relative flex w-full max-w-xl items-center">
+        <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:gap-3">
+          <label className="relative flex w-full min-w-0 items-center lg:w-[26rem] xl:w-[32rem]">
             <Search className="pointer-events-none absolute left-4 h-4 w-4 text-ink-fg/55" />
             <input
               value={query}
@@ -472,7 +495,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
             />
           </label>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 lg:justify-end">
             {[
               { value: "all", label: "All misses" },
               { value: "wrong", label: "Wrong only" },
@@ -483,7 +506,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                 type="button"
                 onClick={() => setStatusFilter(option.value as "all" | ReviewErrorLogStatus)}
                 className={[
-                  "rounded-full border-2 border-ink-fg px-4 py-2 text-xs font-black uppercase tracking-[0.14em] brutal-shadow-sm workbook-press",
+                  "shrink-0 whitespace-nowrap rounded-full border-2 border-ink-fg px-4 py-2 text-xs font-black uppercase tracking-[0.14em] brutal-shadow-sm workbook-press",
                   statusFilter === option.value ? "bg-primary text-ink-fg" : "bg-surface-white text-ink-fg",
                 ].join(" ")}
               >
@@ -495,176 +518,173 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
 
         </section>
 
-      <Table>
-        <TableCaption className="pb-2">
-          {loadingRows
-            ? "Loading the latest 20 mistakes..."
-            : `${sortedRows.length} entries currently loaded, sorted by ${sortColumn === "questionNumber" ? "question number" : sortColumn} (${sortDirection}).`}
-        </TableCaption>
-        <TableHeader className="sticky top-0 z-10">
-          <TableRow className="hover:bg-paper-bg">
-            <TableHead className="w-[11.75rem] min-w-[11.75rem]" aria-sort={getHeaderAriaSort("timestamp")}>
-              <button
-                type="button"
-                onClick={() => handleSortChange("timestamp")}
-                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
-              >
-                <span>Time</span>
-                {renderSortIcon("timestamp")}
-              </button>
-            </TableHead>
-            <TableHead className="w-[8.25rem]" aria-sort={getHeaderAriaSort("questionNumber")}>
-              <button
-                type="button"
-                onClick={() => handleSortChange("questionNumber")}
-                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
-              >
-                <span>Question</span>
-                {renderSortIcon("questionNumber")}
-              </button>
-            </TableHead>
-            <TableHead className="w-[12rem] min-w-[12rem]" aria-sort={getHeaderAriaSort("testTitle")}>
-              <button
-                type="button"
-                onClick={() => handleSortChange("testTitle")}
-                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
-              >
-                <span>Test</span>
-                {renderSortIcon("testTitle")}
-              </button>
-            </TableHead>
-            <TableHead aria-sort={getHeaderAriaSort("domain")}>
-              <button
-                type="button"
-                onClick={() => handleSortChange("domain")}
-                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
-              >
-                <span>Domain</span>
-                {renderSortIcon("domain")}
-              </button>
-            </TableHead>
-            <TableHead aria-sort={getHeaderAriaSort("skill")}>
-              <button
-                type="button"
-                onClick={() => handleSortChange("skill")}
-                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
-              >
-                <span>Skill</span>
-                {renderSortIcon("skill")}
-              </button>
-            </TableHead>
-            <TableHead aria-sort={getHeaderAriaSort("difficulty")}>
-              <button
-                type="button"
-                onClick={() => handleSortChange("difficulty")}
-                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
-              >
-                <span>Difficulty</span>
-                {renderSortIcon("difficulty")}
-              </button>
-            </TableHead>
-            <TableHead className="min-w-[14rem]" aria-sort={getHeaderAriaSort("reason")}>
-              <button
-                type="button"
-                onClick={() => handleSortChange("reason")}
-                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
-              >
-                <span>Reason</span>
-                {renderSortIcon("reason")}
-              </button>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loadingRows ? (
-            <TableRow>
-              <TableCell colSpan={7} className="py-12 text-center text-sm text-ink-fg/70">
-                Loading the latest mistakes...
-              </TableCell>
-            </TableRow>
-          ) : rows.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="py-12 text-center text-sm text-ink-fg/70">
-                No matching mistakes found for the current search and filter.
-              </TableCell>
-            </TableRow>
-          ) : (
-            sortedRows.map((row) => (
-              <TableRow
-                key={row.key}
-                tabIndex={0}
-                onClick={() => onViewQuestion({ resultId: row.resultId, testId: row.testId, answer: row.answer, questionNumber: row.questionNumber })}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onViewQuestion({ resultId: row.resultId, testId: row.testId, answer: row.answer, questionNumber: row.questionNumber });
-                  }
-                }}
-                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-fg focus-visible:ring-offset-2"
-              >
-                <TableCell>
-                  <span className="text-sm font-semibold text-ink-fg">{formatErrorLogTimestamp(row.timestamp).dateTimeLabel}</span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm font-semibold text-ink-fg">{row.questionNumber}</span>
-                </TableCell>
-                <TableCell>
-                  <span className="block min-w-0 max-w-[12rem] truncate font-semibold text-ink-fg" title={row.testTitle}>
-                    {row.testTitle}
-                  </span>
-                </TableCell>
-                <TableCell className="font-medium">{row.domain}</TableCell>
-                <TableCell className="font-medium text-ink-fg/80">{row.skill}</TableCell>
-                <TableCell>
-                  <span className={[
-                    "inline-flex rounded-full border-2 border-ink-fg px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]",
-                    getDifficultyTone(row.difficulty),
-                  ].join(" ")}>
-                    {row.difficulty}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-                    <Select
-                      value={row.reason || UNSET_REASON_VALUE}
-                      onValueChange={(nextValue) => void handleReasonChange(row, nextValue)}
-                      disabled={pendingReasonKey === row.key}
+      <PaginatedStickyTableShell
+        loading={loadingRows}
+        hasRows={visibleRows.length > 0}
+        loadingLabel="Loading page"
+        pagination={totalPages > 1 ? <CompactPagination page={page} totalPages={totalPages} onChange={handlePageChange} /> : null}
+      >
+        <table className="min-w-[1100px] w-full table-fixed text-sm text-ink-fg">
+              <ErrorLogColGroup />
+              <thead>
+                <tr className="bg-paper-bg hover:bg-paper-bg">
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("timestamp")}>
+                    <button
+                      type="button"
+                      onClick={() => handleSortChange("timestamp")}
+                      className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
                     >
-                      <SelectTrigger
-                        className="h-11 min-w-[11rem] rounded-xl px-3 py-2 text-xs font-bold normal-case tracking-normal"
-                        style={getReasonSurfaceStyle(row.reason)}
-                      >
-                        <SelectValue placeholder="Add reason" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={UNSET_REASON_VALUE}>No reason yet</SelectItem>
-                        {row.reason && !getReasonItemByLabel(row.reason) ? <SelectItem value={row.reason}>{row.reason}</SelectItem> : null}
-                        {reasonCatalog.map((reason) => (
-                          <SelectItem key={reason.id} value={reason.label}>
-                            <span className="inline-flex items-center gap-2">
-                              <span className="h-2.5 w-2.5 rounded-full border border-ink-fg/30" style={{ backgroundColor: reason.color }} />
-                              {reason.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                        <SelectItem value={CUSTOMIZE_REASON_VALUE}>Customise reasons</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      {hasMore ? (
-        <div className="flex justify-center">
-          <button type="button" onClick={() => void handleLoadMore()} disabled={loadingMoreRows} className="workbook-button bg-surface-white text-ink-fg disabled:cursor-wait disabled:opacity-70">
-            {loadingMoreRows ? "Loading..." : "Show more"}
-          </button>
-        </div>
-      ) : null}
+                      <span>Time</span>
+                      {renderSortIcon("timestamp")}
+                    </button>
+                  </th>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("questionNumber")}>
+                    <button
+                      type="button"
+                      onClick={() => handleSortChange("questionNumber")}
+                      className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+                    >
+                      <span>Question</span>
+                      {renderSortIcon("questionNumber")}
+                    </button>
+                  </th>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("testTitle")}>
+                    <button
+                      type="button"
+                      onClick={() => handleSortChange("testTitle")}
+                      className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+                    >
+                      <span>Test</span>
+                      {renderSortIcon("testTitle")}
+                    </button>
+                  </th>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("domain")}>
+                    <button
+                      type="button"
+                      onClick={() => handleSortChange("domain")}
+                      className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+                    >
+                      <span>Domain</span>
+                      {renderSortIcon("domain")}
+                    </button>
+                  </th>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("skill")}>
+                    <button
+                      type="button"
+                      onClick={() => handleSortChange("skill")}
+                      className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+                    >
+                      <span>Skill</span>
+                      {renderSortIcon("skill")}
+                    </button>
+                  </th>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("difficulty")}>
+                    <button
+                      type="button"
+                      onClick={() => handleSortChange("difficulty")}
+                      className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+                    >
+                      <span>Difficulty</span>
+                      {renderSortIcon("difficulty")}
+                    </button>
+                  </th>
+                  <th className="sticky top-0 z-10 h-12 whitespace-nowrap border-b-4 border-ink-fg bg-paper-bg px-4 text-left align-middle" aria-sort={getHeaderAriaSort("reason")}>
+                    <button
+                      type="button"
+                      onClick={() => handleSortChange("reason")}
+                      className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+                    >
+                      <span>Reason</span>
+                      {renderSortIcon("reason")}
+                    </button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="[&_tr:last-child]:border-0">
+                {visibleRows.length === 0 && loadingRows ? (
+                  <tr className="border-b-2 border-ink-fg/15 odd:bg-surface-white even:bg-paper-bg/60">
+                    <td colSpan={7} className="px-4 py-12 text-center text-sm text-ink-fg/70">
+                      Loading the latest mistakes...
+                    </td>
+                  </tr>
+                ) : visibleRows.length === 0 ? (
+                  <tr className="border-b-2 border-ink-fg/15 odd:bg-surface-white even:bg-paper-bg/60">
+                    <td colSpan={7} className="px-4 py-12 text-center text-sm text-ink-fg/70">
+                      No matching mistakes found for the current search and filter.
+                    </td>
+                  </tr>
+                ) : (
+                  sortedRows.map((row) => (
+                    <tr
+                      key={row.key}
+                      tabIndex={0}
+                      onClick={() => onViewQuestion({ resultId: row.resultId, testId: row.testId, answer: row.answer, questionNumber: row.questionNumber })}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onViewQuestion({ resultId: row.resultId, testId: row.testId, answer: row.answer, questionNumber: row.questionNumber });
+                        }
+                      }}
+                      className="cursor-pointer border-b-2 border-ink-fg/15 transition-colors odd:bg-surface-white even:bg-paper-bg/60 hover:bg-primary/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-fg focus-visible:ring-offset-2"
+                    >
+                      <td className="px-4 py-3 align-middle">
+                        <span className="text-sm font-semibold text-ink-fg">{formatErrorLogTimestamp(row.timestamp).dateTimeLabel}</span>
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <span className="text-sm font-semibold text-ink-fg">{row.questionNumber}</span>
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <span className="block min-w-0 truncate font-semibold text-ink-fg" title={row.testTitle}>
+                          {row.testTitle}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-middle font-medium">{row.domain}</td>
+                      <td className="px-4 py-3 align-middle font-medium text-ink-fg/80">{row.skill}</td>
+                      <td className="px-4 py-3 align-middle">
+                        <span
+                          className={[
+                            "inline-flex rounded-full border-2 border-ink-fg px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]",
+                            getDifficultyTone(row.difficulty),
+                          ].join(" ")}
+                        >
+                          {row.difficulty}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+                          <Select
+                            value={row.reason || UNSET_REASON_VALUE}
+                            onValueChange={(nextValue) => void handleReasonChange(row, nextValue)}
+                            disabled={pendingReasonKey === row.key}
+                          >
+                            <SelectTrigger
+                              className="h-11 min-w-[11rem] rounded-xl px-3 py-2 text-xs font-bold normal-case tracking-normal"
+                              style={getReasonSurfaceStyle(row.reason)}
+                            >
+                              <SelectValue placeholder="Add reason" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={UNSET_REASON_VALUE}>No reason yet</SelectItem>
+                              {row.reason && !getReasonItemByLabel(row.reason) ? <SelectItem value={row.reason}>{row.reason}</SelectItem> : null}
+                              {reasonCatalog.map((reason) => (
+                                <SelectItem key={reason.id} value={reason.label}>
+                                  <span className="inline-flex items-center gap-2">
+                                    <span className="h-2.5 w-2.5 rounded-full border border-ink-fg/30" style={{ backgroundColor: reason.color }} />
+                                    {reason.label}
+                                  </span>
+                                </SelectItem>
+                              ))}
+                              <SelectItem value={CUSTOMIZE_REASON_VALUE}>Customise reasons</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+      </PaginatedStickyTableShell>
 
       {isReasonManagerOpen ? (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-ink-fg/25 p-4">

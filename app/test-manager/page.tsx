@@ -1,134 +1,171 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { useSession } from "@/lib/auth/client";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import Loading from "@/components/Loading";
-import { TestManagerBoardProvider } from "@/components/test-manager/TestManagerBoardProvider";
-import { TestManagerColumn } from "@/components/test-manager/TestManagerColumn";
 import { TestManagerInboxColumn } from "@/components/test-manager/TestManagerInboxColumn";
 import { TestManagerPageHeader } from "@/components/test-manager/TestManagerPageHeader";
-import { useTestManagerPageController } from "@/components/test-manager/useTestManagerPageController";
-import { VocabAddColumnPanel } from "@/components/vocab/VocabAddColumnPanel";
-
-function isTestManagerCard<T>(value: T | undefined | null): value is T {
-  return Boolean(value);
-}
+import { API_PATHS } from "@/lib/apiPaths";
+import api from "@/lib/axios";
+import type { TestManagerCard } from "@/lib/testManagerReports";
 
 function TestManagerScreen() {
-  const {
-    board,
-    hydrated,
-    inboxCards,
-    draggingColumnId,
-    dropIndicator,
-    isAddingColumn,
-    newColumnTitle,
-    editingColumnId,
-    editingColumnTitle,
-    openMenuColumnId,
-    menuRef,
-    boardScrollRef,
-    setDraggingCardId,
-    setEditingColumnTitle,
-    setIsAddingColumn,
-    setNewColumnTitle,
-    handleCreateColumn,
-    cancelCreateColumn,
-    startEditColumn,
-    saveColumnEdit,
-    cancelColumnEdit,
-    toggleColumnMenu,
-    handleChangeColumnColor,
-    handleRemoveColumn,
-    handleDropCardToBucket,
-    handleColumnDragStart,
-    clearColumnDragState,
-    handleColumnDragOver,
-    handleColumnDrop,
-    handleBoardDragOver,
-    handleBoardDrop,
-  } = useTestManagerPageController();
+  const [cards, setCards] = useState<TestManagerCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [resolvingQuestionId, setResolvingQuestionId] = useState<string | null>(
+    null,
+  );
+  const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReports = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await api.get<{ cards: TestManagerCard[] }>(
+          API_PATHS.TEST_MANAGER_REPORTS,
+        );
+        if (!cancelled) {
+          setCards(response.data.cards ?? []);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          const message =
+            typeof loadError === "object" &&
+            loadError !== null &&
+            "response" in loadError &&
+            typeof (loadError as { response?: { data?: { error?: string } } })
+              .response?.data?.error === "string"
+              ? ((loadError as { response?: { data?: { error?: string } } })
+                  .response?.data?.error ?? "")
+              : "Could not load reported questions.";
+
+          setError(message || "Could not load reported questions.");
+          setCards([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadReports();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleResolve = async (questionId: string) => {
+    setResolvingQuestionId(questionId);
+    setError("");
+
+    try {
+      const response = await api.patch<{ isResolved: boolean }>(
+        API_PATHS.getTestManagerReport(questionId),
+      );
+      setCards((currentCards) =>
+        currentCards.map((card) =>
+          card.questionId === questionId
+            ? {
+                ...card,
+                isResolved: response.data.isResolved,
+                reports: card.reports.map((report) => ({
+                  ...report,
+                  resolvedAt: response.data.isResolved
+                    ? (report.resolvedAt ?? new Date().toISOString())
+                    : undefined,
+                })),
+              }
+            : card,
+        ),
+      );
+    } catch (actionError) {
+      const message =
+        typeof actionError === "object" &&
+        actionError !== null &&
+        "response" in actionError &&
+        typeof (actionError as { response?: { data?: { error?: string } } })
+          .response?.data?.error === "string"
+          ? ((actionError as { response?: { data?: { error?: string } } })
+              .response?.data?.error ?? "")
+          : "Could not update the reported question.";
+
+      setError(message || "Could not update the reported question.");
+    } finally {
+      setResolvingQuestionId(null);
+    }
+  };
+
+  const handleDelete = async (questionId: string) => {
+    setDeletingQuestionId(questionId);
+    setError("");
+
+    try {
+      await api.delete(API_PATHS.getTestManagerReport(questionId));
+      setCards((currentCards) =>
+        currentCards.filter((card) => card.questionId !== questionId),
+      );
+    } catch (actionError) {
+      const message =
+        typeof actionError === "object" &&
+        actionError !== null &&
+        "response" in actionError &&
+        typeof (actionError as { response?: { data?: { error?: string } } })
+          .response?.data?.error === "string"
+          ? ((actionError as { response?: { data?: { error?: string } } })
+              .response?.data?.error ?? "")
+          : "Could not delete the reported question.";
+
+      setError(message || "Could not delete the reported question.");
+    } finally {
+      setDeletingQuestionId(null);
+    }
+  };
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-paper-bg bg-dot-pattern px-4 py-4 sm:px-5 lg:h-screen lg:overflow-hidden lg:px-6">
-      <InitialTabBootReady when={hydrated} />
-      <div className="mx-auto max-w-[1640px] lg:flex lg:h-full lg:flex-col">
+    <main className="min-h-[calc(100vh-4rem)] bg-paper-bg px-4 py-4 sm:px-5 lg:px-6">
+      <InitialTabBootReady when={!loading} />
+      <div className="mx-auto max-w-[1400px]">
         <TestManagerPageHeader />
 
-        <section className="workbook-panel p-3 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        {error ? (
+          <section className="workbook-panel mb-4 border-2 border-ink-fg bg-accent-3 px-5 py-4 text-sm font-bold text-white">
+            {error}
+          </section>
+        ) : null}
+
+        <section className="workbook-panel p-3">
           <div className="mb-3 flex items-center justify-between px-1">
             <div>
-              <div className="text-[13px] font-semibold uppercase tracking-[0.16em] text-ink-fg/70">Collections</div>
+              <div className="text-[13px] font-semibold uppercase tracking-[0.16em] text-ink-fg/70">
+                Reported Questions
+              </div>
             </div>
-            <div className="workbook-sticker bg-accent-3 text-white">{board.columns.length} lists</div>
+            <div className="workbook-sticker bg-accent-3 text-white">
+              {cards.filter((card) => !card.isResolved).length} unresolved
+              questions
+            </div>
           </div>
 
-          <div
-            ref={boardScrollRef}
-            className="flex gap-4 overflow-x-auto pb-2 lg:min-h-0 lg:flex-1 lg:items-stretch"
-            onDragOver={handleBoardDragOver}
-            onDrop={handleBoardDrop}
-          >
+          <div className="flex justify-center">
             <TestManagerInboxColumn
-              hydrated={hydrated}
-              cards={inboxCards}
-              onCardDragStart={setDraggingCardId}
-              onDropCard={() => handleDropCardToBucket("inbox")}
-            />
-
-            {board.columns.map((column) => {
-              const columnCards = column.cardIds.map((cardId) => board.cards[cardId]).filter(isTestManagerCard);
-              const showBefore =
-                dropIndicator?.columnId === column.id &&
-                dropIndicator.position === "before" &&
-                draggingColumnId !== column.id;
-              const showAfter =
-                dropIndicator?.columnId === column.id &&
-                dropIndicator.position === "after" &&
-                draggingColumnId !== column.id;
-
-              return (
-                <TestManagerColumn
-                  key={column.id}
-                  column={column}
-                  cards={columnCards}
-                  showBefore={showBefore}
-                  showAfter={showAfter}
-                  isDragging={draggingColumnId === column.id}
-                  editingColumnId={editingColumnId}
-                  editingColumnTitle={editingColumnTitle}
-                  openMenuColumnId={openMenuColumnId}
-                  menuRef={menuRef}
-                  onCardDragStart={setDraggingCardId}
-                  onColumnTitleChange={setEditingColumnTitle}
-                  onSaveColumnEdit={saveColumnEdit}
-                  onCancelColumnEdit={cancelColumnEdit}
-                  onStartColumnEdit={() => startEditColumn(column)}
-                  onToggleMenu={toggleColumnMenu}
-                  onUpdateColumnColor={handleChangeColumnColor}
-                  onRemoveColumn={handleRemoveColumn}
-                  onDropCard={() => handleDropCardToBucket(column.id)}
-                  onHeaderDragStart={handleColumnDragStart}
-                  onHeaderDragEnd={clearColumnDragState}
-                  onHeaderDragOver={handleColumnDragOver}
-                  onHeaderDrop={(event, columnId) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    handleColumnDrop(columnId);
-                  }}
-                />
-              );
-            })}
-
-            <VocabAddColumnPanel
-              isAddingColumn={isAddingColumn}
-              newColumnTitle={newColumnTitle}
-              onNewColumnTitleChange={setNewColumnTitle}
-              onCreateColumn={handleCreateColumn}
-              onCancel={cancelCreateColumn}
-              onStart={() => setIsAddingColumn(true)}
-              widthClass="w-[375px]"
+              loading={loading}
+              cards={cards}
+              resolvingQuestionId={resolvingQuestionId}
+              deletingQuestionId={deletingQuestionId}
+              onResolve={handleResolve}
+              onDelete={handleDelete}
             />
           </div>
         </section>
@@ -139,7 +176,8 @@ function TestManagerScreen() {
 
 export default function TestManagerPage() {
   const { data: session, status } = useSession();
-  const canEditPublicExams = session?.user.permissions.includes("edit_public_exams");
+  const canEditPublicExams =
+    session?.user.permissions.includes("edit_public_exams");
 
   if (status === "loading") {
     return <Loading />;
@@ -156,9 +194,5 @@ export default function TestManagerPage() {
     );
   }
 
-  return (
-    <TestManagerBoardProvider>
-      <TestManagerScreen />
-    </TestManagerBoardProvider>
-  );
+  return <TestManagerScreen />;
 }

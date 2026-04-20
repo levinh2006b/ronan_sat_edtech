@@ -2,7 +2,7 @@
 
 ## Goal
 
-Migrate the application from `NextAuth + MongoDB` to `Supabase Auth + Postgres + RLS`, while temporarily retaining MongoDB only for `TestManagerBoard` and reported-question workflows.
+Migrate the application from `NextAuth + MongoDB` to `Supabase Auth + Postgres + RLS`, while temporarily retaining MongoDB only as a legacy migration source.
 
 ## Product decisions
 
@@ -19,7 +19,7 @@ Migrate the application from `NextAuth + MongoDB` to `Supabase Auth + Postgres +
 - Keep execution order explicit so multiple agents can safely coordinate through the same plan.
 - Prefer normalized SQL joins over duplicated columns or array fields.
 - Enable RLS before cutting app reads and writes over to a table.
-- Treat MongoDB as legacy-only for fix workflows during the bridge phase.
+- Treat MongoDB as legacy-only for one-time migration and fetch workflows.
 
 ## Execution ledger
 
@@ -32,7 +32,7 @@ Migrate the application from `NextAuth + MongoDB` to `Supabase Auth + Postgres +
 7. In progress: migrate tests and questions from MongoDB into Postgres, preserving `legacy_mongo_id`.
 8. In progress: migrate results into normalized attempts and answers tables, then rebuild review and error-log reads against SQL.
 9. In progress: migrate user-owned settings, synced testing-room theme, review reasons, vocab storage, and streaks.
-10. Pending: bridge Mongo fix-board reads and writes through SQL `legacy_mongo_id` lookups.
+10. Done: replace Mongo fix-board storage with normalized `user_reports` rows in Supabase.
 11. Pending: run local verification for student, teacher, and admin flows with RLS enabled.
 12. Done: add a GitHub Actions migration pipeline so PRs validate `supabase/migrations/**` on a fresh local reset and pushes to `main` auto-push linked migrations to the production Supabase project.
 
@@ -111,16 +111,16 @@ Migrate the application from `NextAuth + MongoDB` to `Supabase Auth + Postgres +
 - Migrate attempts/results.
 - Migrate review reasons, settings, vocab, and streaks.
 
-### Phase 5: Mongo bridge and verification
+### Phase 5: Final normalization and verification
 
-- Keep fix-board storage in Mongo.
-- Resolve referenced tests/questions through SQL `legacy_mongo_id`.
+- Keep Mongo limited to migration-source tooling only.
+- Resolve referenced tests/questions through SQL foreign keys.
 - Verify student, teacher, and admin flows locally under RLS.
 
 ## Open risks
 
 - Existing Mongo `correctAnswer` values may not always map cleanly to a single imported option row.
-- Fix workflows become brittle if `legacy_mongo_id` is not preserved consistently.
+- Legacy migration workflows become brittle if `legacy_mongo_id` is not preserved consistently.
 - RLS policies must be verified through real authenticated sessions, not only service-role queries.
 - The auth cutover touches middleware, route handlers, server components, and client session consumers at once, so partial cutovers can leave mixed assumptions behind.
 
@@ -141,9 +141,9 @@ Migrate the application from `NextAuth + MongoDB` to `Supabase Auth + Postgres +
   - Supabase auth users were created locally from Mongo users with deterministic temporary passwords so local end-to-end auth testing can proceed before a production-grade reset/invite policy is finalized.
   - `30` malformed legacy questions were skipped rather than half-imported because they lacked usable options, accepted answers, or correct-answer mappings.
   - `54` results and `638` result answers were skipped because they referenced relations that do not currently map cleanly after the question import, so those need a dedicated cleanup pass before production migration.
-- The main runtime auth/data cutover is now implemented, including Supabase-backed auth flows, profile/settings routes, tests/questions services, results/review services, vocab board, review reasons, and the Mongo fix-board legacy bridge.
+- The main runtime auth/data cutover is now implemented, including Supabase-backed auth flows, profile/settings routes, tests/questions services, results/review services, vocab board, review reasons, and normalized reported-question storage in `user_reports`.
 - The leaderboard runtime path now reads from Supabase `test_attempts` instead of the removed Mongo `Result` model.
-- Dead Mongo-era models and scripts for migrated test/question/result/user domains have been removed, leaving Mongo only for fix workflows and hall-of-fame student cards.
+- Dead Mongo-era models and scripts for migrated test/question/result/user domains have been removed, leaving Mongo only for migration tooling.
 - GitHub Actions now validates changed Supabase migrations on pull requests with `supabase db reset`, and pushes merged migration changes on `main` to the linked production database through the GitHub `production` environment.
 - The next highest-priority step is a production-readiness pass: remove dead Mongo code for migrated domains, validate end-to-end browser flows, and resolve skipped legacy data before any cloud or production cutover.
 
@@ -158,7 +158,7 @@ Migrate the application from `NextAuth + MongoDB` to `Supabase Auth + Postgres +
 - Tests, questions, question explanations, and the main test/question services now read and write through Supabase/Postgres.
 - User stats, review reason catalog, vocab board, and password changes now use Supabase-backed routes.
 - Result creation, result history reads, review error-log reads, and answer-reason updates now route through the new Postgres-backed `resultService`.
-- Mongo test-manager routes remain in place, but `/api/test-manager-reports` now resolves incoming SQL UUID test/question ids back to `legacy_mongo_id` before writing into the Mongo board.
+- Reported questions now persist as normalized `user_reports` rows in Supabase, and the test-manager groups them by `question_id` at read time.
 
 ## Remaining work
 
@@ -180,10 +180,7 @@ Migrate the application from `NextAuth + MongoDB` to `Supabase Auth + Postgres +
   - old user auth/profile logic
   - unused Mongoose models and services for migrated areas
   - stale helper code that only existed for NextAuth/Mongo session hydration
-- Audit all remaining Mongo dependencies and confirm they are intentionally retained:
-  - `TestManagerBoard`
-  - fix report workflow
-  - student hall-of-fame card content if still intended to remain on Mongo
+- Audit the remaining Mongo references and keep them limited to one-time migration and optional fetch tooling only.
 - Resolve the skipped legacy migration rows before production migration:
   - malformed questions with missing options or answer keys
   - results referencing unmapped questions/tests

@@ -5,6 +5,7 @@ const migrationSteps = [
   "migrateTestsAndQuestionsToSupabase.ts",
   "migrateUserDataToSupabase.ts",
   "migrateResultsToSupabase.ts",
+  "migrateLegacyBoardAndStudentsToSupabase.ts",
 ] as const;
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {

@@ -13,7 +13,7 @@ export const API_PATHS = {
   USER_VOCAB_BOARD: "/api/user/vocab-board",
   USER_REVIEW_REASONS: "/api/user/review-reasons",
   VOCAB_DICTIONARY: "/api/vocab/dictionary",
-  TEST_MANAGER_BOARD: "/api/test-manager-board",
+  TEST_MANAGER_TESTS: "/api/test-manager/tests",
   TEST_MANAGER_REPORTS: "/api/test-manager-reports",
   GROUPS: "/api/groups",
   RESULT_REASON: "/api/results/reason",
@@ -31,4 +31,5 @@ export const API_PATHS = {
   getReviewResult: (resultId: string) => `/api/results/${resultId}`,
   getReviewQuestion: (resultId: string, questionId: string) => `/api/results/${resultId}/questions/${questionId}`,
   getTestManagerQuestion: (cardId: string) => `/api/test-manager/questions/${cardId}`,
+  getTestManagerReport: (questionId: string) => `/api/test-manager-reports/${questionId}`,
 };

@@ -12,8 +12,8 @@ The current state is:
 - Core SQL schema and RLS exist.
 - Local migration scripts exist and were executed.
 - Main auth/runtime/service cutover has been implemented.
-- Mongo remains intentionally in use for `TestManagerBoard` and test-manager reports.
-- Hall-of-fame student cards still remain in Mongo.
+- Reported-question storage and hall-of-fame student cards now run on Supabase.
+- Mongo now remains only as an optional source for one-time migration scripts.
 - Some legacy data is malformed and was skipped during migration.
 
 ## Local Supabase
@@ -86,23 +86,24 @@ Moved to Supabase-backed runtime paths:
 - results service
 - review error log
 - answer reason persistence
+- normalized reported-question storage
+- hall-of-fame student cards
+- manager-only resolve/delete actions for reported questions
 
 ### Mongo retained intentionally
 
-- `app/api/test-manager-board/route.ts`
-- `app/api/test-manager-reports/route.ts`
-- `app/api/students/route.ts`
-- legacy `TestManagerBoard` model and Mongo connection for the test-manager workflow
-- legacy `studentCard` model for hall-of-fame cards
+- one-time migration scripts under `scripts/migrations/mongodb-to-supabase/`
+- local data refresh helpers that can still copy from a remote Mongo source when needed
 
 ### Mongo removed after cutover
 
 - leaderboard is now computed from Supabase `test_attempts`
 - old Mongo `User`, `Result`, `Test`, and `Question` models were removed
+- reported-question runtime storage now uses normalized `public.user_reports`
+- hall-of-fame student runtime storage now uses `public.hall_of_fame_students`
+- old Mongo `TestManagerBoard`, `studentCard`, and `lib/mongodb.ts` runtime files were removed
 - old Mongo-only seed/import scripts for tests/questions were removed
 - old SMTP email helper files were removed because password reset now uses Supabase Auth directly
-
-`/api/test-manager-reports` now maps Postgres UUID ids back to `legacy_mongo_id` before writing into Mongo.
 
 ## Data migration status
 
@@ -146,7 +147,7 @@ Results/answers were skipped when referenced relations could not be mapped after
 1. Run a real browser verification pass over the migrated runtime.
 2. Fix migration scripts or source data for skipped malformed rows.
 3. Re-run migration from a clean reset and compare counts again.
-4. Remove dead Mongo code for domains already migrated.
+4. Simplify local tooling/docs that still mention Mongo as a runtime requirement.
 5. Decide the production user-auth migration policy.
 
 ## Suggested verification checklist
@@ -166,10 +167,13 @@ Results/answers were skipped when referenced relations could not be mapped after
 13. Vocab board loads and saves
 14. Admin page access control
 15. Fix report submission from test/review screens
+16. Verify reported-question list and question editor reads against `user_reports`
+17. Verify resolve/delete actions on reported questions with `edit_public_exams` users
 
 ## Notes for continuation
 
 - Do not reintroduce `next-auth`.
 - Prefer `lib/auth/*` and `lib/supabase/*` only.
-- Keep Mongo limited to fix workflows unless there is an explicit decision to migrate those too.
+- The app runtime no longer depends on MongoDB.
+- Mongo-backed migration scripts can still be used to pull legacy data into Supabase when needed.
 - Update this file and `memory/MIGRATION-PLAN.md` as soon as new phases complete.

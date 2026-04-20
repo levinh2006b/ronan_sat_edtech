@@ -7,11 +7,13 @@ import { ArrowLeft, Check, FileWarning, Loader2, Pencil, Plus, Save, Trash2 } fr
 
 import Loading from "@/components/Loading";
 import QuestionExtraBlock from "@/components/question/QuestionExtraBlock";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
 import type { QuestionExtra } from "@/lib/questionExtra";
 import { VERBAL_SECTION } from "@/lib/sections";
-import type { TestManagerCard } from "@/lib/testManagerBoard";
+import { readTestManagerQuestionCache, writeTestManagerQuestionCache } from "@/lib/testManagerQuestionCache";
+import type { TestManagerCard } from "@/lib/testManagerReports";
 import { renderHtmlLatexContent } from "@/utils/renderContent";
 
 type EditorQuestion = {
@@ -161,8 +163,17 @@ export function TestManagerQuestionEditor({ cardId }: { cardId: string }) {
   useEffect(() => {
     let cancelled = false;
 
+    const cached = readTestManagerQuestionCache<EditorPayload>(cardId);
+    if (cached) {
+      setData(cached);
+      setForm(toFormState(cached.question));
+      setLoading(false);
+    }
+
     const loadQuestion = async () => {
-      setLoading(true);
+      if (!cached) {
+        setLoading(true);
+      }
       setError("");
 
       try {
@@ -174,6 +185,7 @@ export function TestManagerQuestionEditor({ cardId }: { cardId: string }) {
 
         setData(response.data);
         setForm(toFormState(response.data.question));
+        writeTestManagerQuestionCache(cardId, response.data);
       } catch (loadError) {
         if (!cancelled) {
           setError(getApiErrorMessage(loadError, "Could not load this reported question."));
@@ -221,7 +233,7 @@ export function TestManagerQuestionEditor({ cardId }: { cardId: string }) {
 
   if (error || !data || !form) {
     return (
-      <main className="min-h-screen bg-paper-bg bg-dot-pattern px-4 py-6 sm:px-6">
+      <main className="min-h-screen bg-paper-bg px-4 py-6 sm:px-6">
         <div className="mx-auto max-w-3xl">
           <div className="workbook-panel p-6">
             <div className="flex items-start gap-3 rounded-2xl border-2 border-ink-fg bg-accent-3 px-4 py-4 text-white brutal-shadow-sm">
@@ -338,6 +350,7 @@ export function TestManagerQuestionEditor({ cardId }: { cardId: string }) {
       const response = await api.patch<EditorPayload>(API_PATHS.getTestManagerQuestion(cardId), payload);
       setData(response.data);
       setForm(toFormState(response.data.question));
+      writeTestManagerQuestionCache(cardId, response.data);
       setEditingField(null);
       setMessage("Question saved.");
     } catch (saveError) {
@@ -352,7 +365,7 @@ export function TestManagerQuestionEditor({ cardId }: { cardId: string }) {
   };
 
   return (
-    <main className="min-h-screen bg-paper-bg bg-dot-pattern px-4 py-4 sm:px-5 lg:px-6">
+    <main className="min-h-screen bg-paper-bg px-4 py-4 sm:px-5 lg:px-6">
       <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-4">
         <section className="workbook-panel overflow-hidden">
           <div className="flex flex-col gap-4 border-b-4 border-ink-fg bg-paper-bg px-5 py-5 lg:flex-row lg:items-center lg:justify-between">
@@ -405,40 +418,52 @@ export function TestManagerQuestionEditor({ cardId }: { cardId: string }) {
             <section className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Section</label>
-                <select value={form.section} onChange={(event) => handleFieldChange("section", event.target.value)} className="workbook-input appearance-auto text-sm">
-                  <option value={VERBAL_SECTION}>{VERBAL_SECTION}</option>
-                  <option value="Math">Math</option>
-                </select>
+                <Select value={form.section} onValueChange={(value) => handleFieldChange("section", value)}>
+                  <SelectTrigger className="text-sm font-medium normal-case tracking-normal">
+                    <SelectValue placeholder="Select section" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={VERBAL_SECTION}>{VERBAL_SECTION}</SelectItem>
+                    <SelectItem value="Math">Math</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Module</label>
-                <select value={form.module} onChange={(event) => handleFieldChange("module", Number.parseInt(event.target.value, 10))} className="workbook-input appearance-auto text-sm">
-                  <option value={1}>Module 1</option>
-                  <option value={2}>Module 2</option>
-                </select>
+                <Select value={String(form.module)} onValueChange={(value) => handleFieldChange("module", Number.parseInt(value, 10))}>
+                  <SelectTrigger className="text-sm font-medium normal-case tracking-normal">
+                    <SelectValue placeholder="Select module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Module 1</SelectItem>
+                    <SelectItem value="2">Module 2</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Question Type</label>
-                <select
-                  value={form.questionType}
-                  onChange={(event) => handleFieldChange("questionType", event.target.value as QuestionFormState["questionType"])}
-                  className="workbook-input appearance-auto text-sm"
-                >
-                  <option value="multiple_choice">Multiple Choice</option>
-                  <option value="spr">Student-Produced Response</option>
-                </select>
+                <Select value={form.questionType} onValueChange={(value) => handleFieldChange("questionType", value as QuestionFormState["questionType"])}>
+                  <SelectTrigger className="text-sm font-medium normal-case tracking-normal">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                    <SelectItem value="spr">Student-Produced Response</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Difficulty</label>
-                <select
-                  value={form.difficulty}
-                  onChange={(event) => handleFieldChange("difficulty", event.target.value as QuestionFormState["difficulty"])}
-                  className="workbook-input appearance-auto text-sm"
-                >
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
+                <Select value={form.difficulty} onValueChange={(value) => handleFieldChange("difficulty", value as QuestionFormState["difficulty"])}>
+                  <SelectTrigger className="text-sm font-medium normal-case tracking-normal">
+                    <SelectValue placeholder="Select difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Domain</label>
@@ -455,56 +480,66 @@ export function TestManagerQuestionEditor({ cardId }: { cardId: string }) {
             </section>
 
             <div className="space-y-6">
-              {(parsedExtra || form.imageUrl.trim()) ? (
-                <EditablePanel
-                  label="Figures"
-                  isEditing={editingField === "figures"}
-                  onStartEdit={() => setEditingField("figures")}
-                  onDone={() => setEditingField(null)}
-                  helper="Click the figure area to edit JSON or image URL"
-                  preview={
-                    <div className={`grid gap-4 ${parsedExtra && form.imageUrl.trim() ? "lg:grid-cols-2" : "grid-cols-1"}`}>
-                      {parsedExtra ? (
-                        <div className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4">
-                          <QuestionExtraBlock
-                            extra={parsedExtra}
-                            className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4"
-                            titleClassName="mb-2 text-center text-[16px] font-normal leading-[1.35] text-ink-fg font-[Georgia,serif]"
-                          />
-                        </div>
-                      ) : null}
+              <EditablePanel
+                label="Figures"
+                isEditing={editingField === "figures"}
+                onStartEdit={() => setEditingField("figures")}
+                onDone={() => setEditingField(null)}
+                helper="Click the figure area to edit JSON or image URL"
+                preview={
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4">
                       {form.imageUrl.trim() ? (
-                        <div className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4">
-                          <img src={form.imageUrl} alt="Question figure" className="max-h-[28rem] w-full object-contain" />
+                        <img src={form.imageUrl} alt="Question figure" className="max-h-[28rem] w-full object-contain" />
+                      ) : (
+                        <div className="flex min-h-40 items-center justify-center rounded-2xl border-2 border-dashed border-ink-fg/35 bg-surface-white px-4 py-8 text-center text-sm text-ink-fg/55">
+                          No image URL yet.
                         </div>
-                      ) : null}
+                      )}
                     </div>
-                  }
-                  editor={
-                    <div className="space-y-4">
-                      <div>
-                        <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Image URL</label>
-                        <input value={form.imageUrl} onChange={(event) => handleFieldChange("imageUrl", event.target.value)} className="workbook-input text-sm" />
-                      </div>
-                      <div>
-                        <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Extra JSON</label>
-                        <textarea value={form.extraText} onChange={(event) => handleFieldChange("extraText", event.target.value)} rows={10} className="workbook-input resize-y font-mono text-sm" placeholder='{"type":"figure_other","content":{}}' />
-                      </div>
+                    <div className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4">
+                      {parsedExtra ? (
+                        <QuestionExtraBlock
+                          extra={parsedExtra}
+                          className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4"
+                          titleClassName="mb-2 text-center text-[16px] font-normal leading-[1.35] text-ink-fg font-[Georgia,serif]"
+                        />
+                      ) : (
+                        <div className="flex min-h-40 items-center justify-center rounded-2xl border-2 border-dashed border-ink-fg/35 bg-surface-white px-4 py-8 text-center text-sm text-ink-fg/55">
+                          No structured figure content yet.
+                        </div>
+                      )}
                     </div>
-                  }
-                />
-              ) : null}
+                  </div>
+                }
+                editor={
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Image URL</label>
+                      <input value={form.imageUrl} onChange={(event) => handleFieldChange("imageUrl", event.target.value)} className="workbook-input text-sm" />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Extra JSON</label>
+                      <textarea value={form.extraText} onChange={(event) => handleFieldChange("extraText", event.target.value)} rows={10} className="workbook-input resize-y font-mono text-sm" placeholder='{"type":"figure_other","content":{}}' />
+                    </div>
+                  </div>
+                }
+              />
 
-              {form.passage.trim() ? (
-                <EditablePanel
-                  label="Passage"
-                  isEditing={editingField === "passage"}
-                  onStartEdit={() => setEditingField("passage")}
-                  onDone={() => setEditingField(null)}
-                  preview={<div className="font-[Georgia,serif] text-[17.5px] leading-[1.8] text-ink-fg">{renderHtmlLatexContent(form.passage)}</div>}
-                  editor={<textarea value={form.passage} onChange={(event) => handleFieldChange("passage", event.target.value)} rows={10} className="workbook-input resize-y text-sm" />}
-                />
-              ) : null}
+              <EditablePanel
+                label="Passage"
+                isEditing={editingField === "passage"}
+                onStartEdit={() => setEditingField("passage")}
+                onDone={() => setEditingField(null)}
+                preview={
+                  form.passage.trim() ? (
+                    <div className="font-[Georgia,serif] text-[17.5px] leading-[1.8] text-ink-fg">{renderHtmlLatexContent(form.passage)}</div>
+                  ) : (
+                    <div className="text-sm text-ink-fg/55">No passage yet.</div>
+                  )
+                }
+                editor={<textarea value={form.passage} onChange={(event) => handleFieldChange("passage", event.target.value)} rows={10} className="workbook-input resize-y text-sm" />}
+              />
 
               <EditablePanel
                 label="Question Text"
@@ -628,13 +663,13 @@ export function TestManagerQuestionEditor({ cardId }: { cardId: string }) {
                     <article key={report.id} className="rounded-[18px] border-2 border-ink-fg bg-paper-bg px-3 py-3">
                       <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-fg/70">
                         <span className="rounded-full border-2 border-ink-fg bg-surface-white px-2 py-0.5 text-ink-fg">{report.label}</span>
-                        <span>{report.errorType}</span>
+                        <span>{report.reason}</span>
                         <span>{report.source === "review" ? "Question from review" : "Question from test"}</span>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-ink-fg">{report.note?.trim() ? report.note : "No extra note provided."}</p>
+                      <p className="mt-2 text-sm leading-6 text-ink-fg">{report.additionalContext?.trim() ? report.additionalContext : "No extra note provided."}</p>
                       <div className="mt-2 text-[11px] text-ink-fg/60">
                         {new Date(report.createdAt).toLocaleString()}
-                        {report.reporterName || report.reporterEmail ? ` • ${report.reporterName || report.reporterEmail}` : ""}
+                        {report.reporterName ? ` • ${report.reporterName}` : ""}
                       </div>
                     </article>
                   ))}

@@ -3,12 +3,18 @@
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 
+function joinClassNames(...values: Array<string | undefined>) {
+  return values.filter(Boolean).join(" ");
+}
+
 type AdminActionDialogProps = {
   open: boolean;
   title: string;
   description: string;
   onClose: () => void;
   size?: "default" | "wide";
+  scrollBody?: boolean;
+  bodyClassName?: string;
   children: ReactNode;
 };
 
@@ -18,6 +24,8 @@ export default function AdminActionDialog({
   description,
   onClose,
   size = "default",
+  scrollBody = true,
+  bodyClassName,
   children,
 }: AdminActionDialogProps) {
   if (!open) {
@@ -54,7 +62,15 @@ export default function AdminActionDialog({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">{children}</div>
+        <div
+          className={joinClassNames(
+            "min-h-0 flex-1 p-5 sm:p-6",
+            scrollBody ? "overflow-y-auto" : "overflow-hidden",
+            bodyClassName,
+          )}
+        >
+          {children}
+        </div>
       </div>
     </div>
   );

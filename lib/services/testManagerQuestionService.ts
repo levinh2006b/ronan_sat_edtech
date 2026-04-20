@@ -1,14 +1,12 @@
 import { z } from "zod";
 
 import type { AppSession } from "@/lib/auth/session";
-import dbConnect from "@/lib/mongodb";
-import TestManagerBoard from "@/lib/models/TestManagerBoard";
 import { QuestionValidationSchema } from "@/lib/schema/question";
 import { normalizeSectionName } from "@/lib/sections";
+import { getReportedQuestionCard } from "@/lib/services/testManagerReportService";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { emptyTestManagerBoard, normalizeTestManagerBoard, type TestManagerCard } from "@/lib/testManagerBoard";
+import { type TestManagerCard } from "@/lib/testManagerReports";
 
-const TEST_MANAGER_BOARD_KEY = "global";
 const PUBLIC_EXAM_EDIT_PERMISSION = "edit_public_exams";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -92,26 +90,7 @@ function requirePublicExamEditor(session: AppSession) {
   throw new TestManagerQuestionError(403, "You do not have permission to edit public exams.");
 }
 
-async function getBoardCard(cardId: string) {
-  await dbConnect();
-
-  const document = await TestManagerBoard.findOneAndUpdate(
-    { key: TEST_MANAGER_BOARD_KEY },
-    { $setOnInsert: { board: emptyTestManagerBoard } },
-    { upsert: true, new: true, setDefaultsOnInsert: true },
-  );
-
-  const board = normalizeTestManagerBoard(document.board);
-  const card = board.cards[cardId];
-
-  if (!card) {
-    throw new TestManagerQuestionError(404, "Reported question not found.");
-  }
-
-  return { board, card, document };
-}
-
-async function getQuestionRow(card: TestManagerCard) {
+async function getQuestionRow(questionId: string) {
   const supabase = createSupabaseAdminClient();
   const query = supabase
     .from("questions")
@@ -151,9 +130,9 @@ async function getQuestionRow(card: TestManagerCard) {
         )
       `,
     );
-  const { data, error } = await (isUuid(card.questionId)
-    ? query.eq("id", card.questionId)
-    : query.eq("legacy_mongo_id", card.questionId)).maybeSingle<QuestionRow>();
+  const { data, error } = await (isUuid(questionId)
+    ? query.eq("id", questionId)
+    : query.eq("legacy_mongo_id", questionId)).maybeSingle<QuestionRow>();
 
   if (error || !data) {
     throw new TestManagerQuestionError(404, "Question not found.");
@@ -218,13 +197,13 @@ function assertEditablePublicTest(test: TestRow) {
 async function resolveEditorTarget(cardId: string, session: AppSession) {
   requirePublicExamEditor(session);
 
-  const { board, card, document } = await getBoardCard(cardId);
-  const question = await getQuestionRow(card);
+  const card = await getReportedQuestionCard(cardId, session);
+  const question = await getQuestionRow(card.questionId);
   const test = await getTestRow(question.test_sections?.test_id ?? card.testId);
 
   assertEditablePublicTest(test);
 
-  return { board, card, document, question, test };
+  return { card, question, test };
 }
 
 async function ensureSectionId(testId: string, sectionName: string, module: number, timeLimitMinutes = 32) {
@@ -378,7 +357,7 @@ export const testManagerQuestionService = {
 
   async updateQuestion(cardId: string, data: unknown, session: AppSession): Promise<ReportedQuestionEditorData> {
     const payload = normalizeQuestionPayload(QuestionValidationSchema.parse(data));
-    const { board, card, document, question, test } = await resolveEditorTarget(cardId, session);
+    const { card, question, test } = await resolveEditorTarget(cardId, session);
     const supabase = createSupabaseAdminClient();
 
     const { data: currentSection } = await supabase
@@ -418,16 +397,7 @@ export const testManagerQuestionService = {
       module: payload.module,
     };
 
-    document.board = {
-      ...board,
-      cards: {
-        ...board.cards,
-        [card.id]: nextCard,
-      },
-    };
-    await document.save();
-
-    const nextQuestion = await getQuestionRow(nextCard);
+    const nextQuestion = await getQuestionRow(nextCard.questionId);
     return {
       card: nextCard,
       question: buildEditorQuestion(nextQuestion, test),

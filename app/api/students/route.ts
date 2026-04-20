@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "@/lib/auth/server";
 import { z } from "zod";
 
-import dbConnect from "@/lib/mongodb";
-import Student from "@/lib/models/studentCard";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const studentSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -15,16 +14,34 @@ const studentSchema = z.object({
 
 export async function GET(req: Request) {
   try {
-    await dbConnect();
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "8", 10)));
     const skip = (page - 1) * limit;
+    const supabase = createSupabaseAdminClient();
 
-    const students = await Student.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit);
-    const total = await Student.countDocuments();
+    const { data: students, count, error } = await supabase
+      .from("hall_of_fame_students")
+      .select("id,name,school,score,exam_date,image_url", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(skip, skip + limit - 1);
 
-    return NextResponse.json({ students, totalPages: Math.ceil(total / limit), currentPage: page });
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({
+      students: (students ?? []).map((student) => ({
+        _id: student.id,
+        name: student.name,
+        school: student.school,
+        score: student.score,
+        examDate: student.exam_date,
+        imageUrl: student.image_url,
+      })),
+      totalPages: Math.ceil((count ?? 0) / limit),
+      currentPage: page,
+    });
   } catch (error) {
     console.error("GET /api/students error:", error);
     return NextResponse.json({ error: "Failed to fetch students" }, { status: 500 });
@@ -43,10 +60,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid student payload" }, { status: 400 });
     }
 
-    await dbConnect();
+    const supabase = createSupabaseAdminClient();
+    const { data: newStudent, error } = await supabase
+      .from("hall_of_fame_students")
+      .insert({
+        name: parsed.data.name,
+        school: parsed.data.school,
+        score: parsed.data.score,
+        exam_date: parsed.data.examDate,
+        image_url: parsed.data.imageUrl,
+      })
+      .select("id,name,school,score,exam_date,image_url")
+      .single();
 
-    const newStudent = await Student.create(parsed.data);
-    return NextResponse.json({ message: "Student created successfully", student: newStudent }, { status: 201 });
+    if (error || !newStudent) {
+      throw error ?? new Error("Failed to create student.");
+    }
+
+    return NextResponse.json(
+      {
+        message: "Student created successfully",
+        student: {
+          _id: newStudent.id,
+          name: newStudent.name,
+          school: newStudent.school,
+          score: newStudent.score,
+          examDate: newStudent.exam_date,
+          imageUrl: newStudent.image_url,
+        },
+      },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("POST /api/students error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

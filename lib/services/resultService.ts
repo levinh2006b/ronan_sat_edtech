@@ -857,6 +857,7 @@ export const resultService = {
     if (attemptIds.length === 0) {
       return {
         rows: [],
+        total: 0,
         hasMore: false,
         nextOffset: 0,
       } satisfies ReviewErrorLogPage;
@@ -947,6 +948,7 @@ export const resultService = {
     const rows = collectedRows.slice(offset, offset + limit);
     return {
       rows,
+      total: collectedRows.length,
       hasMore: collectedRows.length > offset + limit,
       nextOffset: offset + rows.length,
     } satisfies ReviewErrorLogPage;

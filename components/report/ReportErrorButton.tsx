@@ -27,8 +27,8 @@ export function ReportErrorButton({
   theme,
 }: ReportErrorButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [errorType, setErrorType] = useState<"Question" | "Answers" | "Missing Graph/Image">("Question");
-  const [note, setNote] = useState("");
+  const [reason, setReason] = useState<"Question" | "Answers" | "Missing Graph/Image">("Question");
+  const [additionalContext, setAdditionalContext] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -52,8 +52,8 @@ export function ReportErrorButton({
         },
         body: JSON.stringify({
           ...context,
-          errorType,
-          note,
+          reason,
+          additionalContext,
         }),
       });
 
@@ -67,8 +67,8 @@ export function ReportErrorButton({
       }
 
       setMessage("Report sent.");
-      setNote("");
-      setErrorType("Question");
+      setAdditionalContext("");
+      setReason("Question");
       window.setTimeout(() => {
         setIsOpen(false);
         setMessage(null);
@@ -119,13 +119,13 @@ export function ReportErrorButton({
             <div className="grid grid-cols-2 gap-2">
               {(["Question", "Answers", "Missing Graph/Image"] as const).map((option) => (
                 <button
-                  key={option}
-                  type="button"
-                  onClick={() => setErrorType(option)}
+                    key={option}
+                    type="button"
+                    onClick={() => setReason(option)}
                   className={`rounded-xl border px-3 py-2 text-sm font-medium transition ${
                     option === "Missing Graph/Image" ? "col-span-2" : ""
                   } ${
-                    errorType === option
+                    reason === option
                       ? reportTheme?.optionActiveClass ?? "border-2 border-ink-fg bg-primary text-ink-fg"
                       : reportTheme?.optionIdleClass ?? "border-2 border-ink-fg bg-surface-white text-ink-fg"
                   }`}
@@ -139,8 +139,8 @@ export function ReportErrorButton({
           <div className="mt-4">
             <label className={`${reportTheme?.labelClass ?? "mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-fg/70"} block`}>Details (optional)</label>
             <textarea
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
+              value={additionalContext}
+              onChange={(event) => setAdditionalContext(event.target.value)}
               rows={3}
               placeholder="Tell us what looks wrong..."
               className={reportTheme?.textareaClass ?? "workbook-input min-h-[96px]"}

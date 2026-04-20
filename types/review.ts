@@ -66,6 +66,7 @@ export type ReviewErrorLogEntry = {
 
 export type ReviewErrorLogPage = {
   rows: ReviewErrorLogEntry[];
+  total: number;
   hasMore: boolean;
   nextOffset: number;
 };

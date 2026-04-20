@@ -41,7 +41,7 @@ const SelectContent = React.forwardRef<
       ref={ref}
       position={position}
       className={joinClassNames(
-        "z-50 max-h-80 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-2xl border-2 border-ink-fg bg-surface-white text-ink-fg brutal-shadow",
+        "z-[160] max-h-80 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-2xl border-2 border-ink-fg bg-surface-white text-ink-fg brutal-shadow",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[side=bottom]:translate-y-2 data-[side=top]:-translate-y-2",
         className,

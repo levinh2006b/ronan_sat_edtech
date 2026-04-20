@@ -16,6 +16,7 @@
     "supabase:migrate:tests": "dotenvx run -f .env.local -f .env.development --ignore=MISSING_ENV_FILE -- tsx scripts/migrations/mongodb-to-supabase/migrateTestsAndQuestionsToSupabase.ts",
     "supabase:migrate:user-data": "dotenvx run -f .env.local -f .env.development --ignore=MISSING_ENV_FILE -- tsx scripts/migrations/mongodb-to-supabase/migrateUserDataToSupabase.ts",
     "supabase:migrate:results": "dotenvx run -f .env.local -f .env.development --ignore=MISSING_ENV_FILE -- tsx scripts/migrations/mongodb-to-supabase/migrateResultsToSupabase.ts",
+    "supabase:migrate:legacy-runtime": "dotenvx run -f .env.local -f .env.development --ignore=MISSING_ENV_FILE -- tsx scripts/migrations/mongodb-to-supabase/migrateLegacyBoardAndStudentsToSupabase.ts",
     "supabase:migrate:all": "dotenvx run -f .env.local -f .env.development --ignore=MISSING_ENV_FILE -- tsx scripts/migrations/mongodb-to-supabase/runAll.ts",
     "decrypt:production": "dotenvx decrypt -f .env.production --stdout",
     "decrypt:development": "dotenvx decrypt -f .env.development --stdout",
