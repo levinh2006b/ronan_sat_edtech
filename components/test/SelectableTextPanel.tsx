@@ -42,6 +42,18 @@ const HIGHLIGHT_COLORS = [
   { id: "pink", value: "color-mix(in srgb, var(--color-accent-1) 24%, white)", label: "Pink" },
 ] as const;
 
+const FORBIDDEN_SELECTION_SELECTOR = [
+  "[data-annotation-toolbar]",
+  "button",
+  "[role='button']",
+  "input",
+  "textarea",
+  "select",
+  "option",
+  "label",
+  "svg",
+].join(",");
+
 export default function SelectableTextPanel({
   annotations,
   onChange,
@@ -143,6 +155,11 @@ export default function SelectableTextPanel({
 
       const selectedText = selection.toString();
       if (!selectedText.trim()) {
+        return;
+      }
+
+      if (!isRangeAllowedForAnnotation(range, root)) {
+        clearSelection();
         return;
       }
 
@@ -347,42 +364,25 @@ export default function SelectableTextPanel({
 }
 
 function applyAnnotation(root: HTMLElement, annotation: TextAnnotation) {
-  const range = createRangeFromOffsets(root, annotation.start, annotation.end);
-  if (!range) {
+  if (annotation.start >= annotation.end) {
     return;
   }
 
-  const wrapper = document.createElement("span");
-  wrapper.dataset.textAnnotationId = annotation.id;
-  wrapper.style.backgroundColor = annotation.color ?? "transparent";
-  wrapper.style.textDecorationLine = annotation.underline ? "underline" : "none";
-  wrapper.style.textDecorationStyle = annotation.underline ? "dotted" : "solid";
-  wrapper.style.textDecorationThickness = annotation.underline ? "2px" : "initial";
-  wrapper.style.textUnderlineOffset = annotation.underline ? "0.24em" : "initial";
-  wrapper.style.textDecorationColor = annotation.underline ? "var(--color-ink-fg)" : "transparent";
-  wrapper.style.boxDecorationBreak = "clone";
-  wrapper.style.setProperty("-webkit-box-decoration-break", "clone");
-  wrapper.style.cursor = "pointer";
-  wrapper.style.borderRadius = "2px";
-  wrapper.style.transition = "filter 120ms ease, background-color 120ms ease, text-decoration-color 120ms ease";
+  const segments = getAnnotationSegments(root, annotation.start, annotation.end);
+  if (segments.length === 0) {
+    return;
+  }
 
-  wrapper.addEventListener("mouseenter", () => {
-    wrapper.style.filter = "brightness(0.94)";
-    if (annotation.underline) {
-      wrapper.style.textDecorationColor = "var(--color-ink-fg)";
-    }
+  segments.forEach((segment) => {
+    const range = document.createRange();
+    range.setStart(segment.node, segment.startOffset);
+    range.setEnd(segment.node, segment.endOffset);
+
+    const wrapper = createAnnotationWrapper(annotation);
+    const fragment = range.extractContents();
+    wrapper.appendChild(fragment);
+    range.insertNode(wrapper);
   });
-
-  wrapper.addEventListener("mouseleave", () => {
-    wrapper.style.filter = "brightness(1)";
-    if (annotation.underline) {
-      wrapper.style.textDecorationColor = "var(--color-ink-fg)";
-    }
-  });
-
-  const fragment = range.extractContents();
-  wrapper.appendChild(fragment);
-  range.insertNode(wrapper);
 }
 
 function unwrapAnnotations(root: HTMLElement) {
@@ -448,6 +448,10 @@ function getSelectableTextNodes(root: HTMLElement) {
       }
 
       if (parentElement.closest("[data-annotation-toolbar]")) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      if (parentElement.closest(FORBIDDEN_SELECTION_SELECTOR)) {
         return NodeFilter.FILTER_REJECT;
       }
 
@@ -540,6 +544,95 @@ function createRenderSignature(root: HTMLElement, annotations: TextAnnotation[])
     textContent,
     annotations: orderedAnnotations,
   });
+}
+
+function isRangeAllowedForAnnotation(range: Range, root: HTMLElement) {
+  if (range.collapsed) {
+    return false;
+  }
+
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) {
+    return false;
+  }
+
+  if (rangeIntersectsForbiddenElements(range, root)) {
+    return false;
+  }
+
+  return getSelectableTextNodes(root).some((node) => range.intersectsNode(node));
+}
+
+function rangeIntersectsForbiddenElements(range: Range, root: HTMLElement) {
+  const forbiddenNodes = root.querySelectorAll(FORBIDDEN_SELECTION_SELECTOR);
+
+  for (const node of forbiddenNodes) {
+    if (range.intersectsNode(node)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function createAnnotationWrapper(annotation: TextAnnotation) {
+  const wrapper = document.createElement("span");
+  wrapper.dataset.textAnnotationId = annotation.id;
+  wrapper.style.backgroundColor = annotation.color ?? "transparent";
+  wrapper.style.textDecorationLine = annotation.underline ? "underline" : "none";
+  wrapper.style.textDecorationStyle = annotation.underline ? "dotted" : "solid";
+  wrapper.style.textDecorationThickness = annotation.underline ? "2px" : "initial";
+  wrapper.style.textUnderlineOffset = annotation.underline ? "0.24em" : "initial";
+  wrapper.style.textDecorationColor = annotation.underline ? "var(--color-ink-fg)" : "transparent";
+  wrapper.style.boxDecorationBreak = "clone";
+  wrapper.style.setProperty("-webkit-box-decoration-break", "clone");
+  wrapper.style.cursor = "pointer";
+  wrapper.style.borderRadius = "2px";
+  wrapper.style.transition = "filter 120ms ease, background-color 120ms ease, text-decoration-color 120ms ease";
+
+  wrapper.addEventListener("mouseenter", () => {
+    wrapper.style.filter = "brightness(0.94)";
+    if (annotation.underline) {
+      wrapper.style.textDecorationColor = "var(--color-ink-fg)";
+    }
+  });
+
+  wrapper.addEventListener("mouseleave", () => {
+    wrapper.style.filter = "brightness(1)";
+    if (annotation.underline) {
+      wrapper.style.textDecorationColor = "var(--color-ink-fg)";
+    }
+  });
+
+  return wrapper;
+}
+
+function getAnnotationSegments(root: HTMLElement, start: number, end: number) {
+  const textNodes = getSelectableTextNodes(root);
+  const segments: Array<{ node: Text; startOffset: number; endOffset: number }> = [];
+
+  let cursor = 0;
+  for (const node of textNodes) {
+    const nodeStart = cursor;
+    const nodeEnd = cursor + node.data.length;
+
+    const segmentStart = Math.max(start, nodeStart);
+    const segmentEnd = Math.min(end, nodeEnd);
+
+    if (segmentStart < segmentEnd) {
+      segments.push({
+        node,
+        startOffset: segmentStart - nodeStart,
+        endOffset: segmentEnd - nodeStart,
+      });
+    }
+
+    cursor = nodeEnd;
+    if (cursor >= end) {
+      break;
+    }
+  }
+
+  return segments;
 }
 
 function UnderlineIcon() {

@@ -88,7 +88,7 @@ export default function ReviewPopup({
       <header className="flex min-h-20 shrink-0 items-center justify-between gap-4 border-b-4 border-ink-fg bg-surface-white px-4 py-3 sm:px-6">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            {q.domain ? <span className="workbook-sticker bg-paper-bg text-ink-fg">{q.domain}</span> : null}
+            {q.domain ? <span className={`workbook-sticker ${isMath ? "bg-accent-2 text-white" : "bg-accent-1 text-ink-fg"}`}>{q.domain}</span> : null}
             {q.skill ? <span className="workbook-sticker bg-accent-1 text-ink-fg">{q.skill}</span> : null}
           </div>
         </div>
@@ -139,7 +139,7 @@ export default function ReviewPopup({
         annotations={annotations}
         onChange={setAnnotations}
         sourceQuestionId={q._id}
-        className={`relative flex min-h-0 flex-1 overflow-hidden ${isPageVariant ? "bg-paper-bg" : ""}`}
+        className={`relative flex min-h-0 flex-1 overflow-hidden bg-paper-bg bg-dot-pattern ${isPageVariant ? "bg-paper-bg" : ""}`}
       >
         <div className="flex h-full min-h-0 flex-1 items-stretch overflow-hidden">
           <PassageColumn q={q} />
@@ -150,12 +150,12 @@ export default function ReviewPopup({
                 <QuestionExtraBlock
                   extra={q.extra}
                   className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4"
-                  titleClassName="mb-2 text-center text-[16px] font-normal leading-[1.35] text-ink-fg font-[Georgia,serif]"
+                  titleClassName="mb-2 text-center font-sans text-[16px] font-normal leading-[1.35] text-ink-fg"
                 />
               ) : null}
 
               <div className="overflow-hidden rounded-2xl border-2 border-ink-fg bg-surface-white px-6 py-5">
-                <p className="text-[17.5px] leading-[1.7] text-ink-fg font-[Georgia,serif]">
+                <p className="font-[Georgia,serif] text-[17.5px] leading-[1.7] text-ink-fg">
                   {renderHtmlLatexContent(q.questionText || "")}
                 </p>
               </div>
@@ -166,7 +166,7 @@ export default function ReviewPopup({
                 <div className="overflow-hidden rounded-2xl border-2 border-ink-fg bg-surface-white p-6">
                   <div className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Explanation</div>
                     {expandedExplanation ? (
-                      <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink-fg">
+                      <p className="whitespace-pre-wrap font-[Georgia,serif] text-[15px] leading-relaxed text-ink-fg">
                         {renderHtmlLatexContent(expandedExplanation || "")}
                       </p>
                     ) : (
