@@ -125,9 +125,9 @@ export async function preloadPostSubmitStudentData() {
 async function preloadStudentAppData() {
   await Promise.allSettled([
     preloadDashboardRouteData(),
-   // preloadFullLengthRouteData(),
-   // preloadSectionalRouteData(),
-   //  preloadReviewRouteData(),
+    preloadFullLengthRouteData(),
+    preloadSectionalRouteData(),
+    preloadReviewRouteData(),
   ]);
 }
 
