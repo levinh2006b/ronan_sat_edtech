@@ -121,7 +121,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
           circleClassName = "bg-accent-2 text-white";
           Icon = CheckCircle;
         } else if (isUserChoice) {
-          wrapClassName = "bg-[#F4A261] font-bold text-ink-fg";
+          wrapClassName = "bg-[#F4A261] text-ink-fg";
           circleClassName = "bg-ink-fg text-white";
           Icon = XCircle;
         }
