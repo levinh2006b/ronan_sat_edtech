@@ -41,7 +41,7 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
     const wrapClassName = isCorrect
       ? "bg-primary text-ink-fg"
       : isWrong
-        ? "bg-accent-3 text-white"
+        ? "bg-[#F4A261] text-ink-fg"
         : "bg-surface-white text-ink-fg";
     const badgeClassName = isCorrect ? "bg-surface-white text-ink-fg" : isWrong ? "bg-ink-fg text-white" : "bg-paper-bg text-ink-fg";
     const Icon = isCorrect ? CheckCircle : isWrong ? XCircle : null;
