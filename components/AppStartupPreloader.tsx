@@ -7,7 +7,7 @@ import { useSession } from "@/lib/auth/client";
 import { markInitialTabPreloadReady } from "@/lib/initialTabLoad";
 import { preloadInitialAppData } from "@/lib/startupPreload";
 
-const BLOCKED_PRELOAD_PREFIXES = ["/auth", "/test/"];
+const BLOCKED_PRELOAD_PREFIXES = ["/auth", "/test/", "/admin"];
 const BLOCKED_PRELOAD_ROUTES = new Set(["/welcome"]);
 
 function canPreloadForPath(pathname: string) {

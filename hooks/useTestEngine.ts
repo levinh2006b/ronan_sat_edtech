@@ -7,6 +7,8 @@ import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
 import { deleteClientCache } from "@/lib/clientCache";
 import { DASHBOARD_CACHE_KEYS } from "@/lib/dashboardCache";
+import { REVIEW_RESULTS_CACHE_KEY } from "@/lib/services/reviewService";
+import { preloadPostSubmitStudentData } from "@/lib/startupPreload";
 import type { QuestionExtra } from "@/lib/questionExtra";
 import { normalizeSectionName, VERBAL_SECTION } from "@/lib/sections";
 import { checkIsCorrect } from "@/utils/gradingHelper";
@@ -39,7 +41,8 @@ function clearDashboardCaches() {
     DASHBOARD_CACHE_KEYS.userResults,
     DASHBOARD_CACHE_KEYS.apiOverview,
     DASHBOARD_CACHE_KEYS.apiUserResults,
-    "review:results",
+    `${DASHBOARD_CACHE_KEYS.apiUserResults}:30`,
+    REVIEW_RESULTS_CACHE_KEY,
   ];
 
   cacheKeys.forEach((key) => deleteClientCache(key));
@@ -248,6 +251,8 @@ export function useTestEngine(testId: string) {
 
         if (res.status === 200 || res.status === 201) {
           clearDashboardCaches();
+          await preloadPostSubmitStudentData();
+          router.refresh();
           router.push(`/review?testId=${testId}&mode=sectional`);
         }
       } else {
@@ -282,6 +287,8 @@ export function useTestEngine(testId: string) {
 
         if (res.status === 200 || res.status === 201) {
           clearDashboardCaches();
+          await preloadPostSubmitStudentData();
+          router.refresh();
           router.push(`/review?testId=${testId}&mode=full`);
         }
       }

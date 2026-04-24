@@ -151,6 +151,9 @@ export default function TestEngine({ testId }: { testId: string }) {   // Khởi
         buttonText={buttonText}
         confirmTitle={buttonText}
         confirmDescription={confirmDescription}
+        onSubmitIntent={() => {
+          router.prefetch(`/review?testId=${testId}&mode=${mode === "sectional" ? "sectional" : "full"}`);
+        }}
         onLeave={() => router.push(mode === "sectional" ? "/sectional" : "/full-length")}
         reportContext={{
           testId,

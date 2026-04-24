@@ -11,12 +11,11 @@ import {
   fetchReviewQuestion,
   fetchReviewResult,
   fetchReviewResults,
+  REVIEW_RESULTS_CACHE_KEY,
   updateReviewAnswerReason,
 } from "@/lib/services/reviewService";
 import type { ReviewAnswer, ReviewResult } from "@/types/review";
 import { filterReviewResultsByType } from "@/components/review/reviewPage.utils";
-
-const REVIEW_RESULTS_CACHE_KEY = "review:results";
 
 type UseReviewPageControllerOptions = {
   activeView?: "results" | "error-log";

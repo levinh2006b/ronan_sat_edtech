@@ -1,12 +1,28 @@
 import { API_PATHS } from "@/lib/apiPaths";
 import api from "@/lib/axios";
+import { readThroughClientCache } from "@/lib/clientCache";
 import { getDefaultReviewReasonCatalog } from "@/lib/reviewReasonCatalog";
 import type { ReviewAnswer, ReviewErrorLogPage, ReviewResult } from "@/types/review";
 import type { ReviewReasonItem } from "@/types/reviewReason";
 
-export async function fetchReviewResults() {
-  const res = await api.get(`${API_PATHS.RESULTS}?summary=1`);
-  return (res.data.results || []) as ReviewResult[];
+export const REVIEW_RESULTS_CACHE_KEY = "review:results";
+
+type FetchOptions = {
+  forceRefresh?: boolean;
+  ttlMs?: number;
+  timeoutMs?: number;
+  signal?: AbortSignal;
+};
+
+export async function fetchReviewResults(options?: FetchOptions) {
+  return readThroughClientCache(
+    REVIEW_RESULTS_CACHE_KEY,
+    async () => {
+      const res = await api.get(`${API_PATHS.RESULTS}?summary=1`, { signal: options?.signal });
+      return (res.data.results || []) as ReviewResult[];
+    },
+    options,
+  );
 }
 
 export async function fetchReviewResult(resultId: string) {

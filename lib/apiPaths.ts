@@ -19,6 +19,7 @@ export const API_PATHS = {
   RESULT_REASON: "/api/results/reason",
   RESULT_ERROR_LOG: "/api/results/error-log",
   TESTS: "/api/tests",
+  STUDENTS: "/api/students",
   ADMIN_ROLES: "/api/admin/roles",
   USER_GROUP_ACCESS_TOKEN: "/api/user/group-access-token",
   // Dynamic routes

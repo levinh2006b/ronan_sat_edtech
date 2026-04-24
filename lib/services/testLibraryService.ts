@@ -1,5 +1,6 @@
 import { API_PATHS } from "@/lib/apiPaths";
 import api from "@/lib/axios";
+import { readThroughClientCache } from "@/lib/clientCache";
 import type { CachedTestsPayload, SortOption } from "@/types/testLibrary";
 
 export function getTestsQueryParams(sortOption: SortOption) {
@@ -24,6 +25,13 @@ type TestLibraryFilters = {
   subject?: "reading" | "math";
 };
 
+type FetchOptions = {
+  forceRefresh?: boolean;
+  ttlMs?: number;
+  timeoutMs?: number;
+  signal?: AbortSignal;
+};
+
 export function getTestsClientCacheKey(
   page: number,
   limit: number,
@@ -41,8 +49,10 @@ export async function fetchTestsPage(
   limit: number,
   sortOption: SortOption,
   filters: TestLibraryFilters = {},
+  options?: FetchOptions,
 ): Promise<CachedTestsPayload> {
   const { sortBy, sortOrder } = getTestsQueryParams(sortOption);
+  const cacheKey = getTestsClientCacheKey(page, limit, sortOption, filters);
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
@@ -58,11 +68,17 @@ export async function fetchTestsPage(
     params.set("subject", filters.subject);
   }
 
-  const res = await api.get(`${API_PATHS.TESTS}?${params.toString()}`);
+  return readThroughClientCache(
+    cacheKey,
+    async () => {
+      const res = await api.get(`${API_PATHS.TESTS}?${params.toString()}`, { signal: options?.signal });
 
-  return {
-    tests: (res.data.tests || []) as CachedTestsPayload["tests"],
-    totalPages: (res.data.pagination?.totalPages || 1) as number,
-    availablePeriods: (res.data.availablePeriods || ["All"]) as string[],
-  };
+      return {
+        tests: (res.data.tests || []) as CachedTestsPayload["tests"],
+        totalPages: (res.data.pagination?.totalPages || 1) as number,
+        availablePeriods: (res.data.availablePeriods || ["All"]) as string[],
+      };
+    },
+    options,
+  );
 }

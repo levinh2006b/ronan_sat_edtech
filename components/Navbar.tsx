@@ -22,6 +22,9 @@ import {
 
 import BrandLogo from "@/components/BrandLogo";
 import { clearClientSessionState } from "@/lib/clearClientSessionState";
+import type { Role } from "@/lib/permissions";
+import { canPrefetchRouteData, canPrefetchRouteShell, prefetchRouteData } from "@/lib/routeDataPrefetch";
+import { useIntentPrefetch } from "@/hooks/useIntentPrefetch";
 
 type NavItemConfig = {
   href: string;
@@ -243,7 +246,9 @@ export default function Navbar() {
 
     const routesToPrefetch = Array.from(new Set([homeHref, ...navItems.map((item) => item.href)]));
     routesToPrefetch.forEach((href) => {
-      router.prefetch(href);
+      if (canPrefetchRouteShell(href)) {
+        router.prefetch(href);
+      }
     });
   }, [homeHref, isReady, navItems, router]);
 
@@ -274,7 +279,14 @@ export default function Navbar() {
         <div className="workbook-scrollbar bg-dot-pattern flex-1 overflow-y-auto px-3 py-4">
           <div className="space-y-2.5">
             {navItems.map((item) => (
-              <NavItem key={item.href} item={item} pathname={pathname} searchParams={searchParams} compact={false} />
+              <NavItem
+                key={item.href}
+                item={item}
+                pathname={pathname}
+                role={session.user.role}
+                searchParams={searchParams}
+                compact={false}
+              />
             ))}
           </div>
         </div>
@@ -300,7 +312,7 @@ export default function Navbar() {
         <div className="bg-dot-pattern overflow-x-auto px-2 py-2 sm:px-3 sm:py-3">
           <div className="flex min-w-max gap-1.5 sm:gap-2">
             {navItems.map((item) => (
-              <NavItem key={item.href} item={item} pathname={pathname} searchParams={searchParams} compact />
+              <NavItem key={item.href} item={item} pathname={pathname} role={session.user.role} searchParams={searchParams} compact />
             ))}
             <button
               onClick={() => void handleSignOut()}
@@ -320,11 +332,13 @@ export default function Navbar() {
 function NavItem({
   item,
   pathname,
+  role,
   searchParams,
   compact,
 }: {
   item: NavItemConfig;
   pathname: string;
+  role?: Role;
   searchParams: ReturnType<typeof useSearchParams>;
   compact: boolean;
 }) {
@@ -333,10 +347,18 @@ function NavItem({
   const isErrorLogView = pathname === "/review" && searchParams.get("view") === "error-log";
   const active = item.queryKey ? matchesPath && matchesQuery : matchesPath && (!isErrorLogView || pathname !== "/review");
   const Icon = item.icon;
+  const shouldPrefetchData = canPrefetchRouteData(item.href, role);
+  const intentPrefetchHandlers = useIntentPrefetch({
+    prefetchKey: `route-data:${item.href}`,
+    disabled: !shouldPrefetchData,
+    prefetch: (signal) => prefetchRouteData(item.href, role, { signal }),
+  });
 
   return (
     <Link
       href={item.href}
+      prefetch={canPrefetchRouteShell(item.href)}
+      {...intentPrefetchHandlers}
       className={[
         active ? "border-4 border-ink-fg brutal-shadow-sm workbook-press" : "border-2 border-ink-fg brutal-shadow-sm workbook-press",
         compact

@@ -9,6 +9,9 @@ import type { UserResultSummary } from "@/types/testLibrary";
 interface FetchOptions {
   /** When true, skip the cache and always hit the network. */
   forceRefresh?: boolean;
+  ttlMs?: number;
+  timeoutMs?: number;
+  signal?: AbortSignal;
 }
 
 // ---------------------------------------------------------------------------
@@ -30,12 +33,13 @@ export async function fetchDashboardUserResults(
     params.set("days", String(days));
   }
 
-  const cacheKey = DASHBOARD_CACHE_KEYS.apiUserResults;
+  const cacheKey =
+    typeof days === "number" ? `${DASHBOARD_CACHE_KEYS.apiUserResults}:${days}` : DASHBOARD_CACHE_KEYS.apiUserResults;
 
   return readThroughClientCache(
     cacheKey,
     async () => {
-      const res = await api.get(`${API_PATHS.RESULTS}?${params.toString()}`);
+      const res = await api.get(`${API_PATHS.RESULTS}?${params.toString()}`, { signal: options?.signal });
       return (res.data.results || []) as UserResultSummary[];
     },
     options,
@@ -46,7 +50,7 @@ export async function fetchDashboardOverview(options?: FetchOptions): Promise<Da
   return readThroughClientCache(
     DASHBOARD_CACHE_KEYS.apiOverview,
     async () => {
-      const res = await api.get(API_PATHS.USER_DASHBOARD);
+      const res = await api.get(API_PATHS.USER_DASHBOARD, { signal: options?.signal });
       return res.data as DashboardOverview;
     },
     options,

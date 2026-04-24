@@ -151,7 +151,9 @@ export function useFullLengthDashboardController() {
       }
 
       try {
-        const nextPayload = await fetchTestsPage(page, pageSize, sortOption, filters);
+        const nextPayload = await fetchTestsPage(page, pageSize, sortOption, filters, {
+          forceRefresh: cachedTests !== undefined,
+        });
 
         if (cancelled) {
           return;

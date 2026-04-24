@@ -34,6 +34,7 @@ interface TestHeaderProps {
   confirmTitle?: string;
   confirmDescription?: string;
   onToggleCalculator?: () => void;
+  onSubmitIntent?: () => void;
   onLeave: () => void;
   reportContext?: {
     testId: string;
@@ -60,6 +61,7 @@ export default function TestHeader({
   confirmTitle,
   confirmDescription,
   onLeave,
+  onSubmitIntent,
   reportContext,
 }: TestHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -133,6 +135,8 @@ export default function TestHeader({
                 type="default"
                 loading={isSubmitting}
                 disabled={isSubmitting}
+                onMouseEnter={onSubmitIntent}
+                onTouchStart={onSubmitIntent}
                 className={`!h-11 !px-6 !font-bold ${submitButtonClass}`}
               >
                 {submitButtonLabel}
@@ -215,6 +219,8 @@ export default function TestHeader({
 
             <button
               type="button"
+              onMouseEnter={onSubmitIntent}
+              onTouchStart={onSubmitIntent}
               onClick={() => {
                 setMobileMenuOpen(false);
                 setMobileConfirmOpen(true);

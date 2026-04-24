@@ -5,16 +5,7 @@ import { ChevronLeft, ChevronRight, Trophy } from "lucide-react";
 
 import StudentCard from "@/components/StudentCard";
 import StudentCardSkeleton from "@/components/StudentCardSkeleton";
-import api from "@/lib/axios";
-
-type HallOfFameStudent = {
-  _id: string;
-  name: string;
-  school: string;
-  score: number;
-  examDate: string;
-  imageUrl: string;
-};
+import { fetchHallOfFamePage, type HallOfFameStudent } from "@/lib/services/hallOfFameService";
 
 export default function HallOfFame() {
   const [students, setStudents] = useState<HallOfFameStudent[]>([]);
@@ -27,9 +18,9 @@ export default function HallOfFame() {
       setLoading(true);
 
       try {
-        const response = await api.get(`/api/students?page=${currentPage}&limit=8`);
-        setStudents(response.data.students);
-        setTotalPages(response.data.totalPages);
+        const page = await fetchHallOfFamePage(currentPage, 8);
+        setStudents(page.students);
+        setTotalPages(page.totalPages);
       } catch (error) {
         console.error("Failed to load hall of fame students", error);
       } finally {
