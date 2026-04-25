@@ -47,29 +47,32 @@ function createResponseStatusError(status: number) {
   return new Error(`Request failed with status ${status}`);
 }
 
-async function wait(ms: number) {     // Nhận vào 50 ms
-  await new Promise((resolve) => window.setTimeout(resolve, ms));    // đếm ngược hết 50 ms mới cho chạy tiếp
+async function wait(ms: number) {
+  await new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-async function persistBoardToServer(nextBoard: VocabBoardState) {  // nextBoard là bảng vocab mới nhất
-  const response = await fetch(API_PATHS.USER_VOCAB_BOARD, {       // fetch để kết nối với máy chủ
-    method: "PUT",                         // Thay thế toàn bộ dữ liệu cũ 
-    credentials: "same-origin",            // Chỉ gửi các thông tin đi nếu Server đúng là của web này, không thì k gửi để bảo mật không tin
+async function persistBoardToServer(nextBoard: VocabBoardState) {
+  const response = await fetch(API_PATHS.USER_VOCAB_BOARD, {
+    method: "PUT",
+    credentials: "same-origin",
     headers: {  
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ board: nextBoard }), // stringify nextBoard rồi mới gửi qua đường truyền mạng
+    body: JSON.stringify({ board: nextBoard }),
   });
 
-  if (!response.ok) {       // Máy chủ kết nối k thành công => Throw lỗi
+  if (!response.ok) {
     throw createResponseStatusError(response.status);
   }
+
+  const payload = (await response.json()) as { board?: unknown };
+  return normalizeVocabBoard(payload.board);
 }
 
 async function loadBoardFromServer() {
-  const response = await fetch(API_PATHS.USER_VOCAB_BOARD, {    // Lấy data về bảng vocab
+  const response = await fetch(API_PATHS.USER_VOCAB_BOARD, {
     method: "GET",
-    cache: "no-store",                // Tuyệt đối k lấy data cũ, phải lấy mới về
+    cache: "no-store",
     credentials: "same-origin",
   });
 
@@ -85,8 +88,11 @@ export function VocabBoardProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
   const idRef = useRef(0);
   const lastPersistedRef = useRef("");
+  const latestSerializedBoardRef = useRef("");
   const [board, setBoard] = useState<VocabBoardState>(emptyVocabBoard);
   const [hydrated, setHydrated] = useState(false);
+
+  latestSerializedBoardRef.current = JSON.stringify(board);
 
   const storageKey = useMemo(() => {
     const userKey = session?.user?.email || session?.user?.id || "guest";
@@ -145,7 +151,11 @@ export function VocabBoardProvider({ children }: { children: ReactNode }) {
         }
 
         if (nextBoard === localBoard) {
-          await persistBoardToServer(nextBoard);
+          const savedBoard = await persistBoardToServer(nextBoard);
+          if (!cancelled) {
+            setBoard(savedBoard);
+            lastPersistedRef.current = JSON.stringify(savedBoard);
+          }
           window.localStorage.removeItem(storageKey);
         }
       } catch (error) {
@@ -188,8 +198,16 @@ export function VocabBoardProvider({ children }: { children: ReactNode }) {
 
     const timeoutId = window.setTimeout(() => {
       void persistBoardToServer(board)
-        .then(() => {
-          lastPersistedRef.current = serializedBoard;
+        .then((savedBoard) => {
+          if (latestSerializedBoardRef.current !== serializedBoard) {
+            return;
+          }
+
+          const savedSerializedBoard = JSON.stringify(savedBoard);
+          lastPersistedRef.current = savedSerializedBoard;
+          if (savedSerializedBoard !== serializedBoard) {
+            setBoard(savedBoard);
+          }
           window.localStorage.removeItem(storageKey);
         })
         .catch((error) => {
@@ -465,6 +483,10 @@ function normalizeDefinition(text: string) {
 }
 
 function createUniqueId(prefix: string, idRef: React.MutableRefObject<number>) {
+  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
   idRef.current += 1;
   return `${prefix}-${Date.now()}-${idRef.current}`;
 }
