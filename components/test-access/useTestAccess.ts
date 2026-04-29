@@ -71,7 +71,7 @@ export function useTestAccess({ testId, requiresToken }: UseTestAccessOptions) {
         return false;
       }
 
-      storeTestAccess(testId);
+      storeTestAccess(testId, normalizedToken);
       setStoredAccess({ testId, requiresToken, isUnlocked: true });
       setIsDialogOpen(false);
       return true;

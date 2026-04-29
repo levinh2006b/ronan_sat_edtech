@@ -3,6 +3,7 @@ const TEST_ACCESS_STORAGE_PREFIX = "ronan:test-access:v1";
 type StoredTestAccess = {
   unlocked: true;
   unlockedAt: string;
+  token?: string;
 };
 
 function getTestAccessStorageKey(testId: string) {
@@ -28,7 +29,25 @@ export function hasStoredTestAccess(testId: string) {
   }
 }
 
-export function storeTestAccess(testId: string) {
+export function getStoredTestAccessToken(testId: string) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(getTestAccessStorageKey(testId));
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsed = JSON.parse(rawValue) as Partial<StoredTestAccess>;
+    return typeof parsed.token === "string" && parsed.token.trim() ? parsed.token : null;
+  } catch {
+    return null;
+  }
+}
+
+export function storeTestAccess(testId: string, token?: string) {
   if (typeof window === "undefined") {
     return;
   }
@@ -36,6 +55,7 @@ export function storeTestAccess(testId: string) {
   const value: StoredTestAccess = {
     unlocked: true,
     unlockedAt: new Date().toISOString(),
+    token: token?.trim() || undefined,
   };
 
   try {

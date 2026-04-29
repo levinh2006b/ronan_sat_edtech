@@ -1,66 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import QRCode from "qrcode";
 
-import { buildTestEntryHref } from "@/lib/testEntryLinks";
-import { generatePDFTemplate } from "@/utils/questionTemplate";
+import { TestTokenDialog } from "@/components/test-access/TestTokenDialog";
+import { useTestAccess } from "@/components/test-access/useTestAccess";
+import { API_PATHS } from "@/lib/apiPaths";
+import { getStoredTestAccessToken } from "@/lib/testAccessStorage";
 
 interface DownloadPdfButtonProps {
   testId: string;
   testName?: string;
   sectionName?: string;
   className?: string;
+  requiresToken?: boolean;
 }
 
-type PdfDataResponse = {
-  testId: string;
-  testTitle: string;
-  questions: Array<Record<string, unknown>>;
-  sectionName?: string;
-};
-
-function buildDocumentTitle(testName: string, sectionName?: string) {
-  const suffix = sectionName ? ` - ${sectionName}` : "";
-  return `RONAN SAT - ${testName}${suffix}`;
+function buildFallbackFileName(testName: string, sectionName?: string) {
+  const suffix = sectionName ? `-${sectionName}` : "";
+  const baseName = `ronan-sat-${testName}${suffix}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${baseName || "ronan-sat-practice"}.pdf`;
 }
 
-async function waitForPrintableAssets(iframeWindow: Window) {
-  const documentRef = iframeWindow.document;
-  const images = Array.from(documentRef.images);
-
-  await Promise.all(
-    images.map(
-      (image) =>
-        new Promise<void>((resolve) => {
-          if (image.complete) {
-            resolve();
-            return;
-          }
-
-          image.addEventListener("load", () => resolve(), { once: true });
-          image.addEventListener("error", () => resolve(), { once: true });
-        })
-    )
-  );
-
-  if ("fonts" in documentRef) {
-    await documentRef.fonts.ready;
+function getFileNameFromContentDisposition(value: string | null) {
+  if (!value) {
+    return null;
   }
+
+  const utf8Match = value.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const plainMatch = value.match(/filename="?([^"]+)"?/i);
+  return plainMatch?.[1] ?? null;
 }
 
-function createHiddenPrintFrame() {
-  const iframe = document.createElement("iframe");
-  iframe.style.position = "fixed";
-  iframe.style.right = "0";
-  iframe.style.bottom = "0";
-  iframe.style.width = "0";
-  iframe.style.height = "0";
-  iframe.style.border = "0";
-  iframe.style.opacity = "0";
-  iframe.setAttribute("aria-hidden", "true");
-  document.body.appendChild(iframe);
-  return iframe;
+function triggerBlobDownload(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function DownloadPdfButton({
@@ -68,111 +54,84 @@ export default function DownloadPdfButton({
   testName = "Practice Test",
   sectionName,
   className,
+  requiresToken = false,
 }: DownloadPdfButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const access = useTestAccess({ testId, requiresToken });
+
+  const downloadPdf = async () => {
+    const params = new URLSearchParams({ testId });
+    if (sectionName) {
+      params.set("section", sectionName);
+    }
+
+    const headers = new Headers();
+    const token = getStoredTestAccessToken(testId);
+    if (token) {
+      headers.set("x-test-access-token", token);
+    }
+
+    const response = await fetch(`${API_PATHS.TEST_PDF_DOWNLOAD}?${params.toString()}`, {
+      credentials: "include",
+      headers,
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(payload?.error || "Unable to download the PDF.");
+    }
+
+    const blob = await response.blob();
+    const fileName =
+      getFileNameFromContentDisposition(response.headers.get("content-disposition")) ||
+      buildFallbackFileName(testName, sectionName);
+    triggerBlobDownload(blob, fileName);
+  };
 
   const handleDownload = async () => {
-    let iframe: HTMLIFrameElement | null = null;
-    let originalDocumentTitle: string | null = null;
+    if (requiresToken && (!access.isUnlocked || !getStoredTestAccessToken(testId))) {
+      access.openDialog();
+      return;
+    }
 
     try {
       setIsDownloading(true);
-
-      const params = new URLSearchParams({ testId });
-      if (sectionName) {
-        params.set("section", sectionName);
-      }
-
-      const response = await fetch(`/api/pdf-data?${params.toString()}`, {
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const message =
-          response.status === 401 ? "You need to sign in before downloading the PDF." : "Unable to load the PDF data.";
-        throw new Error(message);
-      }
-
-      const data = (await response.json()) as PdfDataResponse;
-      const documentTitle = buildDocumentTitle(testName || data.testTitle, sectionName || data.sectionName);
-      const mode = sectionName ? "sectional" : "full";
-      const testingRoomUrl = new URL(
-        buildTestEntryHref(data.testId, {
-          mode,
-          sectionName: data.sectionName,
-        }),
-        window.location.origin,
-      ).toString();
-      const testingRoomQrSvg = (await QRCode.toString(testingRoomUrl, {
-        type: "svg",
-        errorCorrectionLevel: "H",
-        margin: 1,
-        width: 224,
-        color: {
-          dark: "#111111",
-          light: "#ffffff",
-        },
-      })).replace(/^<\?xml[^>]*>\s*/, "");
-      const htmlString = await generatePDFTemplate({
-        testId: data.testId,
-        testTitle: data.testTitle,
-        questions: data.questions,
-        sectionName: data.sectionName,
-        documentTitle,
-        assetBaseUrl: window.location.origin,
-        testingRoomUrl,
-        testingRoomQrSvg,
-      });
-
-      iframe = createHiddenPrintFrame();
-      const iframeWindow = iframe.contentWindow;
-
-      if (!iframeWindow) {
-        throw new Error("Unable to create the hidden print frame.");
-      }
-
-      iframeWindow.document.open();
-      iframeWindow.document.write(htmlString);
-      iframeWindow.document.close();
-
-      await waitForPrintableAssets(iframeWindow);
-
-      const cleanup = () => {
-        if (originalDocumentTitle !== null) {
-          document.title = originalDocumentTitle;
-          originalDocumentTitle = null;
-        }
-        iframe?.remove();
-        iframe = null;
-      };
-
-      iframeWindow.addEventListener("afterprint", cleanup, { once: true });
-      window.setTimeout(cleanup, 60_000);
-
-      originalDocumentTitle = document.title;
-      document.title = documentTitle;
-      iframeWindow.focus();
-      iframeWindow.print();
+      await downloadPdf();
     } catch (error) {
-      console.error("Failed to prepare print PDF", error);
-      if (originalDocumentTitle !== null) {
-        document.title = originalDocumentTitle;
-      }
-      iframe?.remove();
-      window.alert(error instanceof Error ? error.message : "An error occurred while preparing the PDF.");
+      console.error("Failed to download PDF", error);
+      window.alert(error instanceof Error ? error.message : "An error occurred while downloading the PDF.");
     } finally {
       setIsDownloading(false);
     }
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleDownload}
-      disabled={isDownloading}
-      className={`${className ?? "text-xs font-medium underline"} ${isDownloading ? "cursor-not-allowed opacity-60" : ""}`}
-    >
-      {isDownloading ? "Downloading..." : "Download PDF"}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={isDownloading}
+        className={`${className ?? "text-xs font-medium underline"} ${isDownloading ? "cursor-not-allowed opacity-60" : ""}`}
+      >
+        {isDownloading ? "Downloading..." : "Download PDF"}
+      </button>
+
+      <TestTokenDialog
+        error={access.error}
+        isSubmitting={access.isSubmitting}
+        onClose={access.closeDialog}
+        onSubmit={async (token) => {
+          const unlocked = await access.verifyToken(token);
+          if (unlocked) {
+            window.setTimeout(() => {
+              void handleDownload();
+            }, 0);
+          }
+          return unlocked;
+        }}
+        open={access.isDialogOpen}
+        testTitle={testName}
+      />
+    </>
   );
 }

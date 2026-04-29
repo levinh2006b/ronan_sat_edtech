@@ -54,6 +54,23 @@ This file is the canonical agent-facing instruction document for repository-wide
 - Preserve role-aware behavior for `STUDENT` and `ADMIN` flows. Do not collapse role distinctions accidentally when editing auth, dashboard, or admin features.
 - Treat environment-backed integrations such as MongoDB, NextAuth, SMTP, and other external providers as configuration boundaries. Do not hardcode secrets, credentials, or provider-specific fallback values.
 
+## Secure PDF and R2 rules
+
+- Flattened PDFs are served from private Cloudflare R2 through `app/api/test-pdfs/download/route.ts`; do not restore the old browser-side PDF generation flow for students.
+- `app/api/pdf-data/route.ts` must not expose raw question, answer, passage, or explanation payloads to students. If a debug/raw-data endpoint is ever needed, keep it admin-only and explicitly document the risk.
+- Supabase stores only PDF metadata and R2 object keys in `test_pdf_assets`; never store R2 secrets in Supabase. R2 credentials belong only in server runtime env.
+- `test_pdf_assets.object_key` must be the exact R2 object key, for example `test-pdfs/<testId>/full/v1.pdf`. It must not be a public URL, signed URL, or custom-domain URL.
+- For Cloudflare R2 SDK access, `R2_ENDPOINT` must be the S3 API account endpoint origin, for example `https://<account-id>.r2.cloudflarestorage.com`. Do not include the bucket path, and do not use a public custom domain such as `https://storage.ronansat.com`.
+- Keep `R2_BUCKET_NAME` separate from `R2_ENDPOINT`; the SDK receives the bucket via `Bucket`, and `forcePathStyle: true` is required for the current R2 client.
+- When debugging R2 `NoSuchKey`, first compare `test_pdf_assets.object_key` against the object detail key in Cloudflare R2, then verify `R2_BUCKET_NAME`, then verify `R2_ENDPOINT` points at the same Cloudflare account as the bucket.
+- Public custom-domain URLs are useful only for manual verification that a file exists. The app should stream through the authenticated API so auth, token-lock checks, and audit logging always run.
+- Token-locked tests must also protect PDF downloads. Client-side unlocked flags are not sufficient; the download route must verify the stored token server-side before streaming from R2.
+- Every successful PDF download should insert an audit row into `test_pdf_download_events` with user, test, asset, mode, user-agent, and IP when available.
+- If the Supabase local reset script fails with `spawn supabase ENOENT` on Windows, resolve the local CLI from `node_modules/.bin/supabase.cmd`. If it then fails on Docker pipes, Docker Desktop is not running or not installed.
+- `scripts/pdf/flattenPdfFolder.ts` is the image-only raster flattening pass. It reads static PDFs from `Desktop/flattened-pdfs`, writes separate output to `Desktop/image-only-pdfs`, preserves folder structure, and must not overwrite the source PDFs.
+- Image-only flattening rasterizes pages and rebuilds a PDF from JPEG images so text cannot be selected/copied. The default production profile is 135 DPI, grayscale, JPEG quality 62 to keep full-length downloads near the low-MB range; override only after benchmarking.
+- The image-only script must be resumable for overnight jobs: skip readable existing outputs by default, use `PDF_FORCE=1` only when regenerating, and write each output through a temporary `.partial` file before rename.
+
 ## Client prefetch and test-engine rules
 
 - The app uses a custom client cache in `lib/clientCache.ts`; route-data prefetch must go through `readThroughClientCache` so page loads can join inflight work instead of duplicating API calls.

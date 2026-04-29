@@ -14,11 +14,18 @@ const EXCLUDED_TABLES = [
   "storage.iceberg_tables",
 ];
 
+function resolveLocalBin(command: string) {
+  const executableName = process.platform === "win32" ? `${command}.cmd` : command;
+  const localPath = join(process.cwd(), "node_modules/.bin", executableName);
+  return existsSync(localPath) ? localPath : command;
+}
+
 function runCommand(command: string, args: string[]) {
   return new Promise<void>((resolve, reject) => {
-    const child = spawn(command, args, {
+    const resolvedCommand = resolveLocalBin(command);
+    const child = spawn(resolvedCommand, args, {
       stdio: "inherit",
-      shell: false,
+      shell: process.platform === "win32" && resolvedCommand.endsWith(".cmd"),
     });
 
     child.on("error", reject);
@@ -28,16 +35,17 @@ function runCommand(command: string, args: string[]) {
         return;
       }
 
-      reject(new Error(`${command} exited with code ${code ?? "unknown"}`));
+      reject(new Error(`${resolvedCommand} exited with code ${code ?? "unknown"}`));
     });
   });
 }
 
 function runCommandWithStdin(command: string, args: string[], inputFilePath: string) {
   return new Promise<void>((resolve, reject) => {
-    const child = spawn(command, args, {
+    const resolvedCommand = resolveLocalBin(command);
+    const child = spawn(resolvedCommand, args, {
       stdio: ["pipe", "inherit", "inherit"],
-      shell: false,
+      shell: process.platform === "win32" && resolvedCommand.endsWith(".cmd"),
     });
     const inputStream = createReadStream(inputFilePath);
 
@@ -50,7 +58,7 @@ function runCommandWithStdin(command: string, args: string[], inputFilePath: str
         return;
       }
 
-      reject(new Error(`${command} exited with code ${code ?? "unknown"}`));
+      reject(new Error(`${resolvedCommand} exited with code ${code ?? "unknown"}`));
     });
   });
 }

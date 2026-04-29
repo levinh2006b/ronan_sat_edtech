@@ -220,6 +220,7 @@ export default function TestCard({
               testId={test._id}
               testName={test.title}
               sectionName={formattedSectionName}
+              requiresToken={test.requiresToken}
               className="workbook-button workbook-button-secondary w-full justify-center"
             />
           </div>
@@ -251,6 +252,7 @@ export default function TestCard({
             <DownloadPdfButton
               testId={test._id}
               testName={test.title}
+              requiresToken={test.requiresToken}
               className="workbook-button workbook-button-secondary w-full justify-center"
             />
           </div>
@@ -270,6 +272,7 @@ export default function TestCard({
             <DownloadPdfButton
               testId={test._id}
               testName={test.title}
+              requiresToken={test.requiresToken}
               className="workbook-button workbook-button-secondary w-full justify-center"
             />
           </div>
