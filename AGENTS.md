@@ -114,3 +114,16 @@ This file is the canonical agent-facing instruction document for repository-wide
 ## Compatibility note
 
 If another tool prefers a tool-specific instruction file, that file should point back to `AGENTS.md` instead of duplicating policy.
+
+
+
+
+# PROJECT NAVIGATION & ARCHITECTURE RULES
+
+1. **ARCHITECTURE MAP:** Always refer to the `ARCHITECTURE.md` file in the root directory to understand the high-level structure, data pipelines, and module entry points of this project. Do not blind-guess file locations.
+
+2. **PRE-TASK REQUIREMENT:** Before planning a solution or making any code changes (e.g., updating a UI component), you MUST read `ARCHITECTURE.md` to identify the correct starting files.
+
+3. **TRACING OVER SEARCHING:** Use the entry points defined in `ARCHITECTURE.md` and trace the `import` / `export` statements within the code to find related dependencies. Avoid full-directory keyword searches unless absolutely necessary, to save context window and quota.
+
+4. **MANDATORY SELF-MAINTENANCE:** If your actions result in creating a new file, deleting a file, moving a file, or fundamentally changing the data flow between modules, YOU MUST immediately update the `ARCHITECTURE.md` file to reflect these changes. The architecture map must always be 100% synced with the current codebase.

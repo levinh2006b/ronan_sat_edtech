@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { normalizeScrapedMarkdownHtml } from "@/lib/scrapedQuestionContent";
 import { normalizeSectionName } from "@/lib/sections";
 import { QuestionValidationSchema } from "@/lib/schema/question";
 
@@ -142,6 +143,13 @@ export const questionService = {
     try {
       const validatedData = QuestionValidationSchema.parse(data);
       const supabase = createSupabaseAdminClient();
+      const normalizedQuestionText = normalizeScrapedMarkdownHtml(validatedData.questionText);
+      const normalizedPassage = validatedData.passage ? normalizeScrapedMarkdownHtml(validatedData.passage) : null;
+      const normalizedExplanation = normalizeScrapedMarkdownHtml(validatedData.explanation);
+      const normalizedChoices = (validatedData.choices ?? []).map((choice) => normalizeScrapedMarkdownHtml(choice));
+      const normalizedCorrectAnswer = validatedData.correctAnswer
+        ? normalizeScrapedMarkdownHtml(validatedData.correctAnswer)
+        : "";
 
       const normalizedSection = normalizeSectionName(validatedData.section);
       const { data: section, error: sectionError } = await supabase
@@ -204,9 +212,9 @@ export const questionService = {
           section_id: targetSection.id,
           position: (existingCount ?? 0) + 1,
           question_type: validatedData.questionType,
-          question_text: validatedData.questionText,
-          passage: validatedData.passage ?? null,
-          explanation: validatedData.explanation,
+          question_text: normalizedQuestionText,
+          passage: normalizedPassage,
+          explanation: normalizedExplanation,
           difficulty: validatedData.difficulty,
           points: validatedData.points,
           domain: validatedData.domain ?? null,
@@ -222,7 +230,7 @@ export const questionService = {
       }
 
       if (validatedData.questionType === "multiple_choice") {
-        const optionRows = (validatedData.choices ?? []).map((choice, index) => ({
+        const optionRows = normalizedChoices.map((choice, index) => ({
           question_id: createdQuestion.id,
           option_code: `choice_${index}`,
           option_text: choice,
@@ -238,7 +246,7 @@ export const questionService = {
           throw new Error(optionError?.message ?? "Failed to create options");
         }
 
-        const matchedOption = options.find((option) => option.option_text === validatedData.correctAnswer);
+        const matchedOption = options.find((option) => option.option_text === normalizedCorrectAnswer);
         if (!matchedOption) {
           throw new Error("Correct answer must exactly match one inserted option");
         }

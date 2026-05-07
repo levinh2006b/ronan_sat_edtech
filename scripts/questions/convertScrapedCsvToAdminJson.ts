@@ -1,15 +1,17 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import Papa from "papaparse";
 import { z } from "zod";
 
+import { normalizeScrapedMarkdownHtml } from "@/lib/scrapedQuestionContent";
 import type { AdminQuestionUploadRow } from "@/types/adminQuestion";
 
 type SourceKind = "bluebooky" | "satgpt";
 type QuestionType = "multiple_choice" | "spr";
+type AiProvider = "codex" | "gemini";
 
 type RawCsvRow = Record<string, string | undefined>;
 
@@ -100,6 +102,8 @@ type GeminiDebugEntry = {
 };
 
 type RunSummary = {
+  aiProvider: AiProvider;
+  aiModel: string;
   sources: Record<SourceKind, number>;
   rowsRead: number;
   parseErrors: number;
@@ -291,9 +295,17 @@ const satgptDir = args.get("satgpt-dir") ?? defaultSatgptDir;
 const outputDir = args.get("out") ?? defaultOutputDir;
 const shouldFillMissingAnswers = args.get("fill-missing-answers") === "true";
 const shouldClassifyMetadata = args.get("classify-metadata") === "true" || shouldFillMissingAnswers;
-const geminiBatchSize = Number.parseInt(args.get("gemini-batch") ?? "12", 10);
-const geminiLimit = Number.parseInt(args.get("gemini-limit") ?? "0", 10);
+const shouldApplyCacheOnly = args.get("apply-cache-only") === "true";
+const geminiBatchSize = Number.parseInt(args.get("ai-batch") ?? args.get("gemini-batch") ?? "12", 10);
+const geminiLimit = Number.parseInt(args.get("ai-limit") ?? args.get("gemini-limit") ?? "0", 10);
+const aiNewLimit = Number.parseInt(args.get("ai-new-limit") ?? "0", 10);
+const aiProvider = ((args.get("ai-provider") ?? "codex").toLowerCase() === "gemini" ? "gemini" : "codex") as AiProvider;
 const geminiModel = args.get("gemini-model") ?? "gemini-2.5-pro";
+const codexModel = args.get("codex-model") ?? args.get("ai-model") ?? "gpt-5.2";
+const codexHome = args.get("codex-home") ?? process.env.CODEX_HOME ?? "C:\\Users\\MHC\\.codex-gatecheap";
+const codexBin = args.get("codex-bin") ?? process.env.CODEX_BIN ?? "C:\\nvm4w\\nodejs\\codex.cmd";
+const aiModel = aiProvider === "codex" ? `${codexModel}; CODEX_HOME=${codexHome}` : geminiModel;
+const answerCacheFileName = aiProvider === "codex" ? "codex-answer-cache.json" : "gemini-answer-cache.json";
 const geminiDebugLog: GeminiDebugEntry[] = [];
 
 function getCell(row: RawCsvRow, key: string) {
@@ -392,7 +404,7 @@ function normalizeLatexDelimiters(value: string) {
 }
 
 function normalizeContentForJson(value: string) {
-  return normalizeLatexDelimiters(normalizeText(value));
+  return normalizeScrapedMarkdownHtml(normalizeLatexDelimiters(normalizeText(value)));
 }
 
 function writeJsonAtomic(filePath: string, value: unknown) {
@@ -591,14 +603,24 @@ function normalizeAnswerChoice(value: string) {
   return normalizeContentForJson(cleaned.replace(/\s+/g, " ").trim());
 }
 
+function canonicalizeContentForAnswerCache(value: string) {
+  return normalizeText(value)
+    .replace(/<br\s*\/?>\s*<br\s*\/?>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<strong>([\s\S]*?)<\/strong>/gi, "**$1**")
+    .replace(/<u>([\s\S]*?)<\/u>/gi, "__$1__")
+    .replace(/<em>([\s\S]*?)<\/em>/gi, "*$1*")
+    .replace(/<[^>]+>/g, "");
+}
+
 function getAnswerCacheKey(row: AdminQuestionUploadRow, context: ConvertedQuestion["promptContext"]) {
   return createHash("sha1")
     .update(JSON.stringify({
       section: row.section,
       questionType: row.questionType,
-      passage: normalizeText(row.passage ?? ""),
-      questionText: normalizeText(row.questionText ?? ""),
-      choices: [row.choice_0, row.choice_1, row.choice_2, row.choice_3].map((choice) => normalizeText(choice ?? "")),
+      passage: canonicalizeContentForAnswerCache(row.passage ?? ""),
+      questionText: canonicalizeContentForAnswerCache(row.questionText ?? ""),
+      choices: [row.choice_0, row.choice_1, row.choice_2, row.choice_3].map((choice) => canonicalizeContentForAnswerCache(choice ?? "")),
       imageUrl: normalizeText(row.imageUrl ?? ""),
       imageUrls: context.imageUrls,
       extraPlainText: normalizeText(context.extraPlainText),
@@ -1083,8 +1105,18 @@ function loadGeminiCache(cachePath: string) {
     return new Map<string, GeminiAnswer>();
   }
 
-  const raw = JSON.parse(readFileSync(cachePath, "utf8")) as GeminiAnswer[];
-  return new Map(raw.map((answer) => [answer.cacheKey ?? answer.id, answer]));
+  const rawText = readFileSync(cachePath, "utf8").replace(/^\uFEFF/u, "");
+  if (!rawText.trim()) {
+    return new Map<string, GeminiAnswer>();
+  }
+
+  const raw = JSON.parse(rawText) as GeminiAnswer[];
+  const cache = new Map<string, GeminiAnswer>();
+  for (const answer of raw) {
+    cache.set(answer.cacheKey ?? answer.id, answer);
+    cache.set(answer.id, answer);
+  }
+  return cache;
 }
 
 function saveGeminiCache(cachePath: string, cache: Map<string, GeminiAnswer>) {
@@ -1302,6 +1334,113 @@ function callGemini(batch: ConvertedQuestion[]) {
   throw new Error(`Gemini failed for ${geminiModel}: ${lastError.slice(0, 1000)}`);
 }
 
+function callCodex(batch: ConvertedQuestion[]) {
+  const basePrompt = [
+    "Return a raw JSON array only. Do not wrap it in markdown fences. Do not include prose.",
+    "You are answering a data-conversion subtask. Do not edit files or run commands.",
+    buildGeminiPrompt(batch),
+  ].join("\n\n");
+  let lastError = "";
+
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    const outputPath = path.join(outputDir, "reports", `codex-response-${Date.now()}-${attempt}.json`);
+    const result = spawnSync(
+      "cmd.exe",
+      [
+        "/d",
+        "/s",
+        "/c",
+        codexBin,
+        "-a",
+        "never",
+        "exec",
+        "--model",
+        codexModel,
+        "--sandbox",
+        "read-only",
+        "--cd",
+        process.cwd(),
+        "--output-last-message",
+        outputPath,
+        "-",
+      ],
+      {
+        input: basePrompt,
+        encoding: "utf8",
+        maxBuffer: 1024 * 1024 * 16,
+        env: {
+          ...process.env,
+          CODEX_HOME: codexHome,
+        },
+      },
+    );
+    const finalMessage = existsSync(outputPath) ? readFileSync(outputPath, "utf8") : "";
+    if (existsSync(outputPath)) {
+      unlinkSync(outputPath);
+    }
+    const combinedOutput = `${finalMessage}\n${result.stdout ?? ""}\n${result.stderr ?? ""}`.trim();
+    const spawnDiagnostic = [
+      result.error ? `spawn error: ${result.error.message}` : "",
+      result.status !== null ? `exit status: ${result.status}` : "",
+      result.signal ? `signal: ${result.signal}` : "",
+      combinedOutput,
+    ].filter(Boolean).join("\n").trim() || "Codex CLI exited without stdout, stderr, output-last-message, or spawn error.";
+    geminiDebugLog.push({
+      type: "api_attempt",
+      batchIds: batch.map((item) => item.id),
+      attempt,
+      status: result.status,
+      reason: spawnDiagnostic.slice(0, 1200),
+      stdoutPreview: (result.stdout ?? "").slice(0, 1200),
+      stderrPreview: (result.stderr ?? "").slice(0, 1200),
+    });
+
+    if (result.status === 0) {
+      try {
+        return parseGeminiJson(finalMessage || result.stdout);
+      } catch (error) {
+        lastError = error instanceof Error ? error.message : String(error);
+        geminiDebugLog.push({
+          type: "malformed_json",
+          batchIds: batch.map((item) => item.id),
+          attempt,
+          reason: lastError,
+          stdoutPreview: combinedOutput.slice(0, 2400),
+          stderrPreview: (result.stderr ?? "").slice(0, 1200),
+        });
+        if (attempt < 5) {
+          sleepSync(1000 * attempt);
+          continue;
+        }
+        break;
+      }
+    }
+
+    lastError = spawnDiagnostic;
+    if (attempt < 5) {
+      const rateLimited = isRateLimitOutput(spawnDiagnostic);
+      const delayMs = rateLimited
+        ? Math.min(120000, (2 ** (attempt - 1)) * 5000 + Math.floor(Math.random() * 1000))
+        : Math.min(30000, attempt * 3000 + Math.floor(Math.random() * 1000));
+      console.log(`Codex ${rateLimited ? "rate limited" : "failed"}; retrying in ${Math.round(delayMs / 1000)}s (attempt ${attempt}/5): ${spawnDiagnostic.slice(0, 300).replace(/\s+/g, " ")}`);
+      sleepSync(delayMs);
+      continue;
+    }
+
+    break;
+  }
+
+  if (isRateLimitOutput(lastError)) {
+    throw new Error(`Codex quota/rate limit reached for ${codexModel} with CODEX_HOME=${codexHome} and CODEX_BIN=${codexBin}: ${lastError.slice(0, 1000)}`);
+  }
+
+  throw new Error(`Codex failed for ${codexModel} with CODEX_HOME=${codexHome} and CODEX_BIN=${codexBin}: ${lastError.slice(0, 1000)}`);
+}
+
+function callAi(batch: ConvertedQuestion[]) {
+  return aiProvider === "codex" ? callCodex(batch) : callGemini(batch);
+}
+
 function applyGeminiAnswer(item: ConvertedQuestion, answer: GeminiAnswer) {
   const type = item.row.questionType;
   let classified = false;
@@ -1471,6 +1610,10 @@ function cachedAnswerSatisfiesItem(answer: GeminiAnswer | undefined, item: Conve
   return Boolean(normalizeText(answer.answer ?? "") || (Array.isArray(answer.sprAnswers) && answer.sprAnswers.some((value) => normalizeText(value))));
 }
 
+function getCachedAnswer(cache: Map<string, GeminiAnswer>, item: ConvertedQuestion) {
+  return cache.get(item.answerCacheKey) ?? cache.get(item.id);
+}
+
 function applySourceDataGate(items: ConvertedQuestion[]) {
   const sourceDataErrors: SourceDataError[] = [];
 
@@ -1490,7 +1633,7 @@ function applySourceDataGate(items: ConvertedQuestion[]) {
 }
 
 function fillMissingAnswers(items: ConvertedQuestion[]) {
-  const cachePath = path.join(outputDir, "reports", "gemini-answer-cache.json");
+  const cachePath = path.join(outputDir, "reports", answerCacheFileName);
   const cache = loadGeminiCache(cachePath);
   const candidates = items.filter(isGeminiCandidate);
   const uniqueCandidates = [...new Map(candidates.map((item) => [item.answerCacheKey, item])).values()];
@@ -1499,26 +1642,49 @@ function fillMissingAnswers(items: ConvertedQuestion[]) {
   let answered = 0;
   let classified = 0;
   let review = 0;
+  let newAiRequests = 0;
 
   for (let index = 0; index < limitedCandidates.length; index += geminiBatchSize) {
     const batch = limitedCandidates.slice(index, index + geminiBatchSize);
-    const uncached = batch.filter((item) => !cachedAnswerSatisfiesItem(cache.get(item.answerCacheKey), item));
+    const uncached = batch.filter((item) => !cachedAnswerSatisfiesItem(getCachedAnswer(cache, item), item));
 
-    if (uncached.length > 0) {
-      console.log(`Gemini batch ${index + 1}-${index + batch.length} of ${limitedCandidates.length}`);
-      const answers = callGemini(uncached);
-      for (const answer of answers) {
-        const matchedItem = uncached.find((item) => item.id === answer.id || item.answerCacheKey === answer.cacheKey);
-        const cacheKey = matchedItem?.answerCacheKey ?? answer.cacheKey ?? answer.id;
-        cache.set(cacheKey, { ...answer, cacheKey });
+    if (uncached.length > 0 && !shouldApplyCacheOnly && (aiNewLimit <= 0 || newAiRequests < aiNewLimit)) {
+      const requestBatch = aiNewLimit > 0 ? uncached.slice(0, Math.max(0, aiNewLimit - newAiRequests)) : uncached;
+      console.log(`${aiProvider === "codex" ? "Codex CLI" : "Gemini"} batch ${index + 1}-${index + batch.length} of ${limitedCandidates.length}`);
+      try {
+        const answers = callAi(requestBatch);
+        for (const answer of answers) {
+          const matchedItem = requestBatch.find((item) => item.id === answer.id || item.answerCacheKey === answer.cacheKey);
+          const cacheKey = matchedItem?.answerCacheKey ?? answer.cacheKey ?? answer.id;
+          cache.set(cacheKey, { ...answer, cacheKey });
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`${aiProvider === "codex" ? "Codex CLI" : "Gemini"} batch failed; marking ${requestBatch.length} item(s) for review and continuing: ${message.slice(0, 500)}`);
+        for (const item of requestBatch) {
+          if (!item.issues.includes("ai_batch_failed")) {
+            item.issues.push("ai_batch_failed");
+          }
+          geminiDebugLog.push({
+            type: "invalid_answer",
+            itemId: item.id,
+            cacheKey: item.answerCacheKey,
+            reason: message,
+            payloadHints: getPayloadHints(item),
+          });
+        }
       }
+      newAiRequests += requestBatch.length;
       saveGeminiCache(cachePath, cache);
     }
   }
 
   for (const item of candidates.filter((candidate) => limitedKeys.has(candidate.answerCacheKey))) {
-    const answer = cache.get(item.answerCacheKey);
+    const answer = getCachedAnswer(cache, item);
     if (!answer) {
+      if (shouldApplyCacheOnly) {
+        continue;
+      }
       item.issues.push("gemini_missing_cached_answer");
       review += 1;
       continue;
@@ -1549,6 +1715,8 @@ function summarize(
   geminiStats: Pick<RunSummary, "geminiCandidates" | "geminiAnswered" | "geminiClassified" | "geminiNeedsReview">,
 ): RunSummary {
   const summary: RunSummary = {
+    aiProvider,
+    aiModel,
     sources: {
       bluebooky: items.filter((item) => item.source === "bluebooky").length,
       satgpt: items.filter((item) => item.source === "satgpt").length,
@@ -1634,7 +1802,7 @@ function writeOutputs(
       issues: item.issues,
       row: item.row,
       promptContext: item.promptContext,
-      cachedGeminiAnswer: loadGeminiCache(path.join(reportDir, "gemini-answer-cache.json")).get(item.answerCacheKey) ?? null,
+      cachedGeminiAnswer: loadGeminiCache(path.join(reportDir, answerCacheFileName)).get(item.answerCacheKey) ?? null,
       payloadHints: getPayloadHints(item),
     }));
 
