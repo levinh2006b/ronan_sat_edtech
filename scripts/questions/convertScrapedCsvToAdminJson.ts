@@ -64,6 +64,18 @@ type ConvertedQuestion = {
   };
 };
 
+type ReadyAdminQuestionUploadRow = AdminQuestionUploadRow & {
+  section: string;
+  module: number;
+  questionType: string;
+  domain: string;
+  skill: string;
+};
+
+type ReadyConvertedQuestion = ConvertedQuestion & {
+  row: ReadyAdminQuestionUploadRow;
+};
+
 type GeminiAnswer = {
   id: string;
   cacheKey?: string;
@@ -867,6 +879,18 @@ function collectIssues(item: ConvertedQuestion) {
   if (type === "spr" && (!Array.isArray(item.row.sprAnswers) || item.row.sprAnswers.length === 0)) {
     issues.push("missing_spr_answer");
   }
+}
+
+function isReadyConvertedQuestion(item: ConvertedQuestion): item is ReadyConvertedQuestion {
+  return (
+    !item.skipped &&
+    item.issues.length === 0 &&
+    typeof item.row.section === "string" &&
+    typeof item.row.module === "number" &&
+    typeof item.row.questionType === "string" &&
+    typeof item.row.domain === "string" &&
+    typeof item.row.skill === "string"
+  );
 }
 
 function isRecordStart(source: SourceKind, line: string) {
@@ -1811,7 +1835,7 @@ function writeOutputs(
   const missingRequests: unknown[] = [];
 
   for (const [key, fileItems] of byFile) {
-    const fileReadyItems = fileItems.filter((item) => !item.skipped && item.issues.length === 0);
+    const fileReadyItems = fileItems.filter(isReadyConvertedQuestion);
     const fileReady = fileReadyItems.map((item) => item.row);
     const fileReview = fileItems.filter((item) => item.skipped || item.issues.length > 0);
     for (const item of fileReadyItems) {
