@@ -31,13 +31,14 @@ export default function WelcomePage() {
 
   const deferredUsername = useDeferredValue(username);
   const normalizedUsername = useMemo(() => normalizeUsername(deferredUsername), [deferredUsername]);
-  const hasCompletedProfile = session?.user?.hasCompletedProfile;
+  const sessionUser = session?.user;
+  const hasCompletedProfile = sessionUser?.hasCompletedProfile;
 
   useEffect(() => {
     if (status === "authenticated" && hasCompletedProfile) {
-      router.replace(getPostAuthRedirectPath(session?.user));
+      router.replace(getPostAuthRedirectPath(sessionUser));
     }
-  }, [hasCompletedProfile, router, session?.user?.hasCompletedProfile, session?.user?.role, status]);
+  }, [hasCompletedProfile, router, sessionUser, status]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -70,20 +71,14 @@ export default function WelcomePage() {
         setIsUsernameAvailable(false);
         setIsCheckingUsername(true);
 
-        const response = await fetch(
-          `${API_PATHS.USER_USERNAME}?value=${encodeURIComponent(normalizedUsername)}`,
+        const response = await api.get<{ isAvailable?: boolean; error?: string }>(
+          API_PATHS.USER_USERNAME,
           {
+            params: { value: normalizedUsername },
             signal: controller.signal,
-            cache: "no-store",
           }
         );
-
-        const payload = (await response.json()) as { isAvailable?: boolean; error?: string };
-        if (!response.ok) {
-          setAvailabilityMessage(payload.error || USERNAME_REQUIREMENTS);
-          setIsUsernameAvailable(false);
-          return;
-        }
+        const payload = response.data;
 
         if (payload.isAvailable) {
           setAvailabilityMessage("Username is available.");
@@ -94,8 +89,14 @@ export default function WelcomePage() {
         setAvailabilityMessage("That username is already taken.");
         setIsUsernameAvailable(false);
       } catch (error) {
-        if ((error as Error).name !== "AbortError") {
-          setAvailabilityMessage("Could not check username right now.");
+        const requestError = error as {
+          code?: string;
+          name?: string;
+          response?: { data?: { error?: string } };
+        };
+
+        if (requestError.name !== "CanceledError" && requestError.code !== "ERR_CANCELED") {
+          setAvailabilityMessage(requestError.response?.data?.error || "Could not check username right now.");
           setIsUsernameAvailable(false);
         }
       } finally {
@@ -114,8 +115,9 @@ export default function WelcomePage() {
     return null;
   }
 
+  const usernameIsValid = isValidUsername(normalizedUsername);
   const birthDateIsValid = isValidBirthDate(birthDate);
-  const canSubmit = Boolean(normalizedUsername) && isUsernameAvailable && birthDateIsValid && !isSaving;
+  const canSubmit = usernameIsValid && birthDateIsValid && !isSaving;
 
   const getSubmitErrorMessage = (error: unknown) => {
     const responseError = error as {

@@ -31,5 +31,8 @@ export async function GET(req: Request) {
     .eq("username", username)
     .maybeSingle();
 
-  return NextResponse.json({ isAvailable: !existingUser, username }, { status: 200 });
+  return NextResponse.json(
+    { isAvailable: !existingUser || existingUser.id === session.user.id, username },
+    { status: 200 }
+  );
 }
