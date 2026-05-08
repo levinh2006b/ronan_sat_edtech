@@ -296,6 +296,7 @@ const outputDir = args.get("out") ?? defaultOutputDir;
 const shouldFillMissingAnswers = args.get("fill-missing-answers") === "true";
 const shouldClassifyMetadata = args.get("classify-metadata") === "true" || shouldFillMissingAnswers;
 const shouldApplyCacheOnly = args.get("apply-cache-only") === "true";
+const shouldContinueOnAiError = args.get("continue-on-ai-error") === "true";
 const geminiBatchSize = Number.parseInt(args.get("ai-batch") ?? args.get("gemini-batch") ?? "12", 10);
 const geminiLimit = Number.parseInt(args.get("ai-limit") ?? args.get("gemini-limit") ?? "0", 10);
 const aiNewLimit = Number.parseInt(args.get("ai-new-limit") ?? "0", 10);
@@ -1120,7 +1121,33 @@ function loadGeminiCache(cachePath: string) {
 }
 
 function saveGeminiCache(cachePath: string, cache: Map<string, GeminiAnswer>) {
-  writeJsonAtomic(cachePath, [...cache.values()].sort((left, right) => (left.cacheKey ?? left.id).localeCompare(right.cacheKey ?? right.id)));
+  const deduped = new Map<string, GeminiAnswer>();
+  for (const answer of cache.values()) {
+    if (!answer.id && !answer.cacheKey) {
+      continue;
+    }
+
+    const key = `${answer.id || ""}\u0000${answer.cacheKey || ""}`;
+    const existing = deduped.get(key);
+    if (!existing) {
+      deduped.set(key, answer);
+      continue;
+    }
+
+    const existingUsable = !existing.needsReview && Boolean(existing.answerLetter || existing.answer || existing.sprAnswers?.length);
+    const nextUsable = !answer.needsReview && Boolean(answer.answerLetter || answer.answer || answer.sprAnswers?.length);
+    if ((nextUsable && !existingUsable) || ((answer.confidence ?? 0) > (existing.confidence ?? 0))) {
+      deduped.set(key, answer);
+    }
+  }
+
+  writeJsonAtomic(
+    cachePath,
+    [...deduped.values()].sort((left, right) =>
+      (left.id || left.cacheKey || "").localeCompare(right.id || right.cacheKey || "")
+      || (left.cacheKey || "").localeCompare(right.cacheKey || "")
+    ),
+  );
 }
 
 function buildGeminiPrompt(batch: ConvertedQuestion[]) {
@@ -1660,6 +1687,11 @@ function fillMissingAnswers(items: ConvertedQuestion[]) {
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
+        if (!shouldContinueOnAiError) {
+          saveGeminiCache(cachePath, cache);
+          throw error;
+        }
+
         console.error(`${aiProvider === "codex" ? "Codex CLI" : "Gemini"} batch failed; marking ${requestBatch.length} item(s) for review and continuing: ${message.slice(0, 500)}`);
         for (const item of requestBatch) {
           if (!item.issues.includes("ai_batch_failed")) {
@@ -1682,7 +1714,7 @@ function fillMissingAnswers(items: ConvertedQuestion[]) {
   for (const item of candidates.filter((candidate) => limitedKeys.has(candidate.answerCacheKey))) {
     const answer = getCachedAnswer(cache, item);
     if (!answer) {
-      if (shouldApplyCacheOnly) {
+      if (shouldApplyCacheOnly || aiNewLimit > 0) {
         continue;
       }
       item.issues.push("gemini_missing_cached_answer");
@@ -1762,12 +1794,41 @@ function writeOutputs(
   }
 
   const readyRows: AdminQuestionUploadRow[] = [];
+  const readyProvenance: Array<{
+    readyIndex: number;
+    id: string;
+    answerCacheKey: string;
+    source: SourceKind;
+    sourceFile: string;
+    csvRowNumber: number;
+    section: string;
+    module: number;
+    questionType: string;
+    domain: string;
+    skill: string;
+  }> = [];
   const reviewItems: ConvertedQuestion[] = [];
   const missingRequests: unknown[] = [];
 
   for (const [key, fileItems] of byFile) {
-    const fileReady = fileItems.filter((item) => !item.skipped && item.issues.length === 0).map((item) => item.row);
+    const fileReadyItems = fileItems.filter((item) => !item.skipped && item.issues.length === 0);
+    const fileReady = fileReadyItems.map((item) => item.row);
     const fileReview = fileItems.filter((item) => item.skipped || item.issues.length > 0);
+    for (const item of fileReadyItems) {
+      readyProvenance.push({
+        readyIndex: readyProvenance.length + 1,
+        id: item.id,
+        answerCacheKey: item.answerCacheKey,
+        source: item.source,
+        sourceFile: item.sourceFile,
+        csvRowNumber: item.csvRowNumber,
+        section: item.row.section,
+        module: item.row.module,
+        questionType: item.row.questionType,
+        domain: item.row.domain,
+        skill: item.row.skill,
+      });
+    }
     readyRows.push(...fileReady);
     reviewItems.push(...fileReview);
     writeJsonAtomic(path.join(adminDir, `${key}.ready.json`), fileReady);
@@ -1809,6 +1870,39 @@ function writeOutputs(
   writeJsonAtomic(path.join(adminDir, "all.ready.json"), readyRows);
   writeJsonAtomic(path.join(adminDir, "all.needs_review.json"), reviewItems);
   writeJsonAtomic(path.join(reportDir, "conversion-report.json"), summary);
+  writeJsonAtomic(path.join(reportDir, "ready-provenance.json"), {
+    summary: {
+      ready: readyRows.length,
+      sources: new Set(readyProvenance.map((item) => `${item.source}:${item.sourceFile}`)).size,
+    },
+    groups: [...readyProvenance.reduce((map, item) => {
+      const key = `${item.source}:${item.sourceFile}`;
+      const group = map.get(key) ?? {
+        source: item.source,
+        sourceFile: item.sourceFile,
+        firstReadyIndex: item.readyIndex,
+        lastReadyIndex: item.readyIndex,
+        count: 0,
+        firstCsvRowNumber: item.csvRowNumber,
+        lastCsvRowNumber: item.csvRowNumber,
+      };
+      group.lastReadyIndex = item.readyIndex;
+      group.count += 1;
+      group.firstCsvRowNumber = Math.min(group.firstCsvRowNumber, item.csvRowNumber);
+      group.lastCsvRowNumber = Math.max(group.lastCsvRowNumber, item.csvRowNumber);
+      map.set(key, group);
+      return map;
+    }, new Map<string, {
+      source: SourceKind;
+      sourceFile: string;
+      firstReadyIndex: number;
+      lastReadyIndex: number;
+      count: number;
+      firstCsvRowNumber: number;
+      lastCsvRowNumber: number;
+    }>()).values()],
+    items: readyProvenance,
+  });
   writeJsonAtomic(path.join(reportDir, "errors.json"), conversionErrors);
   writeJsonAtomic(path.join(reportDir, "source-data-errors.json"), sourceDataErrors);
   writeJsonAtomic(path.join(reportDir, "gemini-needs-review.json"), geminiNeedsReviewItems);

@@ -1,4 +1,8 @@
 import { Readable } from "stream";
+import { createReadStream, existsSync } from "fs";
+import { stat } from "fs/promises";
+import os from "os";
+import path from "path";
 
 import type { AppSession } from "@/lib/auth/session";
 import { getGoogleDriveClient } from "@/lib/googleDrive/client";
@@ -30,6 +34,13 @@ type TestPdfAssetRow = {
   storage_provider: "google_drive" | string;
   drive_file_id: string | null;
   drive_folder_id: string | null;
+};
+
+type PdfStreamSource = {
+  asset: TestPdfAssetRow;
+  body: unknown;
+  contentType?: string | null;
+  contentLength?: string | number | null;
 };
 
 type TestAccessRow = {
@@ -101,6 +112,56 @@ function bodyToWebStream(body: unknown) {
   }
 
   throw new PdfAssetError("Unable to stream the PDF file.", 502);
+}
+
+function getLocalPdfAssetRoots() {
+  const configuredRoots = process.env.PDF_LOCAL_ASSET_ROOTS
+    ?.split(path.delimiter)
+    .map((root) => root.trim())
+    .filter(Boolean);
+  const roots = configuredRoots?.length
+    ? configuredRoots
+    : [
+        process.env.PDF_OUTPUT_DIR,
+        "D:\\image-only-pdfs",
+        path.join(os.homedir(), "Desktop", "image-only-pdfs"),
+      ];
+
+  return [...new Set(roots.filter((root): root is string => Boolean(root)).map((root) => path.resolve(root)))];
+}
+
+function getLocalAssetPath(root: string, objectKey: string) {
+  const resolvedRoot = path.resolve(root);
+  const resolvedPath = path.resolve(resolvedRoot, ...objectKey.split("/"));
+
+  if (resolvedPath !== resolvedRoot && !resolvedPath.startsWith(`${resolvedRoot}${path.sep}`)) {
+    return null;
+  }
+
+  return resolvedPath;
+}
+
+async function getLocalPdfStreamSourceForAsset(asset: TestPdfAssetRow): Promise<PdfStreamSource | null> {
+  for (const root of getLocalPdfAssetRoots()) {
+    const assetPath = getLocalAssetPath(root, asset.object_key);
+    if (!assetPath || !existsSync(assetPath)) {
+      continue;
+    }
+
+    const fileStats = await stat(assetPath);
+    if (!fileStats.isFile()) {
+      continue;
+    }
+
+    return {
+      asset,
+      body: createReadStream(assetPath),
+      contentType: asset.content_type || "application/pdf",
+      contentLength: fileStats.size,
+    };
+  }
+
+  return null;
 }
 
 async function userCanReadTest(session: AppSession, test: TestAccessRow) {
@@ -225,6 +286,52 @@ async function getActivePdfAsset(params: PdfDownloadParams) {
   return data as TestPdfAssetRow;
 }
 
+async function getLatestReadableLocalPdfAsset(params: PdfDownloadParams, activeAsset: TestPdfAssetRow) {
+  const activeLocalSource = await getLocalPdfStreamSourceForAsset(activeAsset);
+  if (activeLocalSource) {
+    return activeLocalSource;
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const sectionName = parseSectionName(params.sectionName);
+  let query = supabase
+    .from("test_pdf_assets")
+    .select("id, test_id, section_name, module_number, mode, asset_kind, object_key, file_name, content_type, file_size_bytes, version, storage_provider, drive_file_id, drive_folder_id")
+    .eq("test_id", params.testId)
+    .eq("mode", params.mode)
+    .eq("asset_kind", "flattened_pdf")
+    .eq("storage_provider", "google_drive")
+    .order("version", { ascending: false });
+
+  if (params.mode === "full") {
+    query = query.is("section_name", null).is("module_number", null);
+  } else {
+    if (!sectionName) {
+      return null;
+    }
+
+    query = query.eq("section_name", sectionName);
+    query =
+      typeof params.moduleNumber === "number"
+        ? query.eq("module_number", params.moduleNumber)
+        : query.is("module_number", null);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new PdfAssetError(error.message, 500);
+  }
+
+  for (const asset of (data ?? []) as TestPdfAssetRow[]) {
+    const localSource = await getLocalPdfStreamSourceForAsset(asset);
+    if (localSource) {
+      return localSource;
+    }
+  }
+
+  return null;
+}
+
 async function getDrivePdfStream(asset: TestPdfAssetRow) {
   if (!asset.drive_file_id) {
     throw new PdfAssetError("This PDF asset is missing its Google Drive file id.", 500);
@@ -262,6 +369,41 @@ async function getDrivePdfStream(asset: TestPdfAssetRow) {
   }
 }
 
+function getErrorSummary(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}
+
+async function getPdfStreamSource(params: PdfDownloadParams, activeAsset: TestPdfAssetRow): Promise<PdfStreamSource> {
+  try {
+    const driveResponse = await getDrivePdfStream(activeAsset);
+    return {
+      asset: activeAsset,
+      body: driveResponse.body,
+      contentType: driveResponse.contentType,
+      contentLength: driveResponse.contentLength,
+    };
+  } catch (error) {
+    const localSource = await getLatestReadableLocalPdfAsset(params, activeAsset);
+    if (localSource) {
+      console.warn("Google Drive PDF stream failed; using local PDF asset fallback.", {
+        testId: params.testId,
+        mode: params.mode,
+        sectionName: localSource.asset.section_name,
+        moduleNumber: localSource.asset.module_number,
+        version: localSource.asset.version,
+        error: getErrorSummary(error),
+      });
+      return localSource;
+    }
+
+    throw error;
+  }
+}
+
 export async function getPdfDownload({
   session,
   params,
@@ -277,25 +419,25 @@ export async function getPdfDownload({
   await assertTokenAccess(session, params.testId, params.token);
 
   const asset = await getActivePdfAsset(params);
-  const driveResponse = await getDrivePdfStream(asset);
+  const streamSource = await getPdfStreamSource(params, asset);
 
   const supabase = createSupabaseAdminClient();
   await supabase.from("test_pdf_download_events").insert({
     user_id: session.user.id,
     test_id: params.testId,
-    pdf_asset_id: asset.id,
+    pdf_asset_id: streamSource.asset.id,
     mode: params.mode,
-    section_name: asset.section_name,
-    module_number: asset.module_number,
+    section_name: streamSource.asset.section_name,
+    module_number: streamSource.asset.module_number,
     ip_address: ipAddress || null,
     user_agent: userAgent || null,
   });
 
   return {
-    asset,
-    stream: bodyToWebStream(driveResponse.body),
-    fileName: getPdfDownloadFileName(test, asset),
-    contentType: driveResponse.contentType || asset.content_type || "application/pdf",
-    contentLength: driveResponse.contentLength ? Number(driveResponse.contentLength) : asset.file_size_bytes ?? undefined,
+    asset: streamSource.asset,
+    stream: bodyToWebStream(streamSource.body),
+    fileName: getPdfDownloadFileName(test, streamSource.asset),
+    contentType: streamSource.contentType || streamSource.asset.content_type || "application/pdf",
+    contentLength: streamSource.contentLength ? Number(streamSource.contentLength) : streamSource.asset.file_size_bytes ?? undefined,
   };
 }

@@ -49,7 +49,7 @@ Server route handlers under `app/api/**/route.ts` should stay thin. They delegat
 - `lib/schema` for validation schemas
 - `types` for shared TypeScript types
 
-Supabase helpers and clients live under `lib/supabase`. Google Drive and PDF asset integration lives under `lib/googleDrive` and `lib/services/pdfAssetService.ts`.
+Supabase helpers and clients live under `lib/supabase`. Google Drive and PDF asset integration lives under `lib/googleDrive` and `lib/services/pdfAssetService.ts`. Runtime PDF downloads prefer the active Google Drive asset recorded in Supabase; if Drive streaming fails and a matching raster file exists in the configured local asset roots, `pdfAssetService` can stream that local raster through the same authenticated API route and audit path.
 
 ## State Management
 

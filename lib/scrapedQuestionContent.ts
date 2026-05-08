@@ -94,8 +94,8 @@ function convertMarkdownInline(value: string) {
   const withUnderlineBlanks = protectedValue.replace(/_{3,}/g, UNDERLINE_BLANK_HTML);
 
   return withUnderlineBlanks
-    .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, (_, content: string) => renderStrongOrUnderline(content))
-    .replace(/__(?=\S)([\s\S]*?\S)__/g, "<u>$1</u>")
+    .replace(/\*\*([\s\S]*?\S)\*\*/g, (_, content: string) => renderStrongOrUnderline(content))
+    .replace(/__([\s\S]*?\S)__/g, "<u>$1</u>")
     .replace(/(^|[^\w*])\*(?=\S)([^*\n]*?\S)\*(?!\w)/g, "$1<em>$2</em>")
     .replace(/(^|[^\w_])_(?=\S)([^_\n]*?\S)_(?!\w)/g, "$1<em>$2</em>")
     .replace(/\uE200(\d+)\uE201/g, (_, index: string) => placeholders[Number(index)] ?? "");
