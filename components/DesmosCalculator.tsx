@@ -31,6 +31,7 @@ export default function DesmosCalculator({ theme = "ronan", isOpen, onClose }: D
     const desmosTheme = getTestingRoomThemePreset(theme).desmos;
     const calculatorRef = useRef<HTMLDivElement>(null);
     const calculatorInst = useRef<DesmosCalculatorInstance | null>(null);
+    const initializedRef = useRef(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
@@ -104,10 +105,24 @@ if (absoluteTop + 104 > window.innerHeight) {
         (e.target as HTMLElement).releasePointerCapture(e.pointerId);
     };
 
+const destroyCalculator = () => {
+    if (calculatorInst.current) {
+        calculatorInst.current.destroy();
+        calculatorInst.current = null;
+        initializedRef.current = false;
+    }
+};
+
+const handleClose = () => {
+    destroyCalculator();
+    setIsExpanded(false);
+    setPosition({ x: 0, y: 0 });
+    onClose();
+};
+
 useEffect(() => {
     if (!isOpen) return;
-
-    let checkInterval: NodeJS.Timeout;
+    if (initializedRef.current) return;
 
     const initCalculator = () => {
         if (window.Desmos && calculatorRef.current && !calculatorInst.current) {
@@ -120,46 +135,45 @@ useEffect(() => {
                 lockViewport: false,
                 border: false,
             });
-
-            if (checkInterval) clearInterval(checkInterval);
+            initializedRef.current = true;
         }
     };
 
-    const existingScript = document.getElementById("desmos-script");
-    if (!existingScript && !window.Desmos) {
-        const script = document.createElement("script");
-        script.src = desmosUrl || "https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6";
-        script.id = "desmos-script";
-        script.async = true;
-        script.onload = () => {
-            initCalculator();
-        };
-        document.body.appendChild(script);
-    }
-
-    if (window.Desmos) {
-        initCalculator();
-    } else {
-        checkInterval = setInterval(initCalculator, 500);
-    }
-
-    return () => {
-        if (checkInterval) {
-            clearInterval(checkInterval);
+    if (!window.Desmos) {
+        const existingScript = document.getElementById("desmos-script");
+        if (!existingScript) {
+            const script = document.createElement("script");
+            script.src = desmosUrl || "https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6";
+            script.id = "desmos-script";
+            script.async = true;
+            script.onload = initCalculator;
+            document.body.appendChild(script);
+        } else {
+            const interval = setInterval(() => {
+                if (window.Desmos) {
+                    clearInterval(interval);
+                    initCalculator();
+                }
+            }, 200);
+            return () => clearInterval(interval);
         }
+    } else {
+        initCalculator();
+    }
+}, [isOpen, desmosUrl]);
 
+useEffect(() => {
+    return () => {
         if (calculatorInst.current) {
             calculatorInst.current.destroy();
             calculatorInst.current = null;
         }
     };
-}, [isOpen, desmosUrl]);
- 
-    if (!isOpen) return null;
+}, []);
  
     return (
         <div
-            className={`fixed z-50 flex flex-col overflow-hidden ${!isDragging ? "transition-all duration-300 ease-in-out" : ""} ${desmosTheme.modalClass} ${isExpanded
+            className={`fixed z-50 flex flex-col overflow-hidden ${!isOpen ? "hidden" : ""} ${!isDragging ? "transition-all duration-300 ease-in-out" : ""} ${desmosTheme.modalClass} ${isExpanded
                     ? "left-2 right-2 top-24 bottom-24 rounded-[2rem] sm:left-6 sm:right-6"
                     : "right-4 top-24 h-[min(70vh,600px)] w-[min(calc(100vw-2rem),500px)] rounded-[2rem] sm:right-6"
                 }`}
@@ -190,7 +204,7 @@ useEffect(() => {
                         {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className={`flex h-10 w-10 items-center justify-center rounded-full ${desmosTheme.controlButtonClass}`}
                         title="Close calculator"
                         type="button"

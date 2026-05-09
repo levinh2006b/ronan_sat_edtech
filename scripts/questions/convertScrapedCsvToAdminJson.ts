@@ -312,6 +312,8 @@ const shouldContinueOnAiError = args.get("continue-on-ai-error") === "true";
 const geminiBatchSize = Number.parseInt(args.get("ai-batch") ?? args.get("gemini-batch") ?? "12", 10);
 const geminiLimit = Number.parseInt(args.get("ai-limit") ?? args.get("gemini-limit") ?? "0", 10);
 const aiNewLimit = Number.parseInt(args.get("ai-new-limit") ?? "0", 10);
+const aiStart = Math.max(1, Number.parseInt(args.get("ai-start") ?? "1", 10) || 1);
+const aiSkipRanges = parseAiIndexRanges(args.get("ai-skip") ?? args.get("ai-skip-ranges") ?? "");
 const aiProvider = ((args.get("ai-provider") ?? "codex").toLowerCase() === "gemini" ? "gemini" : "codex") as AiProvider;
 const geminiModel = args.get("gemini-model") ?? "gemini-2.5-pro";
 const codexModel = args.get("codex-model") ?? args.get("ai-model") ?? "gpt-5.2";
@@ -333,6 +335,30 @@ function normalizeText(value: string) {
     .replace(/\\n/g, "\n")
     .replace(/\u00a0/g, " ")
     .trim();
+}
+
+function parseAiIndexRanges(value: string) {
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const [startText, endText = startText] = part.split("-", 2);
+      const start = Number.parseInt(startText, 10);
+      const end = Number.parseInt(endText, 10);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start <= 0 || end <= 0) {
+        throw new Error(`Invalid --ai-skip range: ${part}`);
+      }
+
+      return {
+        start: Math.min(start, end),
+        end: Math.max(start, end),
+      };
+    });
+}
+
+function shouldSkipAiBatch(start: number, end: number) {
+  return aiSkipRanges.some((range) => start <= range.end && end >= range.start);
 }
 
 function shouldConvertDollarMath(content: string) {
@@ -438,6 +464,16 @@ function sleepSync(ms: number) {
 
 function isRateLimitOutput(value: string) {
   return /quota|rate limit|resource exhausted|too many requests|429/i.test(value);
+}
+
+function isTransientAiOutput(value: string) {
+  return isRateLimitOutput(value) || /service temporarily unavailable|server_error|statusCode["']?\s*:\s*503|\b503\b|try again shortly/i.test(value);
+}
+
+function getAiRetryDelayMs(attempt: number, transient: boolean) {
+  return transient
+    ? Math.min(180000, (2 ** (attempt - 1)) * 10000 + Math.floor(Math.random() * 2000))
+    : Math.min(30000, attempt * 3000 + Math.floor(Math.random() * 1000));
 }
 
 function decodeHtmlEntities(value: string) {
@@ -1209,7 +1245,7 @@ function buildGeminiPrompt(batch: ConvertedQuestion[]) {
   ].join("\n\n");
 }
 
-function parseGeminiJson(output: string): GeminiAnswer[] {
+function parseAiJson(output: string): GeminiAnswer[] {
   const cleaned = output
     .trim()
     .replace(/^```(?:json)?\s*/i, "")
@@ -1231,7 +1267,7 @@ function parseGeminiJson(output: string): GeminiAnswer[] {
     }
   }
 
-  throw new Error(`Gemini returned malformed JSON: ${output.slice(0, 500)}`);
+  throw new Error(`AI provider returned malformed JSON: ${output.slice(0, 500)}`);
 }
 
 function getPayloadHints(item: ConvertedQuestion): NonNullable<GeminiDebugEntry["payloadHints"]> {
@@ -1348,7 +1384,7 @@ function callGemini(batch: ConvertedQuestion[]) {
 
     if (result.status === 0) {
       try {
-        return parseGeminiJson(result.stdout);
+        return parseAiJson(result.stdout);
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
         geminiDebugLog.push({
@@ -1360,7 +1396,10 @@ function callGemini(batch: ConvertedQuestion[]) {
           stderrPreview: (result.stderr ?? "").slice(0, 1200),
         });
         if (attempt < 5) {
-          sleepSync(1000 * attempt);
+          const transient = isTransientAiOutput(lastError);
+          const delayMs = getAiRetryDelayMs(attempt, transient);
+          console.log(`Gemini returned ${transient ? "a transient service error" : "malformed JSON"}; retrying in ${Math.round(delayMs / 1000)}s (attempt ${attempt}/5)`);
+          sleepSync(delayMs);
           continue;
         }
         break;
@@ -1368,9 +1407,9 @@ function callGemini(batch: ConvertedQuestion[]) {
     }
 
     lastError = combinedOutput;
-    if (isRateLimitOutput(combinedOutput) && attempt < 5) {
-      const delayMs = Math.min(120000, (2 ** (attempt - 1)) * 5000 + Math.floor(Math.random() * 1000));
-      console.log(`Gemini rate limited; retrying in ${Math.round(delayMs / 1000)}s (attempt ${attempt}/5)`);
+    if (isTransientAiOutput(combinedOutput) && attempt < 5) {
+      const delayMs = getAiRetryDelayMs(attempt, true);
+      console.log(`Gemini service unavailable/rate limited; retrying in ${Math.round(delayMs / 1000)}s (attempt ${attempt}/5)`);
       sleepSync(delayMs);
       continue;
     }
@@ -1380,6 +1419,10 @@ function callGemini(batch: ConvertedQuestion[]) {
 
   if (isRateLimitOutput(lastError)) {
     throw new Error(`Gemini quota/rate limit reached for ${geminiModel}: ${lastError.slice(0, 1000)}`);
+  }
+
+  if (isTransientAiOutput(lastError)) {
+    throw new Error(`Gemini temporarily unavailable for ${geminiModel}: ${lastError.slice(0, 1000)}`);
   }
 
   throw new Error(`Gemini failed for ${geminiModel}: ${lastError.slice(0, 1000)}`);
@@ -1448,7 +1491,7 @@ function callCodex(batch: ConvertedQuestion[]) {
 
     if (result.status === 0) {
       try {
-        return parseGeminiJson(finalMessage || result.stdout);
+        return parseAiJson(finalMessage || result.stdout);
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
         geminiDebugLog.push({
@@ -1460,7 +1503,10 @@ function callCodex(batch: ConvertedQuestion[]) {
           stderrPreview: (result.stderr ?? "").slice(0, 1200),
         });
         if (attempt < 5) {
-          sleepSync(1000 * attempt);
+          const transient = isTransientAiOutput(lastError);
+          const delayMs = getAiRetryDelayMs(attempt, transient);
+          console.log(`Codex returned ${transient ? "a transient service error" : "malformed JSON"}; retrying in ${Math.round(delayMs / 1000)}s (attempt ${attempt}/5): ${lastError.slice(0, 300).replace(/\s+/g, " ")}`);
+          sleepSync(delayMs);
           continue;
         }
         break;
@@ -1469,11 +1515,9 @@ function callCodex(batch: ConvertedQuestion[]) {
 
     lastError = spawnDiagnostic;
     if (attempt < 5) {
-      const rateLimited = isRateLimitOutput(spawnDiagnostic);
-      const delayMs = rateLimited
-        ? Math.min(120000, (2 ** (attempt - 1)) * 5000 + Math.floor(Math.random() * 1000))
-        : Math.min(30000, attempt * 3000 + Math.floor(Math.random() * 1000));
-      console.log(`Codex ${rateLimited ? "rate limited" : "failed"}; retrying in ${Math.round(delayMs / 1000)}s (attempt ${attempt}/5): ${spawnDiagnostic.slice(0, 300).replace(/\s+/g, " ")}`);
+      const transient = isTransientAiOutput(spawnDiagnostic);
+      const delayMs = getAiRetryDelayMs(attempt, transient);
+      console.log(`Codex ${transient ? "service unavailable/rate limited" : "failed"}; retrying in ${Math.round(delayMs / 1000)}s (attempt ${attempt}/5): ${spawnDiagnostic.slice(0, 300).replace(/\s+/g, " ")}`);
       sleepSync(delayMs);
       continue;
     }
@@ -1483,6 +1527,10 @@ function callCodex(batch: ConvertedQuestion[]) {
 
   if (isRateLimitOutput(lastError)) {
     throw new Error(`Codex quota/rate limit reached for ${codexModel} with CODEX_HOME=${codexHome} and CODEX_BIN=${codexBin}: ${lastError.slice(0, 1000)}`);
+  }
+
+  if (isTransientAiOutput(lastError)) {
+    throw new Error(`Codex temporarily unavailable for ${codexModel} with CODEX_HOME=${codexHome} and CODEX_BIN=${codexBin}: ${lastError.slice(0, 1000)}`);
   }
 
   throw new Error(`Codex failed for ${codexModel} with CODEX_HOME=${codexHome} and CODEX_BIN=${codexBin}: ${lastError.slice(0, 1000)}`);
@@ -1697,11 +1745,28 @@ function fillMissingAnswers(items: ConvertedQuestion[]) {
 
   for (let index = 0; index < limitedCandidates.length; index += geminiBatchSize) {
     const batch = limitedCandidates.slice(index, index + geminiBatchSize);
+    const batchStart = index + 1;
+    const batchEnd = index + batch.length;
+
+    if (batchEnd < aiStart) {
+      continue;
+    }
+
+    if (shouldSkipAiBatch(batchStart, batchEnd)) {
+      console.log(`Skipping ${aiProvider === "codex" ? "Codex CLI" : "Gemini"} batch ${batchStart}-${batchEnd} of ${limitedCandidates.length} due to --ai-skip.`);
+      for (const item of batch) {
+        if (!item.issues.includes("ai_skipped_by_range")) {
+          item.issues.push("ai_skipped_by_range");
+        }
+      }
+      continue;
+    }
+
     const uncached = batch.filter((item) => !cachedAnswerSatisfiesItem(getCachedAnswer(cache, item), item));
 
     if (uncached.length > 0 && !shouldApplyCacheOnly && (aiNewLimit <= 0 || newAiRequests < aiNewLimit)) {
       const requestBatch = aiNewLimit > 0 ? uncached.slice(0, Math.max(0, aiNewLimit - newAiRequests)) : uncached;
-      console.log(`${aiProvider === "codex" ? "Codex CLI" : "Gemini"} batch ${index + 1}-${index + batch.length} of ${limitedCandidates.length}`);
+      console.log(`${aiProvider === "codex" ? "Codex CLI" : "Gemini"} batch ${batchStart}-${batchEnd} of ${limitedCandidates.length}`);
       try {
         const answers = callAi(requestBatch);
         for (const answer of answers) {
