@@ -40,7 +40,7 @@ export function useFullLengthDashboardController() {
 
   useEffect(() => {
     const testsCache = getClientCache<CachedTestsPayload>(
-      getTestsClientCacheKey(1, pageSize, "newest", { selectedPeriod: "All" }),
+      getTestsClientCacheKey(1, pageSize, "newest", { selectedPeriod: "All", fullLengthOnly: true }),
     );
 
     initialTestsCacheRef.current = testsCache;
@@ -135,7 +135,7 @@ export function useFullLengthDashboardController() {
         return;
       }
 
-      const filters = { selectedPeriod } as const;
+      const filters = { selectedPeriod, fullLengthOnly: true } as const;
       const cacheKey = getTestsClientCacheKey(page, pageSize, sortOption, filters);
       const cachedTests = getClientCache<CachedTestsPayload>(cacheKey);
 

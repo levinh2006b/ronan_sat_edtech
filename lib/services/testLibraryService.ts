@@ -23,6 +23,7 @@ export function getTestsQueryParams(sortOption: SortOption) {
 type TestLibraryFilters = {
   selectedPeriod?: string;
   subject?: "reading" | "math";
+  fullLengthOnly?: boolean;
 };
 
 type FetchOptions = {
@@ -41,7 +42,8 @@ export function getTestsClientCacheKey(
   const { sortBy, sortOrder } = getTestsQueryParams(sortOption);
   const period = filters.selectedPeriod && filters.selectedPeriod !== "All" ? filters.selectedPeriod : "All";
   const subject = filters.subject ?? "all";
-  return `tests:${page}:${limit}:${sortBy}:${sortOrder}:${period}:${subject}`;
+  const fl = filters.fullLengthOnly ? "fl" : "";
+  return `tests:${page}:${limit}:${sortBy}:${sortOrder}:${period}:${subject}${fl}`;
 }
 
 export async function fetchTestsPage(
@@ -92,6 +94,10 @@ async function fetchTestsPageFromApi(
 
   if (filters.subject) {
     params.set("subject", filters.subject);
+  }
+
+  if (filters.fullLengthOnly) {
+    params.set("fullLengthOnly", "true");
   }
 
   const res = await api.get(`${API_PATHS.TESTS}?${params.toString()}`, { signal: options?.signal });
