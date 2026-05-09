@@ -12,6 +12,7 @@ type SortableTestField = "createdAt" | "title";  // 2 way to sort
 type TestFilters = {                             // Filter: Only show test accoding to subject (Math/Verbal) or period (March 2025)
   period?: string | null;
   subject?: string | null;
+  fullLengthOnly?: boolean;
 };
 
 type RawTestRow = {      // Info for a specific test
@@ -118,6 +119,17 @@ function matchesSubject(sections: RawTestRow["test_sections"], subject?: string 
   });
 }
 
+function hasAllFourModules(sections: RawTestRow["test_sections"]) {
+  if (!sections || sections.length === 0) return false;
+
+  const verbal1 = sections.some((s) => isVerbalSection(s.name) && s.module_number === 1 && s.question_count > 0);
+  const verbal2 = sections.some((s) => isVerbalSection(s.name) && s.module_number === 2 && s.question_count > 0);
+  const math1 = sections.some((s) => s.name === MATH_SECTION && s.module_number === 1 && s.question_count > 0);
+  const math2 = sections.some((s) => s.name === MATH_SECTION && s.module_number === 2 && s.question_count > 0);
+
+  return verbal1 && verbal2 && math1 && math2;
+}
+
 
 function toLegacyTestShape(test: RawTestRow, lockedTestIds = new Set<string>()) { 
   const sections = [...(test.test_sections ?? [])]              // Sao chép các dữ liệu của bài test đó
@@ -186,7 +198,7 @@ export const testService = {
 
     const rows = (data ?? []) as RawTestRow[];
     const lockedTestIds = await testAccessService.getLockedTestIds(rows.map((test) => test.id));
-    const filtered = rows.filter((test) => matchesPeriod(test.title, filters.period) && matchesSubject(test.test_sections, filters.subject));
+    const filtered = rows.filter((test) => matchesPeriod(test.title, filters.period) && matchesSubject(test.test_sections, filters.subject) && (filters.fullLengthOnly ? hasAllFourModules(test.test_sections) : true));
     const availablePeriods = ["All", ...sortPeriods(Array.from(new Set(rows.map((test) => getTestPeriodLabel(test.title)))))];
 
     filtered.sort((left, right) => {

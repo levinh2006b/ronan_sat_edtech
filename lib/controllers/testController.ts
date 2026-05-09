@@ -18,10 +18,12 @@ export const testController = {
       const sortOrder = searchParams.get("sortOrder") || "desc";
       const period = searchParams.get("period");
       const subject = searchParams.get("subject");
+      const fullLengthOnly = searchParams.get("fullLengthOnly") === "true";
 
       const result = await testService.getTests(page, limit, sortBy, sortOrder, {
         period,
         subject,
+        fullLengthOnly,
       });
 
       return NextResponse.json(result);
