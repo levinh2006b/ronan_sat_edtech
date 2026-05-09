@@ -44,16 +44,18 @@ function isMathContent(value: string): boolean {
   const content = value.trim();
   if (!content) return false;
 
-  if (/\\[a-zA-Z]+|\\[,;:! ]|[{}^_=<>]|[+\-*/]|[()[\]]/.test(content)) {
-    return true;
-  }
+  // Strong math indicators: backslash, exponents, braces, equals, addition, multiplication, inequalities
+  if (/\\[a-zA-Z%&#_{}~|]+|[\^{}=+*<>]/.test(content)) return true;
 
   if (/[a-zA-Z]/.test(content)) {
     const words = content.match(/[a-zA-Z]+/g) ?? [];
-    return words.length <= 2 && /^[\d\s.,a-zA-Z]+$/.test(content);
+    if (words.length > 2) return false;
+    // Allow letters, digits, spaces, basic punctuation, parentheses, dashes
+    return /^[\d\s.,;:a-zA-Z()\-]+$/.test(content);
   }
 
-  return /^[\d\s.,]+$/.test(content) && content.length <= 12;
+  // No letters: accept coordinate notation, negative numbers, short expressions
+  return /^[\d\s.,;:()\-]+$/.test(content) && content.length <= 12;
 }
 
 function isValidInlineMathOpener(text: string, index: number): boolean {
@@ -71,7 +73,7 @@ function isValidInlineMathCloser(text: string, index: number, openerIndex: numbe
   const content = text.slice(openerIndex + 1, index);
   if (!isMathContent(content)) return false;
 
-  return after === undefined || /[\s,.;:!?()[\]{}<>"'`$]/.test(after);
+  return after === undefined || /[\s,.;:!?()[\]{}<>"'\u2018\u2019\u201c\u201d\`$\u2013\u2014\u2026-]/.test(after);
 }
 
 function findInlineDollarCloser(text: string, openerIndex: number): number {

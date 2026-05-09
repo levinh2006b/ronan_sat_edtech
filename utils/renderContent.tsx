@@ -13,13 +13,15 @@ import {
   tokenizeHtmlLatexContent,
   type ContentSegment,
 } from "@/utils/latexTokenizer";
+import { normalizeMathDelimiters } from "@/utils/mathContentNormalizer";
 
 export { hasTallMath, renderKatexMarkup, tokenizeHtmlLatexContent, type ContentSegment };
 
 export function renderHtmlLatexContent(text: string | undefined): ReactNode {
   if (!text) return "";
 
-  const segments = tokenizeHtmlLatexContent(text);
+  const normalized = normalizeMathDelimiters(text);
+  const segments = tokenizeHtmlLatexContent(normalized);
   return segments.map((segment) => {
     if (segment.type === "math") {
       return (

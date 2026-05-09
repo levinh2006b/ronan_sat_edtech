@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { tokenizeHtmlLatexContent, type ContentSegment } from "@/utils/latexTokenizer";
+import { normalizeMathDelimiters } from "@/utils/mathContentNormalizer";
 
 function serializeMathSegment(segment: Extract<ContentSegment, { type: "math" }>) {
   if (segment.delimiter === "\\(") return `\\(${segment.value}\\)`;
@@ -227,9 +228,46 @@ test("downgrades unclosed inline math at the end of the string to plain text", (
 
 
 test("parses standard LaTeX inline math parentheses", () => {
-  assert.deepEqual(tokenizeLatexSegments("Dùng \\(x+y\\) nhé"), [
-    { type: "text", value: "Dùng " },
+  assert.deepEqual(tokenizeLatexSegments("D\u00f9ng \\(x+y\\) nh\u00e9"), [
+    { type: "text", value: "D\u00f9ng " },
     { type: "math", value: "\\(x+y\\)", delimiter: "\\(" },
-    { type: "text", value: " nhé" },
+    { type: "text", value: " nh\u00e9" },
+  ]);
+});
+
+test("rejects parenthesized narrative text as math via word count gate", () => {
+  assert.deepEqual(tokenizeLatexSegments("$(a quick note)$"), [
+    { type: "text", value: "$(a quick note)$" },
+  ]);
+});
+
+test("normalizer escapes currency range to prevent false math pairing", () => {
+  const normalized = normalizeMathDelimiters("The range is $5 - $10 dollars.");
+  assert.deepEqual(tokenizeLatexSegments(normalized), [
+    { type: "text", value: "The range is $5 - $10 dollars." },
+  ]);
+  const tight = normalizeMathDelimiters("$5-$10");
+  assert.deepEqual(tokenizeLatexSegments(tight), [
+    { type: "text", value: "$5-$10" },
+  ]);
+});
+
+test("tolerates a single space between dollar sign and number as currency text", () => {
+  assert.deepEqual(tokenizeLatexSegments("$ 1,250.50"), [
+    { type: "text", value: "$ 1,250.50" },
+  ]);
+});
+
+test("treats trailing dollar sign on a number as plain text", () => {
+  assert.deepEqual(tokenizeLatexSegments("The cost is 50$."), [
+    { type: "text", value: "The cost is 50$." },
+  ]);
+});
+
+test("parses inline math when followed by a hyphen", () => {
+  assert.deepEqual(tokenizeLatexSegments("In the $xy$-plane"), [
+    { type: "text", value: "In the " },
+    { type: "math", value: "$xy$", delimiter: "$" },
+    { type: "text", value: "-plane" },
   ]);
 });

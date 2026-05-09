@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   getMathDollarSuggestion,

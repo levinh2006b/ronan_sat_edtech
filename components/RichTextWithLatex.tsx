@@ -3,6 +3,7 @@
 import { Fragment, createElement, useEffect, useState, type ReactNode } from "react";
 
 import { renderKatexMarkup, tokenizeHtmlLatexContent } from "@/utils/latexTokenizer";
+import { normalizeMathDelimiters } from "@/utils/mathContentNormalizer";
 
 const ALLOWED_TAGS = new Set([
   "b",
@@ -32,7 +33,8 @@ const ALLOWED_TAGS = new Set([
 const HTML_TAG_PATTERN = /<\/?(?:b|br|div|em|figcaption|figure|i|img|li|ol|p|span|strong|sub|sup|table|tbody|td|th|thead|tr|u|ul)\b/i;
 
 function renderLatexText(text: string, keyPrefix: string): ReactNode {
-  const segments = tokenizeHtmlLatexContent(text);
+  const normalized = normalizeMathDelimiters(text);
+  const segments = tokenizeHtmlLatexContent(normalized);
   if (segments.length === 1 && segments[0]?.type === "html") {
     return <Fragment key={keyPrefix}>{segments[0].value}</Fragment>;
   }
