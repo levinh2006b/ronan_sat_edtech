@@ -6,6 +6,7 @@ import posthog from "posthog-js";
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "https://us.i.posthog.com";
+const posthogUiHost = process.env.NEXT_PUBLIC_POSTHOG_UI_HOST?.trim();
 
 type PostHogProviderProps = {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export default function PostHogProvider({ children }: PostHogProviderProps) {
 
     posthog.init(posthogKey, {
       api_host: posthogHost,
+      ...(posthogUiHost ? { ui_host: posthogUiHost } : {}),
       capture_pageview: "history_change",
       defaults: "2026-01-30",
       person_profiles: "identified_only",
