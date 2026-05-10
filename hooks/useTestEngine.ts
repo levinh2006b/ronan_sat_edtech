@@ -11,7 +11,6 @@ import { REVIEW_RESULTS_CACHE_KEY } from "@/lib/services/reviewService";
 import { fetchTestEngineQuestions, type TestEngineQuestion } from "@/lib/services/testEngineService";
 import { preloadPostSubmitStudentData } from "@/lib/startupPreload";
 import { normalizeSectionName, VERBAL_SECTION } from "@/lib/sections";
-import { checkIsCorrect } from "@/utils/gradingHelper";
 import { useTimer } from "./useTimer";
 
 type TestQuestion = TestEngineQuestion;
@@ -47,6 +46,35 @@ function getAnsweredQuestionCount(questions: TestQuestion[], answers: Record<str
 
 function getMinimumRequiredAnswers(totalQuestions: number) {
   return Math.ceil(totalQuestions * 0.75);
+}
+
+function getDraftKey(testId: string) {
+  return `bluebook:draft:${testId}`;
+}
+
+function saveDraft(testId: string, answers: Record<string, string>) {
+  try {
+    localStorage.setItem(getDraftKey(testId), JSON.stringify(answers));
+  } catch {
+    // localStorage full or unavailable — silently ignore
+  }
+}
+
+function loadDraft(testId: string): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(getDraftKey(testId));
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function clearDraft(testId: string) {
+  try {
+    localStorage.removeItem(getDraftKey(testId));
+  } catch {
+    // silently ignore
+  }
 }
 
 export function useTestEngine(testId: string) {
@@ -99,7 +127,7 @@ export function useTestEngine(testId: string) {
         });
         setQuestions(fetchedQuestions);
         setCurrentIndex(0);
-        setAnswers({});
+        setAnswers(loadDraft(testId));
         setAnswerTimestamps({});
         setFlagged({});
 
@@ -140,7 +168,11 @@ export function useTestEngine(testId: string) {
   }, [mode, targetModule, targetSection, testId, setTimeRemaining]);
 
   const handleAnswerSelect = (questionId: string, choice: string) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: choice }));
+    setAnswers((prev) => {
+      const next = { ...prev, [questionId]: choice };
+      saveDraft(testId, next);
+      return next;
+    });
     if (!choice || choice === "Omitted") {
       return;
     }
@@ -208,68 +240,34 @@ export function useTestEngine(testId: string) {
           questionId: question._id,
           userAnswer,
           answeredAt: userAnswer === "Omitted" ? submissionTimestamp : answerTimestamps[question._id] ?? submissionTimestamp,
-          isCorrect: checkIsCorrect(question, userAnswer),
         };
       });
 
       if (mode === "sectional") {
-        let correctCount = 0;
-
-        currentModuleQuestions.forEach((question) => {
-          const userAnswer = answers[question._id] || "";
-          if (checkIsCorrect(question, userAnswer)) {
-            correctCount += 1;
-          }
-        });
-
         const res = await api.post(API_PATHS.RESULTS, {
           testId,
           isSectional: true,
           sectionalSubject: currentStage.section,
           sectionalModule: currentStage.module,
           answers: formattedAnswers,
-          totalScore: correctCount,
-          readingScore: 0,
-          mathScore: 0,
         });
 
         if (res.status === 200 || res.status === 201) {
+          clearDraft(testId);
           clearDashboardCaches();
           await preloadPostSubmitStudentData();
           router.refresh();
           router.push(`/review?testId=${testId}&mode=sectional`);
         }
       } else {
-        let earnedReadingPoints = 0;
-        let earnedMathPoints = 0;
-
-        questions.forEach((question) => {
-          const userAnswer = answers[question._id] || "";
-          if (!checkIsCorrect(question, userAnswer)) {
-            return;
-          }
-
-          const points = question.points || 0;
-          if (question.section === VERBAL_SECTION) {
-            earnedReadingPoints += points;
-          } else if (question.section === "Math") {
-            earnedMathPoints += points;
-          }
-        });
-
-        const readingScore = Math.min(200 + earnedReadingPoints, 800);
-        const mathScore = Math.min(200 + earnedMathPoints, 800);
-        const totalScore = readingScore + mathScore;
-
         const res = await api.post(API_PATHS.RESULTS, {
           testId,
           isSectional: false,
           answers: formattedAnswers,
-          score: totalScore,
-          sectionBreakdown: { readingAndWriting: readingScore, math: mathScore },
         });
 
         if (res.status === 200 || res.status === 201) {
+          clearDraft(testId);
           clearDashboardCaches();
           await preloadPostSubmitStudentData();
           router.refresh();

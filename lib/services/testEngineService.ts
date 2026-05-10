@@ -18,9 +18,7 @@ export type TestEngineQuestion = {
   section: string;
   module: number;
   points?: number;
-  correctAnswer?: string;
   questionType?: string;
-  sprAnswers?: string[];
   questionText?: string;
   passage?: string;
   choices?: string[];

@@ -70,6 +70,29 @@ function toLegacyQuestionShape(question: RawQuestionRow) {
   };
 }
 
+function toStudentQuestionShape(question: RawQuestionRow) {
+  const sortedOptions = [...(question.question_options ?? [])].sort((left, right) => left.display_order - right.display_order);
+  const section = question.test_sections;
+  const choices = sortedOptions.map((option) => option.option_text);
+
+  return {
+    _id: question.id,
+    testId: section?.test_id,
+    section: section?.name,
+    domain: question.domain ?? undefined,
+    skill: question.skill ?? undefined,
+    module: section?.module_number ?? 1,
+    questionType: question.question_type,
+    questionText: question.question_text,
+    passage: question.passage ?? undefined,
+    choices: choices.length > 0 ? choices : undefined,
+    difficulty: question.difficulty,
+    points: question.points,
+    imageUrl: question.image_url ?? undefined,
+    extra: question.extra ?? undefined,
+  };
+}
+
 async function syncSectionQuestionCount(supabase: ReturnType<typeof createSupabaseAdminClient>, sectionId: string) {
   const { count, error: countError } = await supabase
     .from("questions")
@@ -91,7 +114,7 @@ async function syncSectionQuestionCount(supabase: ReturnType<typeof createSupaba
 }
 
 export const questionService = {
-  async getQuestions(testId?: string | null) {
+  async getQuestions(testId?: string | null, role?: string) {
     const supabase = createSupabaseAdminClient();
     const query = supabase
       .from("questions")
@@ -136,7 +159,13 @@ export const questionService = {
       throw new Error(response.error.message);
     }
 
-    return (response.data ?? []).map((question) => toLegacyQuestionShape(question as unknown as RawQuestionRow));
+    const rows = response.data ?? [];
+    const isAdmin = role === "ADMIN";
+
+    return rows.map((question) => {
+      const row = question as unknown as RawQuestionRow;
+      return isAdmin ? toLegacyQuestionShape(row) : toStudentQuestionShape(row);
+    });
   },
 
   async createQuestion(data: unknown) {
