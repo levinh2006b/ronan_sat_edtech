@@ -61,6 +61,7 @@ Optional services for full functionality:
 
 - a Gmail account with an App Password for email sending
 - a Google OAuth app
+- Opencode credentials when running the AI question-corpus evaluator
 
 This repo is now set up around `bun`:
 
@@ -272,6 +273,7 @@ Environment variables used by the codebase:
 | `REMOTE_MONGODB_URI` | Optional | Explicit remote MongoDB source for `bun run db -- --fetch` |
 | `SUPABASE_DB_PASSWORD` | For `bun run db -- --fetch` Supabase sync | Production Supabase database password |
 | `SUPABASE_PROJECT_REF` | Optional | Overrides the default production Supabase project ref used by `bun run db -- --fetch` |
+| `DATABASE_URL` / `POSTGRES_URL` | Optional for question corpus evaluation | Direct PostgreSQL URL; evaluator otherwise builds the Supabase host from project ref and DB password |
 | `NEXT_PUBLIC_SUPABASE_URL` | For Supabase migration work | Supabase API URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | For Supabase migration work | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | For Supabase migration scripts/server-only work | Supabase service role key |
@@ -407,6 +409,11 @@ After configuring the environment and running `bun run dev`, verify in this orde
 | `bun run start` | Start the production build |
 | `bun run lint` | Run ESLint |
 | `bun run changelog` | Generate/update changelog |
+| `bun run questions:evaluate-corpus` | Dry-run or execute the Opencode/DeepSeek question corpus evaluator against development env |
+| `bun run questions:evaluate-corpus:production` | Run the same evaluator with production env loaded; add `--execute` only after reviewing dry-run logs |
+| `bun run questions:evaluate-corpus:self-test` | Run formatter, UI-math, asset-classification, taxonomy, and points checks for the evaluator script |
+
+For `questions:evaluate-corpus`, Supabase direct hosts may resolve to IPv6-only addresses. If the local network cannot reach IPv6 Postgres, either set `DATABASE_URL`/`POSTGRES_URL` to the Supabase pooler connection string or pass `--use-supabase-pooler`; the script will use `SUPABASE_DB_PASSWORD` with the default `aws-1-ap-southeast-1.pooler.supabase.com` host. Use `--llm-batch-size=5` for initial dry-runs; parsed tables are sent as Markdown, existing SVG assets produce `needs-visual-review`, `image_url` is treated as non-renderable, required visual/table prompts without renderable `extra` become deterministic dry-run replacement candidates, and UI/KaTeX warnings produce `needs-math-review`. Flash solver calls use a separate configurable concurrency lane (`--solver-concurrency`, default at least three) and are cached per question so evaluator retries and split batches do not repeat solved Flash work; cache hits are logged in `solver-cache.jsonl`. Flash solver retries default to `--max-attempts=2` for transient gateway failures. For staged overnight checks, combine `--max-new`, `--skip-completed-from=<run-dir-or-evaluated.jsonl>`, `--evaluator-max-attempts=2`, `--evaluator-fallback-model=<fast-model>` for transient 5xx/timeouts, and `--shutdown-on-complete`.
 
 ## 12. Notable project structure
 

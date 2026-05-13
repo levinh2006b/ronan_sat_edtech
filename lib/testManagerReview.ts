@@ -9,7 +9,10 @@ export type TestManagerReviewFilter =
   | "math_dollar_latex"
   | "missing_math_delimiters"
   | "rhetorical_notes_format"
-  | "has_keyword_any";
+  | "has_keyword_any"
+  | "visual_reference_keyword"
+  | "broken_csv_table"
+  | "orphan_visual";
 
 export type TestManagerReviewFlag =
   | "has_figure_or_table"
@@ -20,7 +23,10 @@ export type TestManagerReviewFlag =
   | "math_dollar_latex"
   | "missing_math_delimiters"
   | "rhetorical_notes_format"
-  | "keyword_with_shared_figure";
+  | "keyword_with_shared_figure"
+  | "visual_reference_keyword"
+  | "broken_csv_table"
+  | "orphan_visual";
 
 export type ReviewKeywordMatch = {
   keyword: string;
@@ -157,6 +163,208 @@ const MEDIUM_CONFIDENCE_KEYWORDS = [
 ];
 
 const EXPLICIT_FIGURE_TERMS = ["graph", "table", "figure", "chart"];
+
+const VISUAL_REFERENCE_PHRASES: string[] = [
+  "based on data in the table",
+  "based on data in the graph",
+  "according to the table",
+  "according to the graph",
+  "which choice best describes data from the table",
+  "which choice best describes data from the graph",
+  "which choice most effectively uses data from the table",
+  "which choice most effectively uses data from the graph",
+  "the table shows",
+  "the graph shows",
+  "the bar graph shows",
+  "the line graph shows",
+  "based on the table",
+  "based on the graph",
+  "as shown in the table",
+  "as shown in the graph",
+  "data from the table",
+  "data from the graph",
+  "the scatterplot shows",
+  "the scatter plot shows",
+  "the table summarizes",
+  "the table represents",
+  "the given table",
+  "the given graph",
+  "according to the given table",
+  "according to the given graph",
+  "the accompanying table",
+  "the accompanying graph",
+  "the bar chart shows",
+  "the box plot summarizes",
+  "the box plot shows",
+  "the dot plot summarizes",
+  "the dot plot shows",
+  "the histogram summarizes",
+  "the histogram shows",
+  "the frequency table summarizes",
+  "the frequency table shows",
+  "based on the scatterplot",
+  "based on the histogram",
+  "based on the box plot",
+  "based on the dot plot",
+  "the two-way table summarizes",
+  "the relative frequency table shows",
+  "the table shows the distribution of",
+  "the data in the table",
+  "the pie chart shows",
+  "the circle graph summarizes",
+  "which of the following graphs represents",
+  "which graph shows the relationship",
+  "which of the following scatterplots",
+  "the graph models the relationship",
+  "the graph models the population",
+  "which choice completes the text with the most accurate data from the table",
+  "which choice completes the text with the most accurate data from the graph",
+  "the student wants to use data from the table to support",
+  "which statement is best supported by the data in the graph",
+  "information from the graph suggests",
+  "as illustrated in the table",
+  "according to the provided data",
+  "the provided table",
+  "the provided graph",
+  "in the table shown",
+  "in the graph shown",
+  "the table displays",
+  "the graph displays",
+  "the table above shows",
+  "the graph above shows",
+  "the dot plot above",
+  "the scatterplot above",
+  "which table represents",
+  "which of the following tables",
+  "which of the following box plots",
+  "which of the following dot plots",
+  "which finding from the table",
+  "which finding from the graph",
+  "which statement best describes data from the table",
+  "which statement best describes data from the graph",
+  "according to the data in the table",
+  "according to the data in the graph",
+  "the chart shows",
+  "as the table indicates",
+  "as the graph indicates",
+  "the partially completed table",
+  "the incomplete table",
+  "based on the line of best fit",
+  "the graph of function",
+  "the graph of the function",
+  "the figure shows",
+  "in the figure shown",
+  "the stem-and-leaf plot shows",
+  "the given plot shows",
+  "based on the chart",
+  "according to the chart",
+  "data from the chart",
+  "the provided table indicates",
+  "the provided graph indicates",
+  "which choice is supported by data from the table",
+  "which choice is supported by data from the graph",
+];
+
+export function findVisualReferencePhrases(input: ReviewQuestionInput): string[] {
+  const haystack = [input.questionText, input.passage].filter((value): value is string => Boolean(value)).join("\n").toLowerCase();
+  if (!haystack.trim()) return [];
+  const matches = new Set<string>();
+  for (const phrase of VISUAL_REFERENCE_PHRASES) {
+    if (haystack.includes(phrase)) matches.add(phrase);
+  }
+  return [...matches];
+}
+
+function parseCsvLineCells(line: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    const next = line[i + 1];
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === "," && !inQuotes) {
+      cells.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+function parseCsvTableRows(raw: string): string[][] {
+  return raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map(parseCsvLineCells)
+    .filter((row) => row.some((cell) => cell.length > 0));
+}
+
+const UNQUOTED_THOUSANDS_REGEX = /(?<!")\b\d{1,3}(?:,\d{3})+\b(?!")/;
+
+function hasUnquotedThousandsNumber(raw: string): boolean {
+  for (const line of raw.split(/\r?\n/)) {
+    let inQuotes = false;
+    let buffer = "";
+    const segments: string[] = [];
+    for (let i = 0; i < line.length; i += 1) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+        buffer += char;
+        continue;
+      }
+      if (!inQuotes && char === ",") {
+        segments.push(buffer);
+        buffer = "";
+        continue;
+      }
+      buffer += char;
+    }
+    segments.push(buffer);
+    for (const segment of segments) {
+      const trimmed = segment.trim();
+      if (trimmed.startsWith('"') && trimmed.endsWith('"')) continue;
+      if (UNQUOTED_THOUSANDS_REGEX.test(trimmed)) return true;
+    }
+  }
+  return false;
+}
+
+function hasBrokenCsvTable(extra: unknown): boolean {
+  const content = getTableContent(extra);
+  if (!content) return false;
+  const raw = content.content;
+  if (!raw.trim()) return false;
+  if (parseMarkdownTableRows(raw)) return false;
+
+  const rows = parseCsvTableRows(raw);
+  if (rows.length >= 2) {
+    const headerCount = rows[0].length;
+    if (rows.slice(1).some((row) => row.length !== headerCount)) return true;
+  }
+  return hasUnquotedThousandsNumber(raw);
+}
+
+function isOrphanVisual(input: ReviewQuestionInput, visualPhraseCount: number): boolean {
+  if (visualPhraseCount > 0) return false;
+  const normalized = normalizeQuestionExtra(input.extra);
+  if (!normalized) return false;
+  if (normalized.type === "figure_math") return false;
+  if (normalized.type === "table") return parseQuestionExtraTable(input.extra) !== null;
+  return getQuestionExtraSvgMarkup(input.extra) !== null;
+}
 
 const FIELD_LABELS: Array<{
   key: keyof Pick<ReviewQuestionInput, "questionText" | "passage" | "explanation" | "domain" | "skill">;
@@ -730,6 +938,7 @@ export function getRhetoricalNotesSuggestion(text: string, field = "questionText
 
 export function getReviewDiagnostics(input: ReviewQuestionInput): ReviewDiagnostics {
   const matchedKeywords = findReviewKeywordMatches(input);
+  const visualPhrases = findVisualReferencePhrases(input);
   const suspicionLevel = getSuspicionLevel(input, matchedKeywords);
   const hasHighConfidenceKeyword = matchedKeywords.some((match) => match.confidence === "high");
   const hasMediumConfidenceKeyword = matchedKeywords.some((match) => match.confidence === "medium");
@@ -741,6 +950,18 @@ export function getReviewDiagnostics(input: ReviewQuestionInput): ReviewDiagnost
 
   if (hasImageUrl || hasQuestionExtra) {
     flags.push("has_figure_or_table");
+  }
+
+  if (visualPhrases.length > 0 && !hasQuestionExtra) {
+    flags.push("visual_reference_keyword");
+  }
+
+  if (hasBrokenCsvTable(input.extra)) {
+    flags.push("broken_csv_table");
+  }
+
+  if (isOrphanVisual(input, visualPhrases.length)) {
+    flags.push("orphan_visual");
   }
 
   if (getMarkdownTableSuggestion(input.extra)) {

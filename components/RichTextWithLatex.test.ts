@@ -252,6 +252,49 @@ test("normalizer escapes currency range to prevent false math pairing", () => {
   ]);
 });
 
+test("normalizer escapes positive comma or cents currency to prevent cross-field math pairing", () => {
+  const normalized = normalizeMathDelimiters("A store collected $35,600.00 and then used $x^2$.");
+  assert.deepEqual(tokenizeLatexSegments(normalized), [
+    { type: "text", value: "A store collected $35,600.00 and then used " },
+    { type: "math", value: "\\(x^2\\)", delimiter: "\\(" },
+    { type: "text", value: "." },
+  ]);
+});
+
+test("normalizer escapes whole-dollar prose currency without breaking numeric math", () => {
+  assert.deepEqual(tokenizeLatexSegments(normalizeMathDelimiters("The class costs $0). Use $17$ next.")), [
+    { type: "text", value: "The class costs $0). Use " },
+    { type: "math", value: "\\(17\\)", delimiter: "\\(" },
+    { type: "text", value: " next." },
+  ]);
+});
+
+test("normalizer repairs malformed dollar percent math", () => {
+  assert.deepEqual(tokenizeLatexSegments(normalizeMathDelimiters("The balance increased by $0.4% and then $0.2% again.")), [
+    { type: "text", value: "The balance increased by " },
+    { type: "math", value: "\\(0.4\\%\\)", delimiter: "\\(" },
+    { type: "text", value: " and then " },
+    { type: "math", value: "\\(0.2\\%\\)", delimiter: "\\(" },
+    { type: "text", value: " again." },
+  ]);
+});
+
+test("normalizer repairs malformed temperature math before prose", () => {
+  assert.deepEqual(tokenizeLatexSegments(normalizeMathDelimiters("$15.4^\\circ C at 1:00 a.m. $18.6^\\circ C$ at 11:30 a.m.")), [
+    { type: "math", value: "\\(15.4^\\circ C\\)", delimiter: "\\(" },
+    { type: "text", value: " at 1:00 a.m. " },
+    { type: "math", value: "\\(18.6^\\circ C\\)", delimiter: "\\(" },
+    { type: "text", value: " at 11:30 a.m." },
+  ]);
+});
+
+test("normalizer repairs malformed text-unit math before prose", () => {
+  const normalized = normalizeMathDelimiters("$0.30 \\text{ milliwatts per square centimeter (mW/cm}^2\\text{)}. In an experiment, density was $0.66 \\text{ mW/cm}^2$.");
+  const segments = tokenizeLatexSegments(normalized);
+  assert.equal(segments.some((segment) => segment.type === "math" && segment.value.includes("0.30")), true);
+  assert.equal(segments.some((segment) => segment.type === "math" && segment.value.includes("0.66")), true);
+});
+
 test("tolerates a single space between dollar sign and number as currency text", () => {
   assert.deepEqual(tokenizeLatexSegments("$ 1,250.50"), [
     { type: "text", value: "$ 1,250.50" },

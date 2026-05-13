@@ -1,0 +1,536 @@
+{
+  "questions": [
+    {
+      "id": "5afb3bef-5027-4e8f-b9c5-cead2aa54f78",
+      "test": {
+        "id": "c1f7abc3-3d89-4509-b6d2-94cab2439051",
+        "title": "2025 October - C",
+        "visibility": "private",
+        "period": "2025 october"
+      },
+      "section": {
+        "id": "d59055e7-8ab7-426e-bdce-8484ed9cb90c",
+        "name": "Reading and Writing",
+        "normalizedName": "Reading and Writing",
+        "moduleNumber": 2,
+        "position": 18
+      },
+      "taxonomy": {
+        "domain": "Standard English Conventions",
+        "skill": "Boundaries"
+      },
+      "difficulty": "easy",
+      "points": 30,
+      "questionType": "multiple_choice",
+      "contentForRenderer": {
+        "questionText": {
+          "sourceText": "Which choice completes the text so that it conforms to the conventions of Standard English?",
+          "rendererText": "Which choice completes the text so that it conforms to the conventions of Standard English?",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "passage": {
+          "sourceText": "Technologies such as microphones and inkjet printers are made using piezoelectric materials, which generate an internal electric field when pressure is applied to them. The toxic nature of some of these materials recently led a team from the University of Sheffield to investigate how <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>",
+          "rendererText": "Technologies such as microphones and inkjet printers are made using piezoelectric materials, which generate an internal electric field when pressure is applied to them. The toxic nature of some of these materials recently led a team from the University of Sheffield to investigate how <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "explanation": {
+          "sourceText": "No explanation available.",
+          "rendererText": "No explanation available.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "choices": [
+          {
+            "optionCode": "choice_0",
+            "displayOrder": 1,
+            "optionText": {
+              "sourceText": "could their use be better regulated?",
+              "rendererText": "could their use be better regulated?",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_1",
+            "displayOrder": 2,
+            "optionText": {
+              "sourceText": "their use could be better regulated.",
+              "rendererText": "their use could be better regulated.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_2",
+            "displayOrder": 3,
+            "optionText": {
+              "sourceText": "their use could be better regulated?",
+              "rendererText": "their use could be better regulated?",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_3",
+            "displayOrder": 4,
+            "optionText": {
+              "sourceText": "could their use be better regulated.",
+              "rendererText": "could their use be better regulated.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          }
+        ]
+      },
+      "sourceContent": {
+        "questionText": "Which choice completes the text so that it conforms to the conventions of Standard English?",
+        "passage": "Technologies such as microphones and inkjet printers are made using piezoelectric materials, which generate an internal electric field when pressure is applied to them. The toxic nature of some of these materials recently led a team from the University of Sheffield to investigate how <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>",
+        "explanation": "No explanation available."
+      },
+      "choices": [
+        {
+          "id": "bfb25abc-7803-4578-98c1-f83965b8f23c",
+          "optionCode": "choice_0",
+          "displayOrder": 1,
+          "optionText": "could their use be better regulated?"
+        },
+        {
+          "id": "2b413ba8-c287-424d-a28b-e038e477c8a0",
+          "optionCode": "choice_1",
+          "displayOrder": 2,
+          "optionText": "their use could be better regulated."
+        },
+        {
+          "id": "31914f81-9d0a-4f4e-a6ef-a3fc89f22c6a",
+          "optionCode": "choice_2",
+          "displayOrder": 3,
+          "optionText": "their use could be better regulated?"
+        },
+        {
+          "id": "360656cb-fdf3-48c5-9892-b3b6a0fdada3",
+          "optionCode": "choice_3",
+          "displayOrder": 4,
+          "optionText": "could their use be better regulated."
+        }
+      ],
+      "officialAnswer": {
+        "type": "multiple_choice",
+        "optionCode": "choice_1",
+        "optionText": "their use could be better regulated.",
+        "displayOrder": 2
+      },
+      "assetAnalysis": {
+        "visualState": "none",
+        "mentionsVisual": false,
+        "tableMarkdown": null,
+        "svgPresent": false,
+        "imagePresent": false,
+        "badExtraReason": null,
+        "mathWarnings": []
+      },
+      "imageUrl": null,
+      "extra": null
+    },
+    {
+      "id": "8d8e64c2-a884-40c6-9c38-75819f93f658",
+      "test": {
+        "id": "84d816a8-9e49-4227-b1aa-578a3dfd6229",
+        "title": "2026 March - W",
+        "visibility": "private",
+        "period": "2026 march"
+      },
+      "section": {
+        "id": "628ee43d-e58c-4603-9eff-f0f9e22571ac",
+        "name": "Reading and Writing",
+        "normalizedName": "Reading and Writing",
+        "moduleNumber": 2,
+        "position": 15
+      },
+      "taxonomy": {
+        "domain": "Information and Ideas",
+        "skill": "Command of Evidence"
+      },
+      "difficulty": "hard",
+      "points": 10,
+      "questionType": "multiple_choice",
+      "contentForRenderer": {
+        "questionText": {
+          "sourceText": "Which statement, if true, would most directly illustrate the text's assertion about isolates' relationship to overall linguistic diversity?",
+          "rendererText": "Which statement, if true, would most directly illustrate the text's assertion about isolates' relationship to overall linguistic diversity?",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "passage": {
+          "sourceText": "The language of the Natchez people, whose homeland comprised a comparatively swampy region in present-day Mississippi and Louisiana, was an isolate, or a language with no demonstrable genealogical relationship to other languages. Globally, coastal marshes and swamps correlate with the incidence of isolates, perhaps because geophysical barriers preserve isolates against the encroachment of language families (groups of languages whose structural and lexical similarity suggests descent from a common progenitor language). Curiously, the same barriers are associated with diversification within language families adjacent to isolates, such that the incidence of isolates like Natchez functions as an index of overall linguistic diversity in a region.",
+          "rendererText": "The language of the Natchez people, whose homeland comprised a comparatively swampy region in present-day Mississippi and Louisiana, was an isolate, or a language with no demonstrable genealogical relationship to other languages. Globally, coastal marshes and swamps correlate with the incidence of isolates, perhaps because geophysical barriers preserve isolates against the encroachment of language families (groups of languages whose structural and lexical similarity suggests descent from a common progenitor language). Curiously, the same barriers are associated with diversification within language families adjacent to isolates, such that the incidence of isolates like Natchez functions as an index of overall linguistic diversity in a region.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "explanation": {
+          "sourceText": "No explanation available.",
+          "rendererText": "No explanation available.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "choices": [
+          {
+            "optionCode": "choice_0",
+            "displayOrder": 1,
+            "optionText": {
+              "sourceText": "The tribes of the Caddo Confederacy, who inhabited a vast region to the northwest of the Natchez homeland, spoke Caddo as well as Adai, a poorly documented language whose relationship to Caddo is unknown and which is typically regarded as an isolate.",
+              "rendererText": "The tribes of the Caddo Confederacy, who inhabited a vast region to the northwest of the Natchez homeland, spoke Caddo as well as Adai, a poorly documented language whose relationship to Caddo is unknown and which is typically regarded as an isolate.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_1",
+            "displayOrder": 2,
+            "optionText": {
+              "sourceText": "Barring an as-yet-undermonstrated genealogical relationship in the deep past, Natchez's lexical similarities with the nearby languages of the Muskogean family are best attributed to areal diffusion, or the spread of linguistic features through contact instead of through descent from a common ancestral language.",
+              "rendererText": "Barring an as-yet-undermonstrated genealogical relationship in the deep past, Natchez's lexical similarities with the nearby languages of the Muskogean family are best attributed to areal diffusion, or the spread of linguistic features through contact instead of through descent from a common ancestral language.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_2",
+            "displayOrder": 3,
+            "optionText": {
+              "sourceText": "Despite incursions by various colonial powers- first Spain, then France, Britain, and finally the United States- into the challenging terrain of Mississippi and Louisiana, the grammar of Natchez appears to have largely resisted the influence of non-Indigenous languages.",
+              "rendererText": "Despite incursions by various colonial powers- first Spain, then France, Britain, and finally the United States- into the challenging terrain of Mississippi and Louisiana, the grammar of Natchez appears to have largely resisted the influence of non-Indigenous languages.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_3",
+            "displayOrder": 4,
+            "optionText": {
+              "sourceText": "Alabama and the many other languages of the Muskogean family proliferated in the areas abutting the homelands of a number of isolate-speaking peoples, such as the Natchez and Timucua.",
+              "rendererText": "Alabama and the many other languages of the Muskogean family proliferated in the areas abutting the homelands of a number of isolate-speaking peoples, such as the Natchez and Timucua.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          }
+        ]
+      },
+      "sourceContent": {
+        "questionText": "Which statement, if true, would most directly illustrate the text's assertion about isolates' relationship to overall linguistic diversity?",
+        "passage": "The language of the Natchez people, whose homeland comprised a comparatively swampy region in present-day Mississippi and Louisiana, was an isolate, or a language with no demonstrable genealogical relationship to other languages. Globally, coastal marshes and swamps correlate with the incidence of isolates, perhaps because geophysical barriers preserve isolates against the encroachment of language families (groups of languages whose structural and lexical similarity suggests descent from a common progenitor language). Curiously, the same barriers are associated with diversification within language families adjacent to isolates, such that the incidence of isolates like Natchez functions as an index of overall linguistic diversity in a region.",
+        "explanation": "No explanation available."
+      },
+      "choices": [
+        {
+          "id": "344e163c-092a-4f68-8816-633c87169c13",
+          "optionCode": "choice_0",
+          "displayOrder": 1,
+          "optionText": "The tribes of the Caddo Confederacy, who inhabited a vast region to the northwest of the Natchez homeland, spoke Caddo as well as Adai, a poorly documented language whose relationship to Caddo is unknown and which is typically regarded as an isolate."
+        },
+        {
+          "id": "4cd2e6de-0d57-4a0c-ac33-d0cbf46d6d60",
+          "optionCode": "choice_1",
+          "displayOrder": 2,
+          "optionText": "Barring an as-yet-undermonstrated genealogical relationship in the deep past, Natchez's lexical similarities with the nearby languages of the Muskogean family are best attributed to areal diffusion, or the spread of linguistic features through contact instead of through descent from a common ancestral language."
+        },
+        {
+          "id": "8a6c4a2c-f009-47b9-84a0-f49916893510",
+          "optionCode": "choice_2",
+          "displayOrder": 3,
+          "optionText": "Despite incursions by various colonial powers- first Spain, then France, Britain, and finally the United States- into the challenging terrain of Mississippi and Louisiana, the grammar of Natchez appears to have largely resisted the influence of non-Indigenous languages."
+        },
+        {
+          "id": "df641aef-a271-47f0-b2aa-237e059d174c",
+          "optionCode": "choice_3",
+          "displayOrder": 4,
+          "optionText": "Alabama and the many other languages of the Muskogean family proliferated in the areas abutting the homelands of a number of isolate-speaking peoples, such as the Natchez and Timucua."
+        }
+      ],
+      "officialAnswer": {
+        "type": "multiple_choice",
+        "optionCode": "choice_3",
+        "optionText": "Alabama and the many other languages of the Muskogean family proliferated in the areas abutting the homelands of a number of isolate-speaking peoples, such as the Natchez and Timucua.",
+        "displayOrder": 4
+      },
+      "assetAnalysis": {
+        "visualState": "none",
+        "mentionsVisual": false,
+        "tableMarkdown": null,
+        "svgPresent": false,
+        "imagePresent": false,
+        "badExtraReason": null,
+        "mathWarnings": []
+      },
+      "imageUrl": null,
+      "extra": null
+    },
+    {
+      "id": "3d85d577-0645-40c2-80bb-b11e96f94aac",
+      "test": {
+        "id": "bc7e306c-678d-43dd-844e-ab56f6533327",
+        "title": "2023 December - D",
+        "visibility": "private",
+        "period": "2023 december"
+      },
+      "section": {
+        "id": "d6c2260a-dd1c-439e-986e-1941e38ab3b8",
+        "name": "Reading and Writing",
+        "normalizedName": "Reading and Writing",
+        "moduleNumber": 1,
+        "position": 20
+      },
+      "taxonomy": {
+        "domain": "Standard English Conventions",
+        "skill": "Boundaries"
+      },
+      "difficulty": "easy",
+      "points": 30,
+      "questionType": "multiple_choice",
+      "contentForRenderer": {
+        "questionText": {
+          "sourceText": "Which choice completes the text so that it conforms to the conventions of Standard English?",
+          "rendererText": "Which choice completes the text so that it conforms to the conventions of Standard English?",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "passage": {
+          "sourceText": "Proto Omotic—a protolanguage, or ancestral language of a family of descendant (daughter) languages—is said to be the common ancestor of all Ta-Ne-Omotic languages. This designation is <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> Proto Omotic is only postulated, its characteristics being inferred from the linguistic properties of its nineteen daughters.",
+          "rendererText": "Proto Omotic—a protolanguage, or ancestral language of a family of descendant (daughter) languages—is said to be the common ancestor of all Ta-Ne-Omotic languages. This designation is <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> Proto Omotic is only postulated, its characteristics being inferred from the linguistic properties of its nineteen daughters.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "explanation": {
+          "sourceText": "No explanation available.",
+          "rendererText": "No explanation available.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "choices": [
+          {
+            "optionCode": "choice_0",
+            "displayOrder": 1,
+            "optionText": {
+              "sourceText": "hypothetical; however,",
+              "rendererText": "hypothetical; however,",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_1",
+            "displayOrder": 2,
+            "optionText": {
+              "sourceText": "hypothetical, however,",
+              "rendererText": "hypothetical, however,",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_2",
+            "displayOrder": 3,
+            "optionText": {
+              "sourceText": "hypothetical. However,",
+              "rendererText": "hypothetical. However,",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_3",
+            "displayOrder": 4,
+            "optionText": {
+              "sourceText": "hypothetical, however;",
+              "rendererText": "hypothetical, however;",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          }
+        ]
+      },
+      "sourceContent": {
+        "questionText": "Which choice completes the text so that it conforms to the conventions of Standard English?",
+        "passage": "Proto Omotic—a protolanguage, or ancestral language of a family of descendant (daughter) languages—is said to be the common ancestor of all Ta-Ne-Omotic languages. This designation is <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> Proto Omotic is only postulated, its characteristics being inferred from the linguistic properties of its nineteen daughters.",
+        "explanation": "No explanation available."
+      },
+      "choices": [
+        {
+          "id": "4e135f7f-7f68-4879-91b0-f1a2d5e74a77",
+          "optionCode": "choice_0",
+          "displayOrder": 1,
+          "optionText": "hypothetical; however,"
+        },
+        {
+          "id": "06fedb8c-a9e0-4341-88fa-c4a9b069c67d",
+          "optionCode": "choice_1",
+          "displayOrder": 2,
+          "optionText": "hypothetical, however,"
+        },
+        {
+          "id": "92f453ef-cf57-4ebd-bcf3-2d6398322331",
+          "optionCode": "choice_2",
+          "displayOrder": 3,
+          "optionText": "hypothetical. However,"
+        },
+        {
+          "id": "807d9c39-08f9-424b-a5fa-fb822407cdf1",
+          "optionCode": "choice_3",
+          "displayOrder": 4,
+          "optionText": "hypothetical, however;"
+        }
+      ],
+      "officialAnswer": {
+        "type": "multiple_choice",
+        "optionCode": "choice_0",
+        "optionText": "hypothetical; however,",
+        "displayOrder": 1
+      },
+      "assetAnalysis": {
+        "visualState": "none",
+        "mentionsVisual": false,
+        "tableMarkdown": null,
+        "svgPresent": false,
+        "imagePresent": false,
+        "badExtraReason": null,
+        "mathWarnings": []
+      },
+      "imageUrl": null,
+      "extra": null
+    },
+    {
+      "id": "60c7fe44-5e5a-48f2-958d-6635df4a507e",
+      "test": {
+        "id": "51dd7443-e8d4-4027-9f07-bf3ac27a577a",
+        "title": "2023 May - B",
+        "visibility": "private",
+        "period": "2023 may"
+      },
+      "section": {
+        "id": "6fbe8526-bafc-4bbd-9495-36a37fc7a23b",
+        "name": "Reading and Writing",
+        "normalizedName": "Reading and Writing",
+        "moduleNumber": 2,
+        "position": 15
+      },
+      "taxonomy": {
+        "domain": "Information and Ideas",
+        "skill": "Command of Evidence"
+      },
+      "difficulty": "hard",
+      "points": 10,
+      "questionType": "multiple_choice",
+      "contentForRenderer": {
+        "questionText": {
+          "sourceText": "Which finding, if true, would most directly support the claim in the underlined sentence?",
+          "rendererText": "Which finding, if true, would most directly support the claim in the underlined sentence?",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "passage": {
+          "sourceText": "Neural networks are computer models intended to reflect the organization of human brains and are often used in studies of brain function. According to an analysis of 11,000 such networks, Rylan Schaeffer and colleagues advise caution when drawing conclusions about brains from observations of neural networks. They found that when attempting to mimic grid cells (brain cells used in navigation), while 90% of the networks could accomplish navigation-related tasks, only about 10% of those exhibited any behaviors similar to those of grid cells. <u>But even this approximation of grid-cell activity has less to do with similarity between the neural networks and biological brains than it does with the rules programmed into the networks.</u>",
+          "rendererText": "Neural networks are computer models intended to reflect the organization of human brains and are often used in studies of brain function. According to an analysis of 11,000 such networks, Rylan Schaeffer and colleagues advise caution when drawing conclusions about brains from observations of neural networks. They found that when attempting to mimic grid cells (brain cells used in navigation), while 90% of the networks could accomplish navigation-related tasks, only about 10% of those exhibited any behaviors similar to those of grid cells. <u>But even this approximation of grid-cell activity has less to do with similarity between the neural networks and biological brains than it does with the rules programmed into the networks.</u>",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "explanation": {
+          "sourceText": "No explanation available.",
+          "rendererText": "No explanation available.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "choices": [
+          {
+            "optionCode": "choice_0",
+            "displayOrder": 1,
+            "optionText": {
+              "sourceText": "The rules that allow for networks to exhibit behaviors like those of grid cells have no equivalent in the function of biological brains.",
+              "rendererText": "The rules that allow for networks to exhibit behaviors like those of grid cells have no equivalent in the function of biological brains.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_1",
+            "displayOrder": 2,
+            "optionText": {
+              "sourceText": "The networks that do not exhibit behaviors like those of grid cells were nonetheless programmed with rules that had proven useful in earlier neural-network studies.",
+              "rendererText": "The networks that do not exhibit behaviors like those of grid cells were nonetheless programmed with rules that had proven useful in earlier neural-network studies.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_2",
+            "displayOrder": 3,
+            "optionText": {
+              "sourceText": "Neural networks can often accomplish tasks that biological brains do, but they are typically programmed with rules to model multiple types of brain cells simultaneously.",
+              "rendererText": "Neural networks can often accomplish tasks that biological brains do, but they are typically programmed with rules to model multiple types of brain cells simultaneously.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_3",
+            "displayOrder": 4,
+            "optionText": {
+              "sourceText": "Once a neural network is programmed, it is trained on certain tasks to see if it can independently arrive at processes that are similar to those performed by biological brains.",
+              "rendererText": "Once a neural network is programmed, it is trained on certain tasks to see if it can independently arrive at processes that are similar to those performed by biological brains.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          }
+        ]
+      },
+      "sourceContent": {
+        "questionText": "Which finding, if true, would most directly support the claim in the underlined sentence?",
+        "passage": "Neural networks are computer models intended to reflect the organization of human brains and are often used in studies of brain function. According to an analysis of 11,000 such networks, Rylan Schaeffer and colleagues advise caution when drawing conclusions about brains from observations of neural networks. They found that when attempting to mimic grid cells (brain cells used in navigation), while 90% of the networks could accomplish navigation-related tasks, only about 10% of those exhibited any behaviors similar to those of grid cells. <u>But even this approximation of grid-cell activity has less to do with similarity between the neural networks and biological brains than it does with the rules programmed into the networks.</u>",
+        "explanation": "No explanation available."
+      },
+      "choices": [
+        {
+          "id": "df43c148-f9cb-4df7-b1f8-6af15e163883",
+          "optionCode": "choice_0",
+          "displayOrder": 1,
+          "optionText": "The rules that allow for networks to exhibit behaviors like those of grid cells have no equivalent in the function of biological brains."
+        },
+        {
+          "id": "133c6fce-1322-4588-874d-e37fe2bb9f57",
+          "optionCode": "choice_1",
+          "displayOrder": 2,
+          "optionText": "The networks that do not exhibit behaviors like those of grid cells were nonetheless programmed with rules that had proven useful in earlier neural-network studies."
+        },
+        {
+          "id": "44a71b27-5092-45bd-9f95-39df295afa63",
+          "optionCode": "choice_2",
+          "displayOrder": 3,
+          "optionText": "Neural networks can often accomplish tasks that biological brains do, but they are typically programmed with rules to model multiple types of brain cells simultaneously."
+        },
+        {
+          "id": "326c3863-643c-49f8-a635-537c5f01cb35",
+          "optionCode": "choice_3",
+          "displayOrder": 4,
+          "optionText": "Once a neural network is programmed, it is trained on certain tasks to see if it can independently arrive at processes that are similar to those performed by biological brains."
+        }
+      ],
+      "officialAnswer": {
+        "type": "multiple_choice",
+        "optionCode": "choice_0",
+        "optionText": "The rules that allow for networks to exhibit behaviors like those of grid cells have no equivalent in the function of biological brains.",
+        "displayOrder": 1
+      },
+      "assetAnalysis": {
+        "visualState": "none",
+        "mentionsVisual": false,
+        "tableMarkdown": null,
+        "svgPresent": false,
+        "imagePresent": false,
+        "badExtraReason": null,
+        "mathWarnings": []
+      },
+      "imageUrl": null,
+      "extra": null
+    }
+  ]
+}

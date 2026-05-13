@@ -81,9 +81,13 @@ The `scripts/` directory contains operational workflows, not runtime UI.
 Important script areas include:
 
 - `scripts/pdf` for PDF generation, rasterization, and publishing workflows
-- `scripts/questions` for scraped question conversion, repair, and AI answer/classification pipelines
+- `scripts/questions` for scraped question conversion, repair, AI answer/classification pipelines, and the PostgreSQL-backed corpus evaluator
 - `scripts/supabase` for local and remote Supabase maintenance
 - `scripts/migrations` for migration workflows
 - `scripts/users` for user maintenance utilities
 
 Generated PDFs and question-conversion outputs should be treated as pipeline artifacts. Runtime student PDF delivery is handled through the authenticated API and the PDF asset services.
+
+Math PDF repair uses `scripts/questions/auditRepairMathPdfLatex.ts` before the PDF pipeline when source content needs deterministic LaTeX cleanup. The PDF template also applies the shared scraped-content mojibake repair at render time so Drive uploads do not preserve common `â€™`/`Â°`-style encoding artifacts in generated HTML/PDF. The overnight Math rerender path should use the PDF script math-affected filters so only `sectional/Math` and full-length assets for tests that actually contain Math are regenerated and published.
+
+Question corpus evaluation uses `scripts/questions/evaluateQuestionCorpus.ts`. It connects to PostgreSQL with `pg`, chunks question IDs into LLM batches, runs three DeepSeek solver calls plus one evaluator call per batch, writes JSONL backups and checkpoints outside the repo by default, and only mutates `public.questions` plus related answer tables when invoked with `--execute`. The script defaults solvers to DeepSeek V4 Flash and the evaluator to DeepSeek V4 Pro, with `--solver-model`, `--evaluator-model`, or legacy shared `--model` overrides. LLM execution defaults to Opencode with the text-only `summary` agent, but `--llm-provider=openai` can route the same prompts through an OpenAI-compatible `/chat/completions` endpoint using `--openai-base-url` and `--openai-api-key-env`. Solver calls use a separate concurrency lane so the three Flash solver calls can run together, and successful solver results are memoized per question so evaluator retries or split batches do not re-run the same Flash work. The script reuses the UI math renderer helpers for LaTeX payloads, skips known visual-problem rows before LLM calls, treats `image_url` as non-renderable for this project, sends existing SVG rows to visual review, treats placeholder answer choices such as `Option B` as deterministic defects, and routes missing/broken visual-source rows through deterministic replacement gates instead of LLM candidate evaluation. Operational runs can use `--max-new`, `--skip-completed-from`, `--known-issues-json`, and `--shutdown-on-complete` for staged dry-runs and overnight audits.

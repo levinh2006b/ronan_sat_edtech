@@ -9,6 +9,24 @@ interface CurrencyRule {
 }
 
 const CURRENCY_ESCAPE_RULES: CurrencyRule[] = [
+  // 0. Malformed percent math from scraped prompts: $0.4% -> \(0.4\%\)
+  {
+    pattern: /(?<!\\)\$(\d+(?:\.\d+)?)%(?!\$)/g,
+    replacement: "\\($1\\%\\)",
+  },
+
+  // 0b. Malformed temperature math from scraped choices: $15.4^\circ C at...
+  {
+    pattern: /(?<!\\)\$(\d+(?:\.\d+)?)\^\\circ\s*C\b(?!\$)/g,
+    replacement: "\\($1^\\circ C\\)",
+  },
+
+  // 0c. Malformed unit math before a prose sentence: $0.30 \text{...}^2\text{)}. In...
+  {
+    pattern: /(?<!\\)\$(\d+(?:\.\d+)?\s+\\text\{[^$]*?\\text\{\)\})(?=[.;,]?\s+[A-Z])/g,
+    replacement: "\\($1\\)",
+  },
+
   // 1. Currency Range: $5 - $10, $5-$10, $5\u2013$10, $5 \u2014 $10
   {
     pattern:
@@ -26,6 +44,18 @@ const CURRENCY_ESCAPE_RULES: CurrencyRule[] = [
   {
     pattern: /\b([A-Z]{2,3})(?<!\\)(\$)\s?(\d[\d,]*\.?\d*)/g,
     replacement: "$1\\$2$3",
+  },
+
+  // 4. Positive currency with comma groups or cents: $35,600.00, $1,250, $12.50
+  {
+    pattern: /(?<!\\)(\$)\s?(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+\.\d{2})(?!\s*\\)(?=\b)/g,
+    replacement: "\\$1$2",
+  },
+
+  // 5. Plain whole-dollar amounts followed by prose punctuation/space: $0), $5.
+  {
+    pattern: /(?<!\\)(\$)\s?(\d+)(?!\.\d)(?=[\s,.;:)])/g,
+    replacement: "\\$1$2",
   },
 ];
 

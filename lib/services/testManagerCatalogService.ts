@@ -88,6 +88,9 @@ function normalizeReviewFilter(value?: string): TestManagerReviewFilter {
     case "missing_math_delimiters":
     case "rhetorical_notes_format":
     case "has_keyword_any":
+    case "visual_reference_keyword":
+    case "broken_csv_table":
+    case "orphan_visual":
       return value;
     default:
       return "all";

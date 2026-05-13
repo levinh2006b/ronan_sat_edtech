@@ -34,6 +34,9 @@ const REVIEW_FILTER_OPTIONS: Array<{ value: TestManagerReviewFilter; label: stri
   { value: "all", label: "All questions" },
   { value: "has_figure_or_table", label: "Has graph/table" },
   { value: "keyword_needs_figure", label: "Keywords need check" },
+  { value: "visual_reference_keyword", label: "Visual-reference keyword" },
+  { value: "orphan_visual", label: "Orphan visual" },
+  { value: "broken_csv_table", label: "Broken CSV table" },
   { value: "markdown_table_payload", label: "Markdown table payload" },
   { value: "bad_extra_payload", label: "Bad figure payload" },
   { value: "math_dollar_latex", label: "Math dollar LaTeX" },
@@ -52,6 +55,9 @@ const REVIEW_FLAG_LABELS: Record<string, string> = {
   missing_math_delimiters: "Naked LaTeX",
   rhetorical_notes_format: "Notes",
   keyword_with_shared_figure: "Shared figure",
+  visual_reference_keyword: "Visual phrase",
+  broken_csv_table: "Broken CSV",
+  orphan_visual: "Orphan visual",
 };
 
 const SUSPICION_LEVEL_LABELS: Record<string, { label: string; className: string }> = {

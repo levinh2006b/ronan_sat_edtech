@@ -6,8 +6,10 @@ import katex from "katex";
 import { marked } from "marked";
 
 import { estimateQuestionExtraUnits, getQuestionExtraSvgMarkup, parseQuestionExtraTable, type QuestionExtra } from "@/lib/questionExtra";
+import { repairScrapedMojibake } from "@/lib/scrapedQuestionContent";
 import { isVerbalSection, MATH_SECTION, VERBAL_SECTION } from "@/lib/sections";
 import { tokenizeHtmlLatexContent, type ContentSegment } from "@/utils/latexTokenizer";
+import { normalizeMathDelimiters } from "@/utils/mathContentNormalizer";
 
 type RawQuestion = {
   order?: number;
@@ -135,6 +137,10 @@ const SUPERSCRIPT_PATTERN = /\^(\{[^}]+\}|\\[a-zA-Z]+|\S)/g;
 const NON_TALL_SUPERSCRIPT_PATTERN = /^(?:\{)?(?:\\circ|\\degree|\\deg|°)(?:\})?$/;
 const BARE_LATEX_PATTERN =
   /(?<![$\\])\\(?:frac|dfrac|tfrac|sqrt|left|right|cdot|times|div|pi|theta|alpha|beta|gamma|delta|lambda|mu|angle|triangle|overline|underline|bar|hat|vec|sin|cos|tan|log|ln|pm|leq|geq|neq|approx|degree|circ)(?:\s*(?:\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}|\\[a-zA-Z]+|[+\-]?\d+(?:\.\d+)?|[a-zA-Z0-9]))*/g;
+const BARE_EXPONENTIAL_EQUATION_PATTERN =
+  /\b[a-zA-Z]\s*=\s*-?\d+(?:\.\d+)?\s*\(\s*-?\d+(?:\.\d+)?\s*\)\s*\^\{?-?[a-zA-Z0-9]+\}?/g;
+const SCRAPED_EXPONENTIAL_NEGATIVE_EXPONENT_PATTERN =
+  /(\b[a-zA-Z]\s*=\s*-?\d+(?:\.\d+)?\s*\(\s*-?\d+(?:\.\d+)?\s*\))\s*[−–-]\s*([a-zA-Z])\b/g;
 const KATEX_DIST_DIR = path.join(process.cwd(), "node_modules", "katex", "dist");
 let cachedLocalKatexStyles: string | null = null;
 
@@ -206,12 +212,6 @@ function loosenTallInlineMathText(mathText: string): string {
   return mathText.replace(/\\frac/g, "\\dfrac");
 }
 
-function normalizeLatexDelimiters(text: string): string {
-  return text
-    .replace(/\\\[([\s\S]*?)\\\]/g, (_match, mathText: string) => `$$${mathText}$$`)
-    .replace(/\\\(([\s\S]*?)\\\)/g, (_match, mathText: string) => `$${mathText}$`);
-}
-
 function normalizeKatexMathText(mathText: string): string {
   let normalized = mathText
     .replace(/\\(left|right)\s+([()[\]{}.|])/g, "\\$1$2")
@@ -237,6 +237,13 @@ function promoteStandaloneInlineMath(text: string): string {
   });
 }
 
+function repairScrapedMathArtifacts(text: string): string {
+  return text.replace(
+    SCRAPED_EXPONENTIAL_NEGATIVE_EXPONENT_PATTERN,
+    (_match: string, base: string, variable: string) => `${base}^{-${variable}}`,
+  );
+}
+
 function parseText(
   text: string | null | undefined,
   options?: {
@@ -248,7 +255,8 @@ function parseText(
     return "";
   }
 
-  const normalizedLineBreaks = normalizeLatexDelimiters(text)
+  const repairedText = repairScrapedMathArtifacts(repairScrapedMojibake(text));
+  const normalizedLineBreaks = normalizeMathDelimiters(repairedText)
     .replace(/&lt;br\s*\/?&gt;/gi, "<br>")
     .replace(/<br\s*\/?>/gi, "<br>");
 
@@ -257,7 +265,7 @@ function parseText(
     ? promoteStandaloneInlineMath(textWithSanitizedTables)
     : textWithSanitizedTables;
 
-  const textWithBareLatexWrapped = wrapBareLatexOutsideDelimitedMath(normalizedText);
+  const textWithBareLatexWrapped = normalizeMathDelimiters(wrapBareLatexOutsideDelimitedMath(normalizedText));
 
   const parsedMath = tokenizeHtmlLatexContent(textWithBareLatexWrapped)
     .map((segment) => {
@@ -275,6 +283,7 @@ function parseText(
         const renderedMath = katex.renderToString(renderMathText, {
           displayMode: isDisplayMath,
           throwOnError: false,
+          strict: "ignore",
           output: "html",
         });
 
@@ -431,15 +440,25 @@ function wrapBareLatexOutsideDelimitedMath(text: string): string {
 }
 
 function wrapBareLatex(text: string): string {
-  return text.replace(BARE_LATEX_PATTERN, (match) => {
-    const trimmed = match.trim();
+  return text
+    .replace(BARE_EXPONENTIAL_EQUATION_PATTERN, (match) => {
+      const trimmed = match.trim();
 
-    if (!trimmed) {
-      return match;
-    }
+      if (!trimmed) {
+        return match;
+      }
 
-    return `$${trimmed}$`;
-  });
+      return `$${trimmed}$`;
+    })
+    .replace(BARE_LATEX_PATTERN, (match) => {
+      const trimmed = match.trim();
+
+      if (!trimmed) {
+        return match;
+      }
+
+      return `$${trimmed}$`;
+    });
 }
 
 function serializeMathSegment(segment: Extract<ContentSegment, { type: "math" }>): string {

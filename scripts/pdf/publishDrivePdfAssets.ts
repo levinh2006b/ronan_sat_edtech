@@ -34,6 +34,9 @@ type CliOptions = {
   offset: number;
   skipPublished: boolean;
   onlyPublished: boolean;
+  mode: "all" | PdfMode;
+  sectionName?: SectionName;
+  mathAffected: boolean;
 };
 
 type ActiveAssetRow = {
@@ -79,6 +82,9 @@ function parseArgs(): CliOptions {
   let offset = 0;
   let skipPublished = false;
   let onlyPublished = false;
+  let mode: CliOptions["mode"] = "all";
+  let sectionName: SectionName | undefined;
+  let mathAffected = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -90,6 +96,24 @@ function parseArgs(): CliOptions {
       skipPublished = true;
     } else if (arg === "--only-published") {
       onlyPublished = true;
+    } else if (arg === "--mode" && next) {
+      const normalizedMode = next.trim().toLowerCase();
+      if (!["all", "full", "sectional"].includes(normalizedMode)) {
+        throw new Error(`Invalid --mode value: ${next}`);
+      }
+      mode = normalizedMode as CliOptions["mode"];
+      index += 1;
+    } else if (arg === "--section" && next) {
+      if (next.trim().toLowerCase() === "math") {
+        sectionName = MATH_SECTION;
+      } else if (next.trim().toLowerCase() === "verbal" || next.trim().toLowerCase() === "reading and writing") {
+        sectionName = VERBAL_SECTION;
+      } else {
+        throw new Error(`Invalid --section value: ${next}`);
+      }
+      index += 1;
+    } else if (arg === "--math-affected") {
+      mathAffected = true;
     } else if (arg === "--input-dir" && next) {
       inputDir = next;
       index += 1;
@@ -112,6 +136,11 @@ function parseArgs(): CliOptions {
     }
   }
 
+  if (mathAffected) {
+    mode = "all";
+    sectionName = MATH_SECTION;
+  }
+
   return {
     execute,
     inputDir: path.resolve(inputDir),
@@ -121,6 +150,9 @@ function parseArgs(): CliOptions {
     offset,
     skipPublished,
     onlyPublished,
+    mode,
+    sectionName,
+    mathAffected,
   };
 }
 
@@ -476,6 +508,20 @@ async function loadTestTitleMap(testIds: string[]) {
   return new Map(((data ?? []) as TestTitleRow[]).map((row) => [row.id, row.title]));
 }
 
+async function loadMathTestIds() {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("test_sections")
+    .select("test_id")
+    .eq("name", MATH_SECTION);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return new Set(((data ?? []) as Array<{ test_id: string }>).map((row) => row.test_id));
+}
+
 function escapeDriveQueryValue(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
@@ -615,10 +661,32 @@ async function main() {
   const discoveredTargets = files
     .map((file) => strictTarget(file) ?? legacyTarget(file))
     .filter((target): target is AssetTarget => Boolean(target))
-    .filter((target) => !options.testId || target.testId === options.testId);
+    .filter((target) => !options.testId || target.testId === options.testId)
+    .filter((target) => options.mode === "all" || target.mode === options.mode)
+    .filter((target) => {
+      if (!options.sectionName || target.mode !== "sectional") {
+        return true;
+      }
+
+      return target.sectionName === options.sectionName;
+    });
+  const mathTestIds = options.mathAffected ? await loadMathTestIds() : null;
+  const scopedTargets = mathTestIds
+    ? discoveredTargets.filter((target) => {
+        if (target.kind === "math") {
+          return true;
+        }
+
+        if (target.kind === "full") {
+          return mathTestIds.has(target.testId);
+        }
+
+        return false;
+      })
+    : discoveredTargets;
   const needsPublishedKeys = options.skipPublished || options.onlyPublished;
   const publishedKeys = needsPublishedKeys ? await loadPublishedAssetKeySet() : new Set<string>();
-  const mappedTargets = discoveredTargets.filter((target) => {
+  const mappedTargets = scopedTargets.filter((target) => {
     const isPublished = publishedKeys.has(getAssetVersionKey(target));
     if (options.skipPublished) {
       return !isPublished;
@@ -641,7 +709,10 @@ async function main() {
   console.log(`Input: ${options.inputDir}`);
   console.log(`Raster output: ${options.outputDir}`);
   console.log(`Raster profile: ${PDF_DPI} DPI, JPEG quality ${JPEG_QUALITY}, chroma ${JPEG_CHROMA_SUBSAMPLING}, grayscale ${USE_GRAYSCALE ? "on" : "off"}`);
-  console.log(`Mapped ${discoveredTargets.length}/${files.length} PDFs. Planning ${targets.length} asset(s).`);
+  console.log(`Mapped ${scopedTargets.length}/${files.length} PDFs after scope filters. Planning ${targets.length} asset(s).`);
+  if (options.mathAffected) {
+    console.log("Scope: math-affected assets only (sectional Math and full PDFs for tests with Math).");
+  }
   if (options.offset > 0) {
     console.log(`Offset: skipping the first ${options.offset} mapped asset(s).`);
   }

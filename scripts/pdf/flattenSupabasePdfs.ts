@@ -83,6 +83,8 @@ type PrintableQuestion = {
   extra?: QuestionExtra | null;
 };
 
+type PdfModeFilter = "all" | "full" | "sectional";
+
 const OUTPUT_DIR = process.env.PDF_OUTPUT_DIR || path.join(os.homedir(), "Desktop", "flattened-pdfs");
 const HTML_DIR = path.join(OUTPUT_DIR, "_html");
 const PUBLIC_DIR = path.join(process.cwd(), "public");
@@ -95,6 +97,10 @@ function parseArgs() {
   const args = process.argv.slice(2);
   let testId = process.env.PDF_TEST_ID?.trim() || undefined;
   let onlyPublished = false;
+  let mode: PdfModeFilter = "all";
+  let sectionName: string | undefined;
+  let mathAffected = false;
+  let failOnKatexError = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -105,12 +111,31 @@ function parseArgs() {
       index += 1;
     } else if (arg === "--only-published") {
       onlyPublished = true;
+    } else if (arg === "--mode" && next) {
+      const normalizedMode = next.trim().toLowerCase();
+      if (!["all", "full", "sectional"].includes(normalizedMode)) {
+        throw new Error(`Invalid --mode value: ${next}`);
+      }
+      mode = normalizedMode as PdfModeFilter;
+      index += 1;
+    } else if (arg === "--section" && next) {
+      sectionName = normalizeSectionName(next);
+      index += 1;
+    } else if (arg === "--math-affected") {
+      mathAffected = true;
+    } else if (arg === "--fail-on-katex-error") {
+      failOnKatexError = true;
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
   }
 
-  return { testId, onlyPublished };
+  if (mathAffected) {
+    mode = "all";
+    sectionName = MATH_SECTION;
+  }
+
+  return { testId, onlyPublished, mode, sectionName, mathAffected, failOnKatexError };
 }
 
 function getBrowserPath() {
@@ -377,8 +402,9 @@ async function writeBookletPdf(params: {
   mode: "full" | "sectional";
   sectionName?: string;
   questions: PrintableQuestion[];
+  failOnKatexError?: boolean;
 }) {
-  const { browserPath, test, mode, sectionName, questions } = params;
+  const { browserPath, test, mode, sectionName, questions, failOnKatexError } = params;
   const folderName = sanitizeFilePart(`${test.title} - ${test.id}`);
   const sectionFolder = sectionName ? sanitizeFilePart(sectionName) : "";
   const outputFolder =
@@ -410,9 +436,16 @@ async function writeBookletPdf(params: {
   });
 
   await writeFile(htmlPath, normalizeHtmlForFileRendering(html), "utf8");
+  if (failOnKatexError && html.includes("katex-error")) {
+    throw new Error(`KaTeX render error found in generated HTML: ${htmlPath}`);
+  }
   const result = await renderPdf(browserPath, htmlPath, pdfPath);
 
   return result.outputPath;
+}
+
+function testHasMathQuestions(questions: PrintableQuestion[]) {
+  return questions.some((question) => normalizeSectionName(question.section) === MATH_SECTION);
 }
 
 function getSectionalTargets(questions: PrintableQuestion[]) {
@@ -467,18 +500,29 @@ async function main() {
       continue;
     }
 
-    if (!publishedKeys || publishedKeys.has(getAssetKey(test.id, "full"))) {
+    const hasMathQuestions = testHasMathQuestions(questions);
+    const shouldRenderFull =
+      options.mode !== "sectional"
+      && (!options.mathAffected || hasMathQuestions)
+      && (!publishedKeys || publishedKeys.has(getAssetKey(test.id, "full")));
+
+    if (shouldRenderFull) {
       const fullPdfPath = await writeBookletPdf({
         browserPath,
         test,
         mode: "full",
         questions,
+        failOnKatexError: options.failOnKatexError,
       });
       renderedCount += 1;
       console.log(`Wrote full-length PDF: ${fullPdfPath}`);
     }
 
-    for (const sectionName of getSectionalTargets(questions)) {
+    const sectionalTargets = getSectionalTargets(questions).filter((sectionName) =>
+      options.sectionName ? sectionName === options.sectionName : true,
+    );
+
+    for (const sectionName of options.mode === "full" ? [] : sectionalTargets) {
       if (publishedKeys && !publishedKeys.has(getAssetKey(test.id, "sectional", sectionName))) {
         continue;
       }
@@ -490,6 +534,7 @@ async function main() {
         mode: "sectional",
         sectionName,
         questions: sectionQuestions,
+        failOnKatexError: options.failOnKatexError,
       });
       renderedCount += 1;
       console.log(`Wrote sectional PDF: ${sectionalPdfPath}`);

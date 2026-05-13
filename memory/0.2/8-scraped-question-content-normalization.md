@@ -22,6 +22,11 @@
 - Added `scripts/questions/checkScrapedQuestionContentNormalization.ts` with representative mojibake, Markdown blockquote, paragraph break, bold/italic, and LaTeX preservation checks.
 - Ran the check script and targeted ESLint successfully.
 
+## 2026-05-11 PDF/Evaluator Follow-up
+
+- `utils/questionTemplate.ts` now applies shared mojibake repair during PDF HTML generation so regenerated Drive PDFs do not render common scraped encoding artifacts.
+- `scripts/questions/evaluateQuestionCorpus.ts` includes deterministic mojibake repair in valid-question mutation plans; dry-runs log patches and execute mode is still required before database text changes.
+
 ## 2026-05-07 Provenance Note
 
 - Regenerated scraped admin JSON with Codex answer fill using `--ai-offset=100 --ai-limit=100`, producing 99 ready rows.

@@ -1,0 +1,669 @@
+{
+  "questions": [
+    {
+      "id": "ba4bf57d-83e6-4764-acde-82e6ffd82d86",
+      "test": {
+        "id": "84d816a8-9e49-4227-b1aa-578a3dfd6229",
+        "title": "2026 March - W",
+        "visibility": "private",
+        "period": "2026 march"
+      },
+      "section": {
+        "id": "5def9737-e9d9-45cd-a622-2d1121d41928",
+        "name": "Reading and Writing",
+        "normalizedName": "Reading and Writing",
+        "moduleNumber": 1,
+        "position": 18
+      },
+      "taxonomy": {
+        "domain": "Standard English Conventions",
+        "skill": "Form, Structure, and Sense"
+      },
+      "difficulty": "easy",
+      "points": 30,
+      "questionType": "multiple_choice",
+      "contentForRenderer": {
+        "questionText": {
+          "sourceText": "Which choice completes the text so that it conforms to the conventions of Standard English?",
+          "rendererText": "Which choice completes the text so that it conforms to the conventions of Standard English?",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "passage": {
+          "sourceText": "In the Czech language, people commonly begin a folktale with a phrase that roughly translates to \"beyond seven mountain ranges, beyond seven rivers.\" In English, beginning with the phrase \"once upon a time\" is common. Indeed, how a folktale begins depends largely on the language in which<u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> being told.",
+          "rendererText": "In the Czech language, people commonly begin a folktale with a phrase that roughly translates to \"beyond seven mountain ranges, beyond seven rivers.\" In English, beginning with the phrase \"once upon a time\" is common. Indeed, how a folktale begins depends largely on the language in which<u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> being told.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "explanation": {
+          "sourceText": "No explanation available.",
+          "rendererText": "No explanation available.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "choices": [
+          {
+            "optionCode": "choice_0",
+            "displayOrder": 1,
+            "optionText": {
+              "sourceText": "they are",
+              "rendererText": "they are",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_1",
+            "displayOrder": 2,
+            "optionText": {
+              "sourceText": "it is",
+              "rendererText": "it is",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_2",
+            "displayOrder": 3,
+            "optionText": {
+              "sourceText": "they were",
+              "rendererText": "they were",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_3",
+            "displayOrder": 4,
+            "optionText": {
+              "sourceText": "these are",
+              "rendererText": "these are",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          }
+        ]
+      },
+      "sourceContent": {
+        "questionText": "Which choice completes the text so that it conforms to the conventions of Standard English?",
+        "passage": "In the Czech language, people commonly begin a folktale with a phrase that roughly translates to \"beyond seven mountain ranges, beyond seven rivers.\" In English, beginning with the phrase \"once upon a time\" is common. Indeed, how a folktale begins depends largely on the language in which<u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> being told.",
+        "explanation": "No explanation available."
+      },
+      "choices": [
+        {
+          "id": "93348fc7-958f-4c1d-be56-19198a5175f7",
+          "optionCode": "choice_0",
+          "displayOrder": 1,
+          "optionText": "they are"
+        },
+        {
+          "id": "306e2bac-008e-4f80-92eb-51bd29c27bb3",
+          "optionCode": "choice_1",
+          "displayOrder": 2,
+          "optionText": "it is"
+        },
+        {
+          "id": "1506cfe2-f7b9-4ee9-b67c-130022eabeef",
+          "optionCode": "choice_2",
+          "displayOrder": 3,
+          "optionText": "they were"
+        },
+        {
+          "id": "a8a140ac-6421-4634-b3c4-61b5ee5ba682",
+          "optionCode": "choice_3",
+          "displayOrder": 4,
+          "optionText": "these are"
+        }
+      ],
+      "officialAnswer": {
+        "type": "multiple_choice",
+        "optionCode": "choice_1",
+        "optionText": "it is",
+        "displayOrder": 2
+      },
+      "assetAnalysis": {
+        "visualState": "none",
+        "mentionsVisual": false,
+        "tableMarkdown": null,
+        "svgPresent": false,
+        "imagePresent": false,
+        "badExtraReason": null,
+        "mathWarnings": []
+      },
+      "imageUrl": null,
+      "extra": null
+    },
+    {
+      "id": "8e01a2d0-8700-450d-b4e8-235f57fea2d4",
+      "test": {
+        "id": "090caa4e-7883-44e2-8a96-2093fe129136",
+        "title": "2023 March - K",
+        "visibility": "private",
+        "period": "2023 march"
+      },
+      "section": {
+        "id": "db6957c9-0d05-4364-ac49-9db212691268",
+        "name": "Reading and Writing",
+        "normalizedName": "Reading and Writing",
+        "moduleNumber": 1,
+        "position": 22
+      },
+      "taxonomy": {
+        "domain": "Expression of Ideas",
+        "skill": "Transitions"
+      },
+      "difficulty": "easy",
+      "points": 30,
+      "questionType": "multiple_choice",
+      "contentForRenderer": {
+        "questionText": {
+          "sourceText": "Which choice completes the text with the most logical transition?",
+          "rendererText": "Which choice completes the text with the most logical transition?",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "passage": {
+          "sourceText": "In order to create the Global Positioning System (GPS), scientists had to develop an accurate mathematical model of Earth’s shape that accounted for various forces, such as tides. <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> it was mathematician Gladys West who wrote the computer program that could perform these necessary calculations.",
+          "rendererText": "In order to create the Global Positioning System (GPS), scientists had to develop an accurate mathematical model of Earth’s shape that accounted for various forces, such as tides. <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> it was mathematician Gladys West who wrote the computer program that could perform these necessary calculations.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "explanation": {
+          "sourceText": "No explanation available.",
+          "rendererText": "No explanation available.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "choices": [
+          {
+            "optionCode": "choice_0",
+            "displayOrder": 1,
+            "optionText": {
+              "sourceText": "Ultimately,",
+              "rendererText": "Ultimately,",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_1",
+            "displayOrder": 2,
+            "optionText": {
+              "sourceText": "In other words,",
+              "rendererText": "In other words,",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_2",
+            "displayOrder": 3,
+            "optionText": {
+              "sourceText": "Secondly,",
+              "rendererText": "Secondly,",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_3",
+            "displayOrder": 4,
+            "optionText": {
+              "sourceText": "In addition,",
+              "rendererText": "In addition,",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          }
+        ]
+      },
+      "sourceContent": {
+        "questionText": "Which choice completes the text with the most logical transition?",
+        "passage": "In order to create the Global Positioning System (GPS), scientists had to develop an accurate mathematical model of Earth’s shape that accounted for various forces, such as tides. <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> it was mathematician Gladys West who wrote the computer program that could perform these necessary calculations.",
+        "explanation": "No explanation available."
+      },
+      "choices": [
+        {
+          "id": "cb2d8702-fcec-4b62-b190-ece46a87ebc2",
+          "optionCode": "choice_0",
+          "displayOrder": 1,
+          "optionText": "Ultimately,"
+        },
+        {
+          "id": "024640ea-73ab-4457-b105-60e3d34281d8",
+          "optionCode": "choice_1",
+          "displayOrder": 2,
+          "optionText": "In other words,"
+        },
+        {
+          "id": "960fd3e3-ec1d-4ce6-a48b-e349bf8edaa4",
+          "optionCode": "choice_2",
+          "displayOrder": 3,
+          "optionText": "Secondly,"
+        },
+        {
+          "id": "941cf01a-94bb-4d4a-bec3-01a43b62b917",
+          "optionCode": "choice_3",
+          "displayOrder": 4,
+          "optionText": "In addition,"
+        }
+      ],
+      "officialAnswer": {
+        "type": "multiple_choice",
+        "optionCode": "choice_0",
+        "optionText": "Ultimately,",
+        "displayOrder": 1
+      },
+      "assetAnalysis": {
+        "visualState": "none",
+        "mentionsVisual": false,
+        "tableMarkdown": null,
+        "svgPresent": false,
+        "imagePresent": false,
+        "badExtraReason": null,
+        "mathWarnings": []
+      },
+      "imageUrl": null,
+      "extra": null
+    },
+    {
+      "id": "9d32a366-0458-4ef8-8505-7ea3b203c038",
+      "test": {
+        "id": "cb520260-d418-4cb1-bf7e-204053dc6142",
+        "title": "2025 December - I",
+        "visibility": "private",
+        "period": "2025 december"
+      },
+      "section": {
+        "id": "446a6086-302f-476f-a6e4-e442ccef8a3b",
+        "name": "Reading and Writing",
+        "normalizedName": "Reading and Writing",
+        "moduleNumber": 1,
+        "position": 13
+      },
+      "taxonomy": {
+        "domain": "Information and Ideas",
+        "skill": "Command of Evidence"
+      },
+      "difficulty": "medium",
+      "points": 20,
+      "questionType": "multiple_choice",
+      "contentForRenderer": {
+        "questionText": {
+          "sourceText": "Which choice most effectively uses a quotation from <em>King Lear</em> to illustrate the claim?",
+          "rendererText": "Which choice most effectively uses a quotation from <em>King Lear</em> to illustrate the claim?",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "passage": {
+          "sourceText": "<em>King Lear</em> is a circa 1606 play by William Shakespeare. In the play, the character of King Lear attempts to test his three daughters’ devotion to him. He later expresses regret for his actions, as is evident when he <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>",
+          "rendererText": "<em>King Lear</em> is a circa 1606 play by William Shakespeare. In the play, the character of King Lear attempts to test his three daughters’ devotion to him. He later expresses regret for his actions, as is evident when he <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "explanation": {
+          "sourceText": "No explanation available.",
+          "rendererText": "No explanation available.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "choices": [
+          {
+            "optionCode": "choice_0",
+            "displayOrder": 1,
+            "optionText": {
+              "sourceText": "says of himself, “I am a man / more sinned against than sinning.”",
+              "rendererText": "says of himself, “I am a man / more sinned against than sinning.”",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_1",
+            "displayOrder": 2,
+            "optionText": {
+              "sourceText": "says during a growing storm, “This tempest will not give me leave to ponder / On things would hurt me more.”",
+              "rendererText": "says during a growing storm, “This tempest will not give me leave to ponder / On things would hurt me more.”",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_2",
+            "displayOrder": 3,
+            "optionText": {
+              "sourceText": "says to himself while striking his head, “Beat at this gate that let thy folly in / And thy dear judgement out!”",
+              "rendererText": "says to himself while striking his head, “Beat at this gate that let thy folly in / And thy dear judgement out!”",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_3",
+            "displayOrder": 4,
+            "optionText": {
+              "sourceText": "says of himself, “I will do such things— / What they are yet, I know not; but they shall be / The terrors of the earth!”",
+              "rendererText": "says of himself, “I will do such things— / What they are yet, I know not; but they shall be / The terrors of the earth!”",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          }
+        ]
+      },
+      "sourceContent": {
+        "questionText": "Which choice most effectively uses a quotation from <em>King Lear</em> to illustrate the claim?",
+        "passage": "<em>King Lear</em> is a circa 1606 play by William Shakespeare. In the play, the character of King Lear attempts to test his three daughters’ devotion to him. He later expresses regret for his actions, as is evident when he <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>",
+        "explanation": "No explanation available."
+      },
+      "choices": [
+        {
+          "id": "6a4767fe-2be2-4759-aed7-c228c2d06d8b",
+          "optionCode": "choice_0",
+          "displayOrder": 1,
+          "optionText": "says of himself, “I am a man / more sinned against than sinning.”"
+        },
+        {
+          "id": "a3cb8ec3-8008-4b09-94f0-adfb447d398d",
+          "optionCode": "choice_1",
+          "displayOrder": 2,
+          "optionText": "says during a growing storm, “This tempest will not give me leave to ponder / On things would hurt me more.”"
+        },
+        {
+          "id": "be44d4ef-558a-4572-8b46-7eea80b8b4e5",
+          "optionCode": "choice_2",
+          "displayOrder": 3,
+          "optionText": "says to himself while striking his head, “Beat at this gate that let thy folly in / And thy dear judgement out!”"
+        },
+        {
+          "id": "9e2cde0f-de4f-4681-b8e2-f0c0007482b7",
+          "optionCode": "choice_3",
+          "displayOrder": 4,
+          "optionText": "says of himself, “I will do such things— / What they are yet, I know not; but they shall be / The terrors of the earth!”"
+        }
+      ],
+      "officialAnswer": {
+        "type": "multiple_choice",
+        "optionCode": "choice_2",
+        "optionText": "says to himself while striking his head, “Beat at this gate that let thy folly in / And thy dear judgement out!”",
+        "displayOrder": 3
+      },
+      "assetAnalysis": {
+        "visualState": "none",
+        "mentionsVisual": false,
+        "tableMarkdown": null,
+        "svgPresent": false,
+        "imagePresent": false,
+        "badExtraReason": null,
+        "mathWarnings": []
+      },
+      "imageUrl": null,
+      "extra": null
+    },
+    {
+      "id": "5e1194bf-ac4d-4134-b284-d214223a3479",
+      "test": {
+        "id": "4bb1e563-6ee3-465a-b106-d93af7dc42ba",
+        "title": "2026 March - I",
+        "visibility": "private",
+        "period": "2026 march"
+      },
+      "section": {
+        "id": "2092989a-021e-4e14-97eb-24c0d3e72986",
+        "name": "Reading and Writing",
+        "normalizedName": "Reading and Writing",
+        "moduleNumber": 2,
+        "position": 27
+      },
+      "taxonomy": {
+        "domain": "Expression of Ideas",
+        "skill": "Rhetorical Synthesis"
+      },
+      "difficulty": "hard",
+      "points": 10,
+      "questionType": "multiple_choice",
+      "contentForRenderer": {
+        "questionText": {
+          "sourceText": "The student wants to say when black swallowtail butterflies are most active. Which choice best uses information from the notes to do this?",
+          "rendererText": "The student wants to say when black swallowtail butterflies are most active. Which choice best uses information from the notes to do this?",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "passage": {
+          "sourceText": "A student has taken these notes:<br>- Black swallowtail butterflies are black with yellow spots.<br>- They are most active during the day.<br>- They eat nectar from flowers.",
+          "rendererText": "A student has taken these notes:<br>- Black swallowtail butterflies are black with yellow spots.<br>- They are most active during the day.<br>- They eat nectar from flowers.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "explanation": {
+          "sourceText": "No explanation available.",
+          "rendererText": "No explanation available.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "choices": [
+          {
+            "optionCode": "choice_0",
+            "displayOrder": 1,
+            "optionText": {
+              "sourceText": "Some butterflies are black with yellow spots.",
+              "rendererText": "Some butterflies are black with yellow spots.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_1",
+            "displayOrder": 2,
+            "optionText": {
+              "sourceText": "Black swallowtail butterflies are most active during the day.",
+              "rendererText": "Black swallowtail butterflies are most active during the day.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_2",
+            "displayOrder": 3,
+            "optionText": {
+              "sourceText": "Black swallowtail butterflies eat nectar from flowers.",
+              "rendererText": "Black swallowtail butterflies eat nectar from flowers.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_3",
+            "displayOrder": 4,
+            "optionText": {
+              "sourceText": "The black swallowtail butterfly is a kind of insect.",
+              "rendererText": "The black swallowtail butterfly is a kind of insect.",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          }
+        ]
+      },
+      "sourceContent": {
+        "questionText": "The student wants to say when black swallowtail butterflies are most active. Which choice best uses information from the notes to do this?",
+        "passage": "A student has taken these notes:<br>- Black swallowtail butterflies are black with yellow spots.<br>- They are most active during the day.<br>- They eat nectar from flowers.",
+        "explanation": "No explanation available."
+      },
+      "choices": [
+        {
+          "id": "75ca43df-92a1-44ff-bd05-d7dd5d2c354a",
+          "optionCode": "choice_0",
+          "displayOrder": 1,
+          "optionText": "Some butterflies are black with yellow spots."
+        },
+        {
+          "id": "dbc9c752-274a-48a9-be92-81a8418690d3",
+          "optionCode": "choice_1",
+          "displayOrder": 2,
+          "optionText": "Black swallowtail butterflies are most active during the day."
+        },
+        {
+          "id": "1291c667-5682-4a27-9d23-d6c84d78c13b",
+          "optionCode": "choice_2",
+          "displayOrder": 3,
+          "optionText": "Black swallowtail butterflies eat nectar from flowers."
+        },
+        {
+          "id": "75a006c2-22fc-40e3-9984-d969acdf0671",
+          "optionCode": "choice_3",
+          "displayOrder": 4,
+          "optionText": "The black swallowtail butterfly is a kind of insect."
+        }
+      ],
+      "officialAnswer": {
+        "type": "multiple_choice",
+        "optionCode": "choice_1",
+        "optionText": "Black swallowtail butterflies are most active during the day.",
+        "displayOrder": 2
+      },
+      "assetAnalysis": {
+        "visualState": "none",
+        "mentionsVisual": false,
+        "tableMarkdown": null,
+        "svgPresent": false,
+        "imagePresent": false,
+        "badExtraReason": null,
+        "mathWarnings": []
+      },
+      "imageUrl": null,
+      "extra": null
+    },
+    {
+      "id": "7024f026-9037-4882-b802-19cd58be83d1",
+      "test": {
+        "id": "df3c8b8e-c0c3-4618-814d-e933dfd4fadf",
+        "title": "2025 June - E",
+        "visibility": "private",
+        "period": "2025 june"
+      },
+      "section": {
+        "id": "f36c7c62-f5d2-4b61-b9aa-77d18f27fe15",
+        "name": "Reading and Writing",
+        "normalizedName": "Reading and Writing",
+        "moduleNumber": 1,
+        "position": 10
+      },
+      "taxonomy": {
+        "domain": "Information and Ideas",
+        "skill": "Command of Evidence"
+      },
+      "difficulty": "medium",
+      "points": 20,
+      "questionType": "multiple_choice",
+      "contentForRenderer": {
+        "questionText": {
+          "sourceText": "Which quotation from “Ghosts of the Old Year” most effectively illustrates the claim?",
+          "rendererText": "Which quotation from “Ghosts of the Old Year” most effectively illustrates the claim?",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "passage": {
+          "sourceText": "“Ghosts of the Old Year” is an early 1900s poem by James Weldon Johnson. In the poem, the speaker describes experiencing an ongoing cycle of anticipation followed by regretful reflection: <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>",
+          "rendererText": "“Ghosts of the Old Year” is an early 1900s poem by James Weldon Johnson. In the poem, the speaker describes experiencing an ongoing cycle of anticipation followed by regretful reflection: <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "explanation": {
+          "sourceText": "No explanation available.",
+          "rendererText": "No explanation available.",
+          "mathSegments": [],
+          "katexErrors": []
+        },
+        "choices": [
+          {
+            "optionCode": "choice_0",
+            "displayOrder": 1,
+            "optionText": {
+              "sourceText": "“What does this brazen tongue declare, / That falling on the midnight air / Brings to my heart a sense of care / Akin to fright?”",
+              "rendererText": "“What does this brazen tongue declare, / That falling on the midnight air / Brings to my heart a sense of care / Akin to fright?”",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_1",
+            "displayOrder": 2,
+            "optionText": {
+              "sourceText": "“The snow has ceased its fluttering flight, / The wind sunk to a whisper light, / An ominous stillness fills the night, / A pause—a hush.”",
+              "rendererText": "“The snow has ceased its fluttering flight, / The wind sunk to a whisper light, / An ominous stillness fills the night, / A pause—a hush.”",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_2",
+            "displayOrder": 3,
+            "optionText": {
+              "sourceText": "“It tells of many a squandered day, / Of slighted gems and treasured clay, / Of precious stores not laid away, / Of fields unreaped.”",
+              "rendererText": "“It tells of many a squandered day, / Of slighted gems and treasured clay, / Of precious stores not laid away, / Of fields unreaped.”",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          },
+          {
+            "optionCode": "choice_3",
+            "displayOrder": 4,
+            "optionText": {
+              "sourceText": "“And so the years go swiftly by, / Each, coming, brings ambitions high, / And each, departing, leaves a sigh / Linked to the past.”",
+              "rendererText": "“And so the years go swiftly by, / Each, coming, brings ambitions high, / And each, departing, leaves a sigh / Linked to the past.”",
+              "mathSegments": [],
+              "katexErrors": []
+            }
+          }
+        ]
+      },
+      "sourceContent": {
+        "questionText": "Which quotation from “Ghosts of the Old Year” most effectively illustrates the claim?",
+        "passage": "“Ghosts of the Old Year” is an early 1900s poem by James Weldon Johnson. In the poem, the speaker describes experiencing an ongoing cycle of anticipation followed by regretful reflection: <u class=\"question-blank\">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>",
+        "explanation": "No explanation available."
+      },
+      "choices": [
+        {
+          "id": "6382ba55-1482-470d-80ee-1f0ffc208154",
+          "optionCode": "choice_0",
+          "displayOrder": 1,
+          "optionText": "“What does this brazen tongue declare, / That falling on the midnight air / Brings to my heart a sense of care / Akin to fright?”"
+        },
+        {
+          "id": "91a11dd5-e7ac-43b0-8abb-03e95dc3501d",
+          "optionCode": "choice_1",
+          "displayOrder": 2,
+          "optionText": "“The snow has ceased its fluttering flight, / The wind sunk to a whisper light, / An ominous stillness fills the night, / A pause—a hush.”"
+        },
+        {
+          "id": "f7c92a0e-481f-4109-a8e7-4dfcd8921545",
+          "optionCode": "choice_2",
+          "displayOrder": 3,
+          "optionText": "“It tells of many a squandered day, / Of slighted gems and treasured clay, / Of precious stores not laid away, / Of fields unreaped.”"
+        },
+        {
+          "id": "25a5b550-ffe1-42c1-987b-4c8bc7d2d3af",
+          "optionCode": "choice_3",
+          "displayOrder": 4,
+          "optionText": "“And so the years go swiftly by, / Each, coming, brings ambitions high, / And each, departing, leaves a sigh / Linked to the past.”"
+        }
+      ],
+      "officialAnswer": {
+        "type": "multiple_choice",
+        "optionCode": "choice_3",
+        "optionText": "“And so the years go swiftly by, / Each, coming, brings ambitions high, / And each, departing, leaves a sigh / Linked to the past.”",
+        "displayOrder": 4
+      },
+      "assetAnalysis": {
+        "visualState": "none",
+        "mentionsVisual": false,
+        "tableMarkdown": null,
+        "svgPresent": false,
+        "imagePresent": false,
+        "badExtraReason": null,
+        "mathWarnings": []
+      },
+      "imageUrl": null,
+      "extra": null
+    }
+  ]
+}
