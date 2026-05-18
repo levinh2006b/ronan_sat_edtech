@@ -108,6 +108,29 @@ async function fetchBrowserSession(user: User | null) {
   } satisfies AppSession;
 }
 
+async function handleInvalidToken(supabase: ReturnType<typeof createSupabaseBrowserClient>) {
+  try {
+    await supabase.auth.signOut();
+  } catch (signOutError) {
+    console.warn("signOut during invalid-token cleanup failed:", signOutError);
+    if (typeof window !== "undefined") {
+      // Safely delete Supabase-specific localStorage keys to preserve user's custom settings/app state
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && (key.startsWith("sb-") || key.includes("supabase"))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+      } catch (storageError) {
+        console.error("Failed to selectively clear localStorage:", storageError);
+      }
+    }
+  }
+}
+
 export function SessionProvider({ children, session }: { children: React.ReactNode; session: AppSession | null }) {
   const [data, setData] = useState<AppSession | null>(session);
   const [status, setStatus] = useState<SessionStatus>(session ? "authenticated" : "loading");
@@ -117,10 +140,17 @@ export function SessionProvider({ children, session }: { children: React.ReactNo
 
     const bootstrap = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        const nextSession = await fetchBrowserSession(user);
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+
+        if (authError) {
+          console.warn("Auth token invalid, clearing session:", authError.message);
+          await handleInvalidToken(supabase);
+          setData(null);
+          setStatus("unauthenticated");
+          return;
+        }
+
+        const nextSession = await fetchBrowserSession(authData.user);
         setData(nextSession);
         setStatus(nextSession ? "authenticated" : "unauthenticated");
       } finally {
@@ -132,14 +162,25 @@ export function SessionProvider({ children, session }: { children: React.ReactNo
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, sessionState) => {
       beginClientAuthSync();
-      void fetchBrowserSession(sessionState?.user ?? null)
-        .then((nextSession) => {
+      void (async () => {
+        try {
+          const { data: authData, error: authError } = await supabase.auth.getUser();
+
+          if (authError) {
+            console.warn("Auth state change detected invalid token:", authError.message);
+            await handleInvalidToken(supabase);
+            setData(null);
+            setStatus("unauthenticated");
+            return;
+          }
+
+          const nextSession = await fetchBrowserSession(authData.user);
           setData(nextSession);
           setStatus(nextSession ? "authenticated" : "unauthenticated");
-        })
-        .finally(() => {
+        } finally {
           endClientAuthSync();
-        });
+        }
+      })();
     });
 
     return () => {
@@ -186,11 +227,15 @@ export function useSession() {
 
 export async function getSession() {
   const supabase = createSupabaseBrowserClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
 
-  return fetchBrowserSession(user);
+  if (authError) {
+    console.warn("getSession: invalid token, clearing session:", authError.message);
+    await handleInvalidToken(supabase);
+    return null;
+  }
+
+  return fetchBrowserSession(authData.user);
 }
 
 export async function signIn(provider: string, options: SignInOptions = {}): Promise<SignInResult | undefined> {

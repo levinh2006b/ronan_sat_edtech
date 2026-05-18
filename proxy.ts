@@ -29,10 +29,18 @@ export default async function proxy(req: NextRequest) {
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.redirect(new URL("/auth", req.url));
+  if (authError || !user) {
+    // Clear all Supabase auth cookies before redirecting so stale JWTs
+    // (e.g., after a secret rotation) cannot cause an infinite redirect loop.
+    const authCookies = req.cookies.getAll().filter((c) => c.name.startsWith("sb-"));
+    const redirect = NextResponse.redirect(new URL("/auth", req.url));
+    for (const c of authCookies) {
+      redirect.cookies.delete(c.name);
+    }
+    return redirect;
   }
 
   try {
